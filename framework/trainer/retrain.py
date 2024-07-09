@@ -17,16 +17,6 @@ from ..utils import *
 device = torch.device('cuda') if torch.cuda.is_available() else torch.device('cpu')
 
 class RetrainTrainer(Trainer):
-
-    # def freeze_unused_mask(self, model, edge_to_delete, subgraph, h):
-    #     gradient_mask = torch.zeros_like(delete_model.operator)
-    #     
-    #     edges = subgraph[h]
-    #     for s, t in edges:
-    #         if s < t:
-    #             gradient_mask[s, t] = 1
-    #     gradient_mask = gradient_mask.to(device)
-    #     model.operator.register_hook(lambda grad: grad.mul_(gradient_mask))
     
     def train(self, model, data, optimizer, args, logits_ori=None, attack_model_all=None, attack_model_sub=None):
         if 'ogbl' in self.args.dataset:
@@ -129,18 +119,6 @@ class RetrainTrainer(Trainer):
     def train_minibatch(self, model, data, optimizer, args, logits_ori=None, attack_model_all=None, attack_model_sub=None):
         start_time = time.time()
         best_metric = 0
-
-        # MI Attack before unlearning
-        if attack_model_all is not None:
-            model, attack_model_all = model.to('cpu'), attack_model_all.to('cpu')
-            mi_logit_all_before, mi_sucrate_all_before = member_infer_attack(model, attack_model_all, data)
-            self.trainer_log['mi_logit_all_before'] = mi_logit_all_before
-            self.trainer_log['mi_sucrate_all_before'] = mi_sucrate_all_before
-            model, attack_model_all = model.to(device), attack_model_all.to(device)
-        if attack_model_sub is not None:
-            mi_logit_sub_before, mi_sucrate_sub_before = member_infer_attack(model, attack_model_sub, data)
-            self.trainer_log['mi_logit_sub_before'] = mi_logit_sub_before
-            self.trainer_log['mi_sucrate_sub_before'] = mi_sucrate_sub_before
 
         data.edge_index = data.train_pos_edge_index
         loader = GraphSAINTRandomWalkSampler(

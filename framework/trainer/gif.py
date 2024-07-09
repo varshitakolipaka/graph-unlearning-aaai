@@ -96,15 +96,6 @@ class GIFTrainer(Trainer):
         # model.train()
         model, data = model.to(device), data.to(device)
         args.eval_on_cpu = False
-        # MI Attack before unlearning
-        if attack_model is not None:
-            mi_logit_all_before, mi_sucrate_all_before = member_infer_attack(model, attack_model, data)
-            self.trainer_log['mi_logit_all_before'] = mi_logit_all_before
-            self.trainer_log['mi_sucrate_all_before'] = mi_sucrate_all_before
-        if attack_model_sub is not None:
-            mi_logit_sub_before, mi_sucrate_sub_before = member_infer_attack(model, attack_model_sub, data)
-            self.trainer_log['mi_logit_sub_before'] = mi_logit_sub_before
-            self.trainer_log['mi_sucrate_sub_before'] = mi_sucrate_sub_before
 
 
         grad_tuple = self.get_grad(data, model)

@@ -39,17 +39,6 @@ class GradientAscentTrainer(Trainer):
         start_time = time.time()
         best_metric = 0
 
-        # MI Attack before unlearning
-        if attack_model_all is not None:
-            mi_logit_all_before, mi_sucrate_all_before = member_infer_attack(model, attack_model_all, data)
-            self.trainer_log['mi_logit_all_before'] = mi_logit_all_before
-            self.trainer_log['mi_sucrate_all_before'] = mi_sucrate_all_before
-        if attack_model_sub is not None:
-            mi_logit_sub_before, mi_sucrate_sub_before = member_infer_attack(model, attack_model_sub, data)
-            self.trainer_log['mi_logit_sub_before'] = mi_logit_sub_before
-            self.trainer_log['mi_sucrate_sub_before'] = mi_sucrate_sub_before
-
-
         for epoch in trange(args.epochs, desc='Unlearning'):
             model.train()
 
@@ -118,16 +107,6 @@ class GradientAscentTrainer(Trainer):
 
     def train_minibatch(self, model, data, optimizer, args, logits_ori=None, attack_model_all=None, attack_model_sub=None):
         best_metric = 0
-
-        # MI Attack before unlearning
-        if attack_model_all is not None:
-            mi_logit_all_before, mi_sucrate_all_before = member_infer_attack(model, attack_model_all, data)
-            self.trainer_log['mi_logit_all_before'] = mi_logit_all_before
-            self.trainer_log['mi_sucrate_all_before'] = mi_sucrate_all_before
-        if attack_model_sub is not None:
-            mi_logit_sub_before, mi_sucrate_sub_before = member_infer_attack(model, attack_model_sub, data)
-            self.trainer_log['mi_logit_sub_before'] = mi_logit_sub_before
-            self.trainer_log['mi_sucrate_sub_before'] = mi_sucrate_sub_before
 
         data.edge_index = data.train_pos_edge_index
         data.node_id = torch.arange(data.x.shape[0])

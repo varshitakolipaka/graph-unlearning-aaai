@@ -63,6 +63,7 @@ def main():
 
     # Train
     trainer = get_trainer(args)
+    print(trainer)
     trainer.train(model, data, optimizer, args)
 
     # Test

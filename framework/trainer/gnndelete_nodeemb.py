@@ -114,23 +114,12 @@ class GNNDeleteNodeembTrainer(Trainer):
         best_metric = 0
         loss_fct = get_loss_fct(self.args.loss_fct)
 
-        # MI Attack before unlearning
-        if attack_model_all is not None:
-            mi_logit_all_before, mi_sucrate_all_before = member_infer_attack(model, attack_model_all, data)
-            self.trainer_log['mi_logit_all_before'] = mi_logit_all_before
-            self.trainer_log['mi_sucrate_all_before'] = mi_sucrate_all_before
-        if attack_model_sub is not None:
-            mi_logit_sub_before, mi_sucrate_sub_before = member_infer_attack(model, attack_model_sub, data)
-            self.trainer_log['mi_logit_sub_before'] = mi_logit_sub_before
-            self.trainer_log['mi_sucrate_sub_before'] = mi_sucrate_sub_before
-
         # 
         non_df_node_mask = torch.ones(data.x.shape[0], dtype=torch.bool, device=data.x.device)
         non_df_node_mask[data.directed_df_edge_index.flatten().unique()] = False
 
         data.sdf_node_1hop_mask_non_df_mask = data.sdf_node_1hop_mask & non_df_node_mask
         data.sdf_node_2hop_mask_non_df_mask = data.sdf_node_2hop_mask & non_df_node_mask
-
         
         # Original node embeddings
         with torch.no_grad():
@@ -287,15 +276,6 @@ class GNNDeleteNodeembTrainer(Trainer):
         # neg_size = 10
         early_stopping = EarlyStopping(patience=4, verbose=True, delta=1e-4, path=args.checkpoint_dir, trace_func=tqdm.write)
 
-        # MI Attack before unlearning
-        if attack_model_all is not None:
-            mi_logit_all_before, mi_sucrate_all_before = member_infer_attack(model, attack_model_all, data)
-            self.trainer_log['mi_logit_all_before'] = mi_logit_all_before
-            self.trainer_log['mi_sucrate_all_before'] = mi_sucrate_all_before
-        if attack_model_sub is not None:
-            mi_logit_sub_before, mi_sucrate_sub_before = member_infer_attack(model, attack_model_sub, data)
-            self.trainer_log['mi_logit_sub_before'] = mi_logit_sub_before
-            self.trainer_log['mi_sucrate_sub_before'] = mi_sucrate_sub_before
 
         non_df_node_mask = torch.ones(data.x.shape[0], dtype=torch.bool, device=data.x.device)
         non_df_node_mask[data.directed_df_edge_index.flatten().unique()] = False

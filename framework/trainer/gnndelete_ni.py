@@ -109,20 +109,10 @@ class GNNDeleteNITrainer(Trainer):
     def train_fullbatch(self, model, data, optimizer, args, logits_ori=None, attack_model_all=None, attack_model_sub=None):
         model = model.to(device)
         data = data.to(device)
-        early_stopping = EarlyStopping(patience=30, verbose=True, delta=1e-4, path=args.checkpoint_dir, trace_func=tqdm.write)
+        early_stopping = EarlyStopping(patience=30, verbose=True, delta=1e-4, path=args.checkpoint_dir, trace_func=tqdm.tqdm.write)
 
         best_metric = 0
         loss_fct = get_loss_fct(self.args.loss_fct)
-
-        # MI Attack before unlearning
-        if attack_model_all is not None:
-            mi_logit_all_before, mi_sucrate_all_before = member_infer_attack(model, attack_model_all, data)
-            self.trainer_log['mi_logit_all_before'] = mi_logit_all_before
-            self.trainer_log['mi_sucrate_all_before'] = mi_sucrate_all_before
-        if attack_model_sub is not None:
-            mi_logit_sub_before, mi_sucrate_sub_before = member_infer_attack(model, attack_model_sub, data)
-            self.trainer_log['mi_logit_sub_before'] = mi_logit_sub_before
-            self.trainer_log['mi_sucrate_sub_before'] = mi_sucrate_sub_before
 
         # 
         non_df_node_mask = torch.ones(data.x.shape[0], dtype=torch.bool, device=data.x.device)
@@ -135,9 +125,6 @@ class GNNDeleteNITrainer(Trainer):
         # Original node embeddings
         with torch.no_grad():
             z1_ori, z2_ori = model.get_original_embeddings(data.x, data.train_pos_edge_index[:, data.dr_mask], return_all_emb=True)
-
-
-        
 
         for epoch in trange(args.epochs, desc='Unlearning'):
             model.train()
@@ -254,7 +241,7 @@ class GNNDeleteNITrainer(Trainer):
             }
             wandb_log(step_log)
             msg = [f'{i}: {j:>4d}' if isinstance(j, int) else f'{i}: {j:.4f}' for i, j in step_log.items()]
-            tqdm.write(' | '.join(msg))
+            tqdm.tqdm.write(' | '.join(msg))
 
             if (epoch + 1) % self.args.valid_freq == 0:
                 valid_loss, dt_auc, dt_aup, df_auc, df_aup, df_logit, logit_all_pair, valid_log = self.eval(model, data, 'val')
@@ -262,13 +249,13 @@ class GNNDeleteNITrainer(Trainer):
                 
                 wandb_log(valid_log)
                 msg = [f'{i}: {j:>4d}' if isinstance(j, int) else f'{i}: {j:.4f}' for i, j in valid_log.items()]
-                tqdm.write(' | '.join(msg))
+                tqdm.tqdm.write(' | '.join(msg))
                 self.trainer_log['log'].append(valid_log)
 
                 z = model(data.x, data.train_pos_edge_index[:, data.dr_mask])
                 early_stopping(dt_auc+df_auc, model, z)
                 if early_stopping.early_stop:
-                    tqdm.write("Early stop")
+                    tqdm.tqdm.write("Early stop")
                     break
 
         # Save
@@ -286,17 +273,7 @@ class GNNDeleteNITrainer(Trainer):
         else:
             loss_fct = nn.MSELoss()
         # neg_size = 10
-        early_stopping = EarlyStopping(patience=4, verbose=True, delta=1e-4, path=args.checkpoint_dir, trace_func=tqdm.write)
-
-        # MI Attack before unlearning
-        if attack_model_all is not None:
-            mi_logit_all_before, mi_sucrate_all_before = member_infer_attack(model, attack_model_all, data)
-            self.trainer_log['mi_logit_all_before'] = mi_logit_all_before
-            self.trainer_log['mi_sucrate_all_before'] = mi_sucrate_all_before
-        if attack_model_sub is not None:
-            mi_logit_sub_before, mi_sucrate_sub_before = member_infer_attack(model, attack_model_sub, data)
-            self.trainer_log['mi_logit_sub_before'] = mi_logit_sub_before
-            self.trainer_log['mi_sucrate_sub_before'] = mi_sucrate_sub_before
+        early_stopping = EarlyStopping(patience=4, verbose=True, delta=1e-4, path=args.checkpoint_dir, trace_func=tqdm.tqdm.write)
 
         non_df_node_mask = torch.ones(data.x.shape[0], dtype=torch.bool, device=data.x.device)
         non_df_node_mask[data.directed_df_edge_index.flatten().unique()] = False
@@ -384,7 +361,7 @@ class GNNDeleteNITrainer(Trainer):
                 }
                 wandb_log(step_log)
                 msg = [f'{i}: {j:>4d}' if isinstance(j, int) else f'{i}: {j:.4f}' for i, j in step_log.items()]
-                tqdm.write(' | '.join(msg))
+                tqdm.tqdm.write(' | '.join(msg))
 
             if (epoch+1) % args.valid_freq == 0:
                 valid_loss, dt_auc, dt_aup, df_auc, df_aup, df_logit, logit_all_pair, valid_log = self.eval(model, data, 'val')
@@ -392,13 +369,13 @@ class GNNDeleteNITrainer(Trainer):
                 valid_log['Epoch'] = epoch
                 wandb_log(valid_log)
                 msg = [f'{i}: {j:>4d}' if isinstance(j, int) else f'{i}: {j:.4f}' for i, j in valid_log.items()]
-                tqdm.write(' | '.join(msg))
+                tqdm.tqdm.write(' | '.join(msg))
                 self.trainer_log['log'].append(valid_log)
 
                 z = model(data.x, data.train_pos_edge_index[:, data.dr_mask])
                 early_stopping(dt_auc+df_auc, model, z)
                 if early_stopping.early_stop:
-                    tqdm.write("Early stop")
+                    tqdm.tqdm.write("Early stop")
                     break
         # Save
         ckpt = {

@@ -1,7 +1,6 @@
 import os
 import time
 import json
-import wandb
 import numpy as np
 import torch
 import torch.nn as nn
@@ -63,6 +62,7 @@ class Trainer:
         return z
 
     def train(self, model, data, optimizer, args):
+        print("LINK PREDICTION!")
         if self.args.dataset in ['Cora', 'PubMed', 'DBLP', 'CS', 'Amazon']:
             return self.train_fullbatch(model, data, optimizer, args)
 
@@ -88,7 +88,7 @@ class Trainer:
                 num_nodes=data.num_nodes,
                 num_neg_samples=data.dtrain_mask.sum())
             
-            z = model(data.x, data.train_pos_edge_index)
+            z = model(data.x, data.train_pos_edge_index) # get node embedding ig? 
             # edge = torch.cat([train_pos_edge_index, neg_edge_index], dim=-1)
             # logits = model.decode(z, edge[0], edge[1])
             logits = model.decode(z, data.train_pos_edge_index, neg_edge_index)
@@ -111,7 +111,7 @@ class Trainer:
                 wandb_log(log)
                 for log in [train_log, valid_log]:
                     msg = [f'{i}: {j:>4d}' if isinstance(j, int) else f'{i}: {j:.4f}' for i, j in log.items()]
-                    tqdm.write(' | '.join(msg))
+                    tqdm.tqdm.write(' | '.join(msg))
 
                 self.trainer_log['log'].append(train_log)
                 self.trainer_log['log'].append(valid_log)
@@ -333,28 +333,6 @@ class Trainer:
         self.trainer_log['auc_gap'] = abs(dt_auc - df_auc)
         self.trainer_log['aup_gap'] = abs(dt_aup - df_aup)
 
-
-        # if model_retrain is not None:    # Deletion
-        #     self.trainer_log['ve'] = verification_error(model, model_retrain).cpu().item()
-            # self.trainer_log['dr_kld'] = output_kldiv(model, model_retrain, data=data).cpu().item()
-
-        # MI Attack after unlearning
-        if attack_model_all is not None:
-            mi_logit_all_after, mi_sucrate_all_after = member_infer_attack(model, attack_model_all, data)
-            self.trainer_log['mi_logit_all_after'] = mi_logit_all_after
-            self.trainer_log['mi_sucrate_all_after'] = mi_sucrate_all_after
-            self.trainer_log['mi_ratio_all'] = np.mean([i[1] / j[1] for i, j in zip(self.trainer_log['mi_logit_all_after'], self.trainer_log['mi_logit_all_before'])])
-            test_log['mi_sucrate'], test_log['mi_ratio'] = mi_sucrate_all_after, self.trainer_log['mi_ratio_all']
-        if attack_model_sub is not None:
-            mi_logit_sub_after, mi_sucrate_sub_after = member_infer_attack(model, attack_model_sub, data)
-            self.trainer_log['mi_logit_sub_after'] = mi_logit_sub_after
-            self.trainer_log['mi_sucrate_sub_after'] = mi_sucrate_sub_after
-            
-            self.trainer_log['mi_ratio_all'] = np.mean([i[1] / j[1] for i, j in zip(self.trainer_log['mi_logit_all_after'], self.trainer_log['mi_logit_all_before'])])
-            self.trainer_log['mi_ratio_sub'] = np.mean([i[1] / j[1] for i, j in zip(self.trainer_log['mi_logit_sub_after'], self.trainer_log['mi_logit_sub_before'])])
-            print(self.trainer_log['mi_ratio_all'], self.trainer_log['mi_ratio_sub'], self.trainer_log['mi_sucrate_all_after'], self.trainer_log['mi_sucrate_sub_after'])
-            print(self.trainer_log['df_auc'], self.trainer_log['df_aup'])
-
         return loss, dt_auc, dt_aup, df_auc, df_aup, df_logit, logit_all_pair, test_log
 
     @torch.no_grad()
@@ -379,6 +357,7 @@ class KGTrainer(Trainer):
         
 class NodeClassificationTrainer(Trainer):
     def train(self, model, data, optimizer, args):
+        print("NODE CLASSIFICATION!")
         start_time = time.time()
         best_epoch = 0
         best_valid_acc = 0
@@ -533,134 +512,4 @@ class NodeClassificationTrainer(Trainer):
             self.trainer_log['ve'] = verification_error(model, model_retrain).cpu().item()
             # self.trainer_log['dr_kld'] = output_kldiv(model, model_retrain, data=data).cpu().item()
 
-        # MI Attack after unlearning
-        if attack_model_all is not None:
-            mi_logit_all_after, mi_sucrate_all_after = member_infer_attack(model, attack_model_all, data)
-            self.trainer_log['mi_logit_all_after'] = mi_logit_all_after
-            self.trainer_log['mi_sucrate_all_after'] = mi_sucrate_all_after
-        if attack_model_sub is not None:
-            mi_logit_sub_after, mi_sucrate_sub_after = member_infer_attack(model, attack_model_sub, data)
-            self.trainer_log['mi_logit_sub_after'] = mi_logit_sub_after
-            self.trainer_log['mi_sucrate_sub_after'] = mi_sucrate_sub_after
-            
-            self.trainer_log['mi_ratio_all'] = np.mean([i[1] / j[1] for i, j in zip(self.trainer_log['mi_logit_all_after'], self.trainer_log['mi_logit_all_before'])])
-            self.trainer_log['mi_ratio_sub'] = np.mean([i[1] / j[1] for i, j in zip(self.trainer_log['mi_logit_sub_after'], self.trainer_log['mi_logit_sub_before'])])
-            print(self.trainer_log['mi_ratio_all'], self.trainer_log['mi_ratio_sub'], self.trainer_log['mi_sucrate_all_after'], self.trainer_log['mi_sucrate_sub_after'])
-            print(self.trainer_log['df_auc'], self.trainer_log['df_aup'])
-
         return loss, dt_acc, dt_f1, test_log
-
-class GraphTrainer(Trainer):
-    def train(self, model, dataset, split_idx, optimizer, args):
-        self.train_loader = DataLoader(dataset[split_idx["train"]], batch_size=32, shuffle=True)
-        self.valid_loader = DataLoader(dataset[split_idx["valid"]], batch_size=32, shuffle=False)
-        self.test_loader = DataLoader(dataset[split_idx["test"]], batch_size=32, shuffle=False)
-
-        start_time = time.time()
-        best_epoch = 0
-        best_valid_auc = 0
-
-        for epoch in trange(args.epochs, desc='Epoch'):
-            model.train()
-
-            for batch in tqdm(self.train_loader, desc="Iteration", leave=False):
-                batch = batch.to(device)
-                pred = model(batch)
-                optimizer.zero_grad()
-                ## ignore nan targets (unlabeled) when computing training loss.
-                is_labeled = batch.y == batch.y
-                loss = F.binary_cross_entropy_with_logits(pred.to(torch.float32)[is_labeled], batch.y.to(torch.float32)[is_labeled])
-                loss.backward()
-                optimizer.step()
-
-            if (epoch+1) % args.valid_freq == 0:
-                valid_auc, valid_log = self.eval(model, dataset, 'val')
-
-                train_log = {
-                    'epoch': epoch,
-                    'train_loss': loss.item()
-                }
-                
-                for log in [train_log, valid_log]:
-                    wandb_log(log)
-                    msg = [f'{i}: {j:>4d}' if isinstance(j, int) else f'{i}: {j:.4f}' for i, j in log.items()]
-                    tqdm.write(' | '.join(msg))
-
-                self.trainer_log['log'].append(train_log)
-                self.trainer_log['log'].append(valid_log)
-
-                if valid_auc > best_valid_auc:
-                    best_valid_auc = valid_auc
-                    best_epoch = epoch
-
-                    print(f'Save best checkpoint at epoch {epoch:04d}. Valid auc = {valid_auc:.4f}')
-                    ckpt = {
-                        'model_state': model.state_dict(),
-                        'optimizer_state': optimizer.state_dict(),
-                    }
-                    torch.save(ckpt, os.path.join(args.checkpoint_dir, 'model_best.pt'))
-
-        self.trainer_log['training_time'] = time.time() - start_time
-
-        # Save models and node embeddings
-        print('Saving final checkpoint')
-        ckpt = {
-            'model_state': model.state_dict(),
-            'optimizer_state': optimizer.state_dict(),
-        }
-        torch.save(ckpt, os.path.join(args.checkpoint_dir, 'model_final.pt'))
-
-        print(f'Training finished. Best checkpoint at epoch = {best_epoch:04d}, best valid auc = {best_valid_auc:.4f}')
-
-        self.trainer_log['best_epoch'] = best_epoch
-        self.trainer_log['best_valid_auc'] = best_valid_auc
-
-    @torch.no_grad()
-    def eval(self, model, data, stage='val', pred_all=False):
-        model.eval()
-        y_true = []
-        y_pred = []
-
-        if stage == 'val':
-            loader = self.valid_loader
-        else:
-            loader = self.test_loader
-
-        if self.args.eval_on_cpu:
-            model = model.to('cpu')
-
-        for batch in tqdm(loader):
-            batch = batch.to(device)
-            pred = model(batch)
-            y_true.append(batch.y.view(pred.shape).detach().cpu())
-            y_pred.append(pred.detach().cpu())
-
-        y_true = torch.cat(y_true, dim = 0).numpy()
-        y_pred = torch.cat(y_pred, dim = 0).numpy()
-
-        evaluator = Evaluator('ogbg-molhiv')
-        auc = evaluator.eval({"y_true": y_true, "y_pred": y_pred})['rocauc']
-        log = {
-            f'val_auc': auc,
-        }
-
-        if self.args.eval_on_cpu:
-            model = model.to(device)
-
-        return auc, log
-
-    @torch.no_grad()
-    def test(self, model, data, model_retrain=None, attack_model_all=None, attack_model_sub=None, ckpt='best'):
-        
-        if ckpt == 'best':    # Load best ckpt
-            ckpt = torch.load(os.path.join(self.args.checkpoint_dir, 'model_best.pt'))
-            model.load_state_dict(ckpt['model_state'])
-
-        dt_auc, test_log = self.eval(model, data, 'test')
-        self.trainer_log['dt_auc'] = dt_auc
-
-        if model_retrain is not None:    # Deletion
-            self.trainer_log['ve'] = verification_error(model, model_retrain).cpu().item()
-            # self.trainer_log['dr_kld'] = output_kldiv(model, model_retrain, data=data).cpu().item()
-
-        return dt_auc, test_log

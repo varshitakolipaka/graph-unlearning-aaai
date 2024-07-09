@@ -48,15 +48,15 @@ def parse_args():
                         help="name suffix for wandb run")
     parser.add_argument("--mode", type=str, default="disabled", 
                         help="wandb mode")
-    parser.add_argument('--lr', type=float, default=1e-3, 
+    parser.add_argument('--lr', type=float, default=0.025, 
                         help='initial learning rate')
     parser.add_argument('--weight_decay', type=float, default=5e-7, 
                         help='weight decay')
     parser.add_argument('--optimizer', type=str, default='Adam', 
                         help='optimizer to use')
-    parser.add_argument('--epochs', type=int, default=3000, 
+    parser.add_argument('--epochs', type=int, default=300, 
                         help='number of epochs to train')
-    parser.add_argument('--valid_freq', type=int, default=100,
+    parser.add_argument('--valid_freq', type=int, default=30,
                         help='# of epochs to do validation')
     parser.add_argument('--checkpoint_dir', type=str, default='./checkpoint',
                         help='checkpoint folder')
@@ -107,6 +107,15 @@ def parse_args():
     parser.add_argument('--scale', type=int, default=100000)
     parser.add_argument('--damp', type=float, default=0.1)
 
+    # Scrub
+
+    parser.add_argument('--unlearn_iters', type=int, default=50, help='number of epochs to train (default: 31)')
+    parser.add_argument('--unlearn_lr', type=float, default=0.015, help='learning rate (default: 0.025)')
+    parser.add_argument('--kd_T', type=float, default=4, help='Knowledge distilation temperature for SCRUB')
+    parser.add_argument('--scrubAlpha', type=float, default=1, help='KL from og_model constant for SCRUB, higher incentivizes closeness to ogmodel')
+    parser.add_argument('--msteps', type=int, default=15, help='Maximization steps on forget set for SCRUB')
+    parser.add_argument('--wd', type=float, default=0.0005, help='learning rate (default: 0.01)')
+    
     args = parser.parse_args()
 
     if 'ogbl' in args.dataset:  # eval on cpu 
@@ -125,6 +134,7 @@ def parse_args():
             args.batch_size = 8192
 
     if 'gnndelete' in args.unlearning_model:
+        
         if args.gnn not in ['rgcn', 'rgat'] and 'ogbl' in args.dataset:
             args.epochs = 600
             args.valid_freq = 50

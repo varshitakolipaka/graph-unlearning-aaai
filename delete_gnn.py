@@ -28,7 +28,6 @@ def get_processed_data(d, val_ratio, test_ratio, df_ratio, subset='in'):
     data = split_forget_retain(data, df_ratio, subset)
     return data
 
-
 torch.autograd.set_detect_anomaly(True)
 def main():
     args = parse_args()
@@ -107,6 +106,10 @@ def main():
 
     # Train
     trainer = get_trainer(args)
+    
+    print(f"df mask: {data.df_mask.sum().item()}") # 5702 
+    print(f"dr mask: {data.dr_mask.sum().item()}") # 108452 -> are these edges?
+    print(f"length of data.x: {data.x.size(dim=0)}") # The length of the x is 19763.
     trainer.train(model, data, optimizer, args, logits_ori, attack_model_all, attack_model_sub)
 
     # Test
