@@ -123,7 +123,7 @@ def parse_args():
 
 
     if args.unlearning_model in ['original', 'retrain']:
-        args.epochs = 2000
+        args.epochs = 200 # changed it to 200 from 2000
         args.valid_freq = 200
         
         # For large graphs

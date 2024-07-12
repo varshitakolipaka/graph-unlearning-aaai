@@ -50,11 +50,11 @@ def main():
     # Dataset
     data = get_processed_data(args.dataset, val_ratio=0.05, test_ratio=0.05, df_ratio=args.df_size)
     print('Directed dataset:', data)
+    
     if args.gnn not in ['rgcn', 'rgat']:
         args.in_dim = data.x.shape[1]
 
     print('Training args', args)
-    
 
     # Model
     model = get_model(args, data.sdf_node_1hop_mask, data.sdf_node_2hop_mask, num_nodes=data.num_nodes, num_edge_type=args.num_edge_type)
@@ -99,6 +99,7 @@ def main():
     wandb.init(config=args, project="GNNDelete", group="over_unlearn", name=get_run_name(args), mode=args.mode)
     wandb.watch(model, log_freq=100)
 
+    # tqdm.tqdm.write('Hola')
 
     # MI attack model
     attack_model_all = None

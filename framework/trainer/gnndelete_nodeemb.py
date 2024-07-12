@@ -109,7 +109,7 @@ class GNNDeleteNodeembTrainer(Trainer):
     def train_fullbatch(self, model, data, optimizer, args, logits_ori=None, attack_model_all=None, attack_model_sub=None):
         model = model.to(device)
         data = data.to(device)
-        early_stopping = EarlyStopping(patience=30, verbose=True, delta=1e-4, path=args.checkpoint_dir, trace_func=tqdm.write)
+        early_stopping = EarlyStopping(patience=30, verbose=True, delta=1e-4, path=args.checkpoint_dir, trace_func=tqdm.tqdm.write)
 
         best_metric = 0
         loss_fct = get_loss_fct(self.args.loss_fct)
@@ -241,7 +241,9 @@ class GNNDeleteNodeembTrainer(Trainer):
             }
             wandb_log(step_log)
             msg = [f'{i}: {j:>4d}' if isinstance(j, int) else f'{i}: {j:.4f}' for i, j in step_log.items()]
-            tqdm.write(' | '.join(msg))
+            
+            # tqdm.tqdm.write("Hello World!")
+            tqdm.tqdm.write(' | '.join(msg))
 
             if (epoch + 1) % self.args.valid_freq == 0:
                 valid_loss, dt_auc, dt_aup, df_auc, df_aup, df_logit, logit_all_pair, valid_log = self.eval(model, data, 'val')
@@ -251,12 +253,12 @@ class GNNDeleteNodeembTrainer(Trainer):
 
                 wandb_log(valid_log)
                 msg = [f'{i}: {j:>4d}' if isinstance(j, int) else f'{i}: {j:.4f}' for i, j in valid_log.items()]
-                tqdm.write(' | '.join(msg))
+                tqdm.tqdm.write(' | '.join(msg))
                 self.trainer_log['log'].append(valid_log)
 
                 early_stopping(dt_auc+df_auc, model, z2)
                 if early_stopping.early_stop:
-                    tqdm.write("Early stop")
+                    tqdm.tqdm.write("Early stop")
                     break
 
         # Save
@@ -274,7 +276,7 @@ class GNNDeleteNodeembTrainer(Trainer):
         else:
             loss_fct = nn.MSELoss()
         # neg_size = 10
-        early_stopping = EarlyStopping(patience=4, verbose=True, delta=1e-4, path=args.checkpoint_dir, trace_func=tqdm.write)
+        early_stopping = EarlyStopping(patience=4, verbose=True, delta=1e-4, path=args.checkpoint_dir, trace_func=tqdm.tqdm.write)
 
 
         non_df_node_mask = torch.ones(data.x.shape[0], dtype=torch.bool, device=data.x.device)
@@ -363,7 +365,7 @@ class GNNDeleteNodeembTrainer(Trainer):
                 }
                 wandb_log(step_log)
                 msg = [f'{i}: {j:>4d}' if isinstance(j, int) else f'{i}: {j:.4f}' for i, j in step_log.items()]
-                tqdm.write(' | '.join(msg))
+                tqdm.tqdm.write(' | '.join(msg))
 
             if (epoch+1) % args.valid_freq == 0:
                 valid_loss, dt_auc, dt_aup, df_auc, df_aup, df_logit, logit_all_pair, valid_log = self.eval(model, data, 'val')
@@ -371,14 +373,14 @@ class GNNDeleteNodeembTrainer(Trainer):
                 valid_log['Epoch'] = epoch
                 wandb_log(valid_log)
                 msg = [f'{i}: {j:>4d}' if isinstance(j, int) else f'{i}: {j:.4f}' for i, j in valid_log.items()]
-                tqdm.write(' | '.join(msg))
+                tqdm.tqdm.write(' | '.join(msg))
                 self.trainer_log['log'].append(valid_log)
 
                 data = data.to(device)
                 z = model(data.x, data.train_pos_edge_index[:, data.dr_mask])
                 early_stopping(dt_auc+df_auc, model, z)
                 if early_stopping.early_stop:
-                    tqdm.write("Early stop")
+                    tqdm.tqdm.write("Early stop")
                     break
         # Save
         ckpt = {

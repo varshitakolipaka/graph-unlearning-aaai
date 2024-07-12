@@ -35,7 +35,6 @@ def main():
     if args.gnn not in ['rgcn', 'rgat']:
         args.in_dim = data.x.shape[1]
 
-
     # Use proper training data for original and Dr
     if args.gnn in ['rgcn', 'rgat']:
         if not hasattr(data, 'train_mask'):
