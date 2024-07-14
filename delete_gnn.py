@@ -58,7 +58,7 @@ def main():
 
     # Model
     model = get_model(args, data.sdf_node_1hop_mask, data.sdf_node_2hop_mask, num_nodes=data.num_nodes, num_edge_type=args.num_edge_type)
-
+    
     if args.unlearning_model != 'retrain':  # Start from trained GNN model
         if os.path.exists(os.path.join(original_path, 'pred_proba.pt')):
             logits_ori = torch.load(os.path.join(original_path, 'pred_proba.pt'))   # logits_ori: tensor.shape([num_nodes, num_nodes]), represent probability of edge existence between any two nodes
@@ -107,11 +107,14 @@ def main():
 
     # Train
     trainer = get_trainer(args)
+    print("RES RIGHTN AFTER TRAINING")
+    test_results = trainer.test(model, data)
+    print(test_results[-1])
     
     print(f"df mask: {data.df_mask.sum().item()}") # 5702 
     print(f"dr mask: {data.dr_mask.sum().item()}") # 108452 -> are these edges?
     print(f"length of data.x: {data.x.size(dim=0)}") # The length of the x is 19763.
-    trainer.train(model, data, optimizer, args, logits_ori, attack_model_all, attack_model_sub)
+    trainer.train(model, data, optimizer, args)
 
     # Test
     if args.unlearning_model != 'retrain':

@@ -54,7 +54,7 @@ def parse_args():
                         help='weight decay')
     parser.add_argument('--optimizer', type=str, default='Adam', 
                         help='optimizer to use')
-    parser.add_argument('--epochs', type=int, default=300, 
+    parser.add_argument('--epochs', type=int, default=50, 
                         help='number of epochs to train')
     parser.add_argument('--valid_freq', type=int, default=30,
                         help='# of epochs to do validation')
@@ -110,7 +110,7 @@ def parse_args():
     # Scrub
 
     parser.add_argument('--unlearn_iters', type=int, default=50, help='number of epochs to train (default: 31)')
-    parser.add_argument('--unlearn_lr', type=float, default=0.015, help='learning rate (default: 0.025)')
+    parser.add_argument('--unlearn_lr', type=float, default=1e-2, help='learning rate (default: 0.025)')
     parser.add_argument('--kd_T', type=float, default=4, help='Knowledge distilation temperature for SCRUB')
     parser.add_argument('--scrubAlpha', type=float, default=1, help='KL from og_model constant for SCRUB, higher incentivizes closeness to ogmodel')
     parser.add_argument('--msteps', type=int, default=15, help='Maximization steps on forget set for SCRUB')
@@ -123,7 +123,7 @@ def parse_args():
 
 
     if args.unlearning_model in ['original', 'retrain']:
-        args.epochs = 200 # changed it to 200 from 2000
+        args.epochs = 50 # changed it to 200 from 2000
         args.valid_freq = 200
         
         # For large graphs

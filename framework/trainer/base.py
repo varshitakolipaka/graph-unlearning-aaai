@@ -28,10 +28,19 @@ class Trainer:
             'dataset': args.dataset, 
             'log': []}
         self.logit_all_pair = None
+        print("meoww")
         self.df_pos_edge = []
 
-        with open(os.path.join(self.args.checkpoint_dir, 'training_args.json'), 'w') as f:
-            json.dump(vars(args), f)
+        # with open(os.path.join(self.args.checkpoint_dir, 'training_args.json'), 'w') as f:
+        #     json.dump(vars(args), f)
+
+        # Ensure the directory exists
+        checkpoint_dir = self.args.checkpoint_dir
+        os.makedirs(checkpoint_dir, exist_ok=True)
+
+        # Now create and write to the file
+        with open(os.path.join(checkpoint_dir, 'training_args.json'), 'w') as f:
+            json.dump(vars(self.args), f)
 
     def freeze_unused_weights(self, model, mask):
         grad_mask = torch.zeros_like(mask)
@@ -142,92 +151,6 @@ class Trainer:
 
         self.trainer_log['best_epoch'] = best_epoch
         self.trainer_log['best_valid_loss'] = best_valid_loss
-
-    def train_minibatch(self, model, data, optimizer, args):
-        start_time = time.time()
-        best_valid_loss = 1000000
-
-        data.edge_index = data.train_pos_edge_index
-        loader = GraphSAINTRandomWalkSampler(
-            data, batch_size=args.batch_size, walk_length=args.walk_length, num_steps=args.num_steps,
-        )
-        for epoch in trange(args.epochs, desc='Epoch'):
-            model.train()
-
-            epoch_loss = 0
-            for step, batch in enumerate(tqdm(loader, desc='Step', leave=False)):
-                # Positive and negative sample
-                train_pos_edge_index = batch.edge_index.to(device)
-                z = model(batch.x.to(device), train_pos_edge_index)
-
-                neg_edge_index = negative_sampling(
-                    edge_index=train_pos_edge_index,
-                    num_nodes=z.size(0))
-                
-                logits = model.decode(z, train_pos_edge_index, neg_edge_index)
-                label = get_link_labels(train_pos_edge_index, neg_edge_index)
-                loss = F.binary_cross_entropy_with_logits(logits, label)
-
-                loss.backward()
-                # torch.nn.utils.clip_grad_norm_(model.parameters(), 1)
-                optimizer.step()
-                optimizer.zero_grad()
-
-                log = {
-                    'epoch': epoch,
-                    'step': step,
-                    'train_loss': loss.item(),
-                }
-                wandb_log(log)
-                msg = [f'{i}: {j:>4d}' if isinstance(j, int) else f'{i}: {j:.4f}' for i, j in log.items()]
-                tqdm.write(' | '.join(msg))
-
-                epoch_loss += loss.item()
-
-            if (epoch+1) % args.valid_freq == 0:
-                valid_loss, dt_auc, dt_aup, df_auc, df_aup, df_logit, logit_all_pair, valid_log = self.eval(model, data, 'val')
-
-                train_log = {
-                    'epoch': epoch,
-                    'train_loss': epoch_loss / step
-                }
-                
-                log = {**train_log, **valid_log}
-                wandb_log(log)
-                for log in [train_log, valid_log]:
-                    msg = [f'{i}: {j:>4d}' if isinstance(j, int) else f'{i}: {j:.4f}' for i, j in log.items()]
-                    tqdm.write(' | '.join(msg))
-
-                self.trainer_log['log'].append(train_log)
-                self.trainer_log['log'].append(valid_log)
-
-                if valid_loss < best_valid_loss:
-                    best_valid_loss = valid_loss
-                    best_epoch = epoch
-
-                    print(f'Save best checkpoint at epoch {epoch:04d}. Valid loss = {valid_loss:.4f}')
-                    ckpt = {
-                        'model_state': model.state_dict(),
-                        'optimizer_state': optimizer.state_dict(),
-                    }
-                    torch.save(ckpt, os.path.join(args.checkpoint_dir, 'model_best.pt'))
-                    torch.save(z, os.path.join(args.checkpoint_dir, 'node_embeddings.pt'))
-
-        self.trainer_log['training_time'] = time.time() - start_time
-
-        # Save models and node embeddings
-        print('Saving final checkpoint')
-        ckpt = {
-            'model_state': model.state_dict(),
-            'optimizer_state': optimizer.state_dict(),
-        }
-        torch.save(ckpt, os.path.join(args.checkpoint_dir, 'model_final.pt'))
-
-        print(f'Training finished. Best checkpoint at epoch = {best_epoch:04d}, best valid loss = {best_valid_loss:.4f}')
-
-        self.trainer_log['best_epoch'] = best_epoch
-        self.trainer_log['best_valid_loss'] = best_valid_loss
-        self.trainer_log['training_time'] = np.mean([i['epoch_time'] for i in self.trainer_log['log'] if 'epoch_time' in i])
 
     @torch.no_grad()
     def eval(self, model, data, stage='val', pred_all=False):

@@ -3,6 +3,7 @@ import torch
 import networkx as nx
 import wandb
 import os
+from torch.nn import functional as F
 
 
 def wandb_log(log_dict):
@@ -435,13 +436,19 @@ def modify_weights(m, factor=0.1):
             m.bias.data = m.bias.data*factor
 
 
-def distill_kl_loss(y_s, y_t, T, reduction='sum'):
-    p_s = torch.nn.functional.log_softmax(y_s/T, dim=1)
-    p_t = torch.nn.functional.softmax(y_t/T, dim=1)
-    loss = torch.nn.functional.kl_div(p_s, p_t, reduction=reduction)
-    if reduction == 'none':
-        loss = torch.sum(loss, dim=1)
-    loss = loss * (T**2) / y_s.shape[0]
+# def distill_kl_loss(y_s, y_t, T, reduction='sum'):
+#     p_s = torch.nn.functional.log_softmax(y_s/T, dim=1)
+#     p_t = torch.nn.functional.softmax(y_t/T, dim=1)
+#     loss = torch.nn.functional.kl_div(p_s, p_t, reduction=reduction)
+#     if reduction == 'none':
+#         loss = torch.sum(loss, dim=1)
+#     loss = loss * (T**2) / y_s.shape[0]
+#     return loss
+
+def distill_kl_loss(y_s, y_t, T):
+    p_s = torch.nn.functional.log_softmax(y_s / T, dim=0)  # changed dim to 0 for 1D tensor
+    p_t = torch.nn.functional.softmax(y_t / T, dim=0)  # changed dim to 0 for 1D tensor
+    loss = F.kl_div(p_s, p_t, reduction='batchmean') * (T ** 2)
     return loss
 
 

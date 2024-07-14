@@ -108,7 +108,7 @@ class GIFTrainer(Trainer):
         log['training_time'] = time
         wandb_log(log)
         msg = [f'{i}: {j:>4d}' if isinstance(j, int) else f'{i}: {j:.4f}' for i, j in log.items()]
-        tqdm.write(' | '.join(msg))
+        tqdm.tqdm.write(' | '.join(msg))
         self.trainer_log['log'].append(log)
 
         # Save
