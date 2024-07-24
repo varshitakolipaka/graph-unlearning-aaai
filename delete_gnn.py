@@ -1,6 +1,7 @@
 import os
 import copy
 import json
+from framework.trainer.label_poison import get_label_poisoned_data
 import wandb
 import pickle
 import argparse
@@ -20,18 +21,20 @@ from framework.data_loader import split_forget_retain, train_test_split_edges_no
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
 
-def get_processed_data(d, val_ratio, test_ratio, df_ratio, subset='in'):
+def get_processed_data(args, val_ratio, test_ratio, df_ratio, subset='in'):
     '''pend for future use'''
-    data = get_original_data(d)
-
-    data = train_test_split_edges_no_neg_adj_mask(data, val_ratio, test_ratio)
-    data = split_forget_retain(data, df_ratio, subset)
+    data = get_original_data(args.dataset)
+    if args.request == 'edge':
+        data = train_test_split_edges_no_neg_adj_mask(data, val_ratio, test_ratio)
+        data = split_forget_retain(data, df_ratio, subset)
+    else:
+        data = get_label_poisoned_data(data, df_ratio, args.random_seed)
     return data
 
 torch.autograd.set_detect_anomaly(True)
 def main():
     args = parse_args()
-    original_path = os.path.join(args.checkpoint_dir, args.dataset, args.gnn, 'original', str(args.random_seed))
+    original_path = os.path.join(args.checkpoint_dir, args.dataset, args.gnn, 'original_node', str(args.random_seed))
     attack_path_all = os.path.join(args.checkpoint_dir, args.dataset, args.gnn, 'member_infer_all', str(args.random_seed))
     args.attack_dir = attack_path_all
     if not os.path.exists(attack_path_all):
@@ -48,7 +51,7 @@ def main():
     seed_everything(args.random_seed)
 
     # Dataset
-    data = get_processed_data(args.dataset, val_ratio=0.05, test_ratio=0.05, df_ratio=args.df_size)
+    data = get_processed_data(args, val_ratio=0.05, test_ratio=0.05, df_ratio=args.df_size)
     print('Directed dataset:', data)
     
     if args.gnn not in ['rgcn', 'rgat']:
@@ -107,9 +110,6 @@ def main():
 
     # Train
     trainer = get_trainer(args)
-    print("RES RIGHTN AFTER TRAINING")
-    test_results = trainer.test(model, data)
-    print(test_results[-1])
     
     print(f"df mask: {data.df_mask.sum().item()}") # 5702 
     print(f"dr mask: {data.dr_mask.sum().item()}") # 108452 -> are these edges?

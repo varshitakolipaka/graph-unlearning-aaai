@@ -19,13 +19,15 @@ device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
 def get_processed_data(d, val_ratio=0.05, test_ratio=0.05):
     data = get_original_data(d)
+    print(data)
     data = train_test_split_edges_no_neg_adj_mask(data, val_ratio, test_ratio)
     return data
 
 
 def main():
     args = parse_args()
-    args.unlearning_model = 'original'
+    print(args)
+    args.unlearning_model = 'original_node'
     args.checkpoint_dir = os.path.join(args.checkpoint_dir, args.dataset, args.gnn, args.unlearning_model, str(args.random_seed))
     os.makedirs(args.checkpoint_dir, exist_ok=True)
     seed_everything(args.random_seed)

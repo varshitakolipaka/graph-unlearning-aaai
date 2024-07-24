@@ -53,12 +53,19 @@ def split_forget_retain(data, df_size, subset='in'):
         df_size = int(df_size)
     else:                       # df_size is the ratio
         df_size = int(df_size / 100 * data.train_pos_edge_index.shape[1])
+    
+    if df_size == 0:
+        print('No edges to delete')
+    
     print(f'Original size: {data.train_pos_edge_index.shape[1]:,}')
     print(f'Df size: {df_size:,}')
     df_mask_all = gen_inout_mask(data)[subset]
     df_nonzero = df_mask_all.nonzero().squeeze()        # subgraph子图内/外的edge idx序号
 
     idx = torch.randperm(df_nonzero.shape[0])[:df_size]
+    
+    # idx -> []
+    
     df_global_idx = df_nonzero[idx]
 
     dr_mask = torch.ones(data.train_pos_edge_index.shape[1], dtype=torch.bool)

@@ -22,6 +22,7 @@ def parse_args():
                         help='hidden dimension')
     parser.add_argument('--out_dim', type=int, default=64, 
                         help='output dimension')
+    parser.add_argument('--request', type=str, default='edge', help='unlearning request', choices=['node', 'edge'])
 
     # Data
     parser.add_argument('--data_dir', type=str, default='./data',
@@ -124,7 +125,7 @@ def parse_args():
 
     if args.unlearning_model in ['original', 'retrain']:
         args.epochs = 50 # changed it to 200 from 2000
-        args.valid_freq = 200
+        args.valid_freq = 5
         
         # For large graphs
         if args.gnn not in ['rgcn', 'rgat'] and 'ogbl' in args.dataset:

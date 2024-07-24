@@ -1,10 +1,10 @@
 from .models import GCN, GAT, GIN, GCNDelete, GATDelete, GINDelete
 from .trainer.base import Trainer, KGTrainer, NodeClassificationTrainer
-from .trainer.retrain import RetrainTrainer, KGRetrainTrainer
+from .trainer.retrain import RetrainTrainer, KGRetrainTrainer, RetrainTrainerNode
 from .trainer.gnndelete_nodeemb import GNNDeleteNodeembTrainer
 from .trainer.gnndelete_ni import GNNDeleteNITrainer
 from .trainer.gradient_ascent import GradientAscentTrainer
-from .trainer.utu import UtUTrainer
+from .trainer.utu import UtUTrainer, UtUTrainerNode
 from .trainer.member_infer import MIAttackTrainer# , MIAttackTrainerNode
 from .trainer.gif import GIFTrainer
 from .trainer.scrub import ScrubTrainer
@@ -13,6 +13,7 @@ trainer_mapping = {
     'original': Trainer,
     'original_node': NodeClassificationTrainer,
     'retrain': RetrainTrainer,
+    'retrain_node': RetrainTrainerNode,
     'gradient_ascent': GradientAscentTrainer,
     'gnndelete_all': GNNDeleteNodeembTrainer,
     'gnndelete_ni': GNNDeleteNITrainer,
@@ -21,6 +22,7 @@ trainer_mapping = {
     'mi_shadow': Trainer,
     'finetune': RetrainTrainer,
     'utu': UtUTrainer,
+    'utu_node': UtUTrainerNode,
     'gif': GIFTrainer,
     'scrub': ScrubTrainer
 }

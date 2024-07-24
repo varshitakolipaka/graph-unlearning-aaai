@@ -295,6 +295,8 @@ class NodeClassificationTrainer(Trainer):
             loss.backward()
             optimizer.step()
             optimizer.zero_grad()
+            
+            print(loss)
 
             if (epoch+1) % args.valid_freq == 0:
                 valid_loss, dt_acc, dt_f1, valid_log = self.eval(model, data, 'val')
@@ -308,11 +310,11 @@ class NodeClassificationTrainer(Trainer):
                 
                 for log in [train_log, valid_log]:
                     msg = [f'{i}: {j:>4d}' if isinstance(j, int) else f'{i}: {j:.4f}' for i, j in log.items()]
-                    tqdm.write(' | '.join(msg))
+                    # write(' | '.join(msg))
 
                 self.trainer_log['log'].append(train_log)
                 self.trainer_log['log'].append(valid_log)
-
+                print(dt_acc)
                 if dt_acc > best_valid_acc:
                     best_valid_acc = dt_acc
                     best_epoch = epoch
@@ -392,6 +394,8 @@ class NodeClassificationTrainer(Trainer):
         # else:
         #     df_auc = np.nan
         #     df_aup = np.nan
+        df_auc = np.nan
+        df_aup = np.nan
 
         # Logits for all node pairs
         if pred_all:
