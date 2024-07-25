@@ -120,6 +120,14 @@ def parse_args():
     parser.add_argument('--scrubAlpha', type=float, default=1, help='KL from og_model constant for SCRUB, higher incentivizes closeness to ogmodel')
     parser.add_argument('--msteps', type=int, default=15, help='Maximization steps on forget set for SCRUB')
     parser.add_argument('--wd', type=float, default=0.0005, help='learning rate (default: 0.01)')
+    
+    
+    # contrastive
+    parser.add_argument('--contrastice_epochs_1', type=int, default=30, help="epochs for contrastive unlearning")
+    parser.add_argument('--contrastice_epochs_2', type=int, default=10, help="epochs for contrastive unlearning")
+    parser.add_argument('--contrastive_margin', type=int, default=500, help="margin for the contrastive loss")
+    parser.add_argument('--contrastive_lambda', type=float, default=0.8, help="weight for the task loss [1 - lambda] is used for the contrastive loss")
+    
 
     args = parser.parse_args()
 
