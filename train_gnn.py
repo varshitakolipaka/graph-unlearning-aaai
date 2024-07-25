@@ -51,6 +51,7 @@ def main():
     # To undirected
     train_pos_edge_index = to_undirected(data.train_pos_edge_index)
     data.train_pos_edge_index = train_pos_edge_index
+    
     data.dtrain_mask = torch.ones(data.train_pos_edge_index.shape[1], dtype=torch.bool)
     assert is_undirected(data.train_pos_edge_index)
 

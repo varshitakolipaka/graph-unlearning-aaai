@@ -174,18 +174,18 @@ def train_test_split_edges_no_neg_adj_mask(data, val_ratio: float = 0.05, test_r
     '''Avoid adding neg_adj_mask'''
 
     num_nodes = data.num_nodes
-    row, col = data.edge_index
+    row, col = data.edge_index # source and target nodes for each edge
     edge_attr = data.edge_attr
 
     # Return upper triangular portion.
     mask = row < col
-    row, col = row[mask], col[mask]
+    row, col = row[mask], col[mask] # store unordered pairs
 
     if edge_attr is not None:
         edge_attr = edge_attr[mask]
 
-    n_v = int(math.floor(val_ratio * row.size(0)))
-    n_t = int(math.floor(test_ratio * row.size(0)))
+    n_v = int(math.floor(val_ratio * row.size(0))) # num of val nodes
+    n_t = int(math.floor(test_ratio * row.size(0))) # num of test nodes
 
     if two_hop_degree is not None:          # Use low degree edges for test sets
         low_degree_mask = two_hop_degree < 50
@@ -199,13 +199,13 @@ def train_test_split_edges_no_neg_adj_mask(data, val_ratio: float = 0.05, test_r
         perm = torch.cat([low, high])
 
     else:
-        perm = torch.randperm(row.size(0))
+        perm = torch.randperm(row.size(0)) # shuffle edges
 
-    row = row[perm]
-    col = col[perm]
+    row = row[perm] # shuffled edges
+    col = col[perm] # shuffled edges
 
     # Train
-    r, c = row[n_v + n_t:], col[n_v + n_t:]
+    r, c = row[n_v + n_t:], col[n_v + n_t:] # train set
     data.train_pos_edge_index = torch.stack([r, c], dim=0)
     if edge_attr is not None:
         data.train_pos_edge_index, data.train_pos_edge_attr = None
@@ -216,25 +216,25 @@ def train_test_split_edges_no_neg_adj_mask(data, val_ratio: float = 0.05, test_r
 
     
     # Test
-    r, c = row[:n_t], col[:n_t]
-    data.test_pos_edge_index = torch.stack([r, c], dim=0)
+    r, c = row[:n_t], col[:n_t] # test set
+    data.test_pos_edge_index = torch.stack([r, c], dim=0) # test set for existent edges, link prediction for these should be high
     neg_edge_index = negative_sampling(
         edge_index=data.test_pos_edge_index,
         num_nodes=data.num_nodes,
         num_neg_samples=data.test_pos_edge_index.shape[1])
 
-    data.test_neg_edge_index = neg_edge_index
+    data.test_neg_edge_index = neg_edge_index # test set for non existent edges, , link prediction for these should be low
 
     # Valid
     r, c = row[n_t:n_t+n_v], col[n_t:n_t+n_v]
-    data.val_pos_edge_index = torch.stack([r, c], dim=0)
+    data.val_pos_edge_index = torch.stack([r, c], dim=0) # val set for existent edges, link prediction for these should be high
 
     neg_edge_index = negative_sampling(
         edge_index=data.val_pos_edge_index,
         num_nodes=data.num_nodes,
         num_neg_samples=data.val_pos_edge_index.shape[1])
 
-    data.val_neg_edge_index = neg_edge_index
+    data.val_neg_edge_index = neg_edge_index # val set for non existent edges, link prediction for these should be low
 
     return data
 

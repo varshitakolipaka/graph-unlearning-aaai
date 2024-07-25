@@ -113,13 +113,14 @@ class UtUTrainerNode(NodeClassificationTrainer):
 
         best_metric = 0
         loss_fct = nn.MSELoss()
-
+        
         z = model(data.x, data.edge_index[:, data.dr_mask]) # df mask = edges connected to the node
         # Save 
         ckpt = {
             'model_state': model.state_dict(),
             'optimizer_state': optimizer.state_dict(),
         }
+        print('storing at: ', args.checkpoint_dir)
         torch.save(ckpt, os.path.join(args.checkpoint_dir, 'model_best.pt'))
         torch.save(z, os.path.join(args.checkpoint_dir, 'node_embeddings.pt'))
         self.trainer_log['best_metric'] = best_metric

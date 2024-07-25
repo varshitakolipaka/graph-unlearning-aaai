@@ -12,6 +12,7 @@ from .trainer.scrub import ScrubTrainer
 trainer_mapping = {
     'original': Trainer,
     'original_node': NodeClassificationTrainer,
+    'lf_attack': NodeClassificationTrainer,
     'retrain': RetrainTrainer,
     'retrain_node': RetrainTrainerNode,
     'gradient_ascent': GradientAscentTrainer,

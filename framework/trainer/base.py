@@ -416,7 +416,7 @@ class NodeClassificationTrainer(Trainer):
 
     @torch.no_grad()
     def test(self, model, data, model_retrain=None, attack_model_all=None, attack_model_sub=None, ckpt='best'):
-        
+
         if ckpt == 'best':    # Load best ckpt
             ckpt = torch.load(os.path.join(self.args.checkpoint_dir, 'model_best.pt'))
             model.load_state_dict(ckpt['model_state'])

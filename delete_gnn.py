@@ -11,6 +11,8 @@ from torch_geometric.utils import to_undirected, to_networkx, k_hop_subgraph, is
 from torch_geometric.data import Data
 from torch_geometric.loader import GraphSAINTRandomWalkSampler
 from torch_geometric.seed import seed_everything
+from torch_geometric.utils import subgraph
+import copy
 
 from framework import get_model, get_trainer
 from framework.training_args import parse_args
@@ -28,13 +30,36 @@ def get_processed_data(args, val_ratio, test_ratio, df_ratio, subset='in'):
         data = train_test_split_edges_no_neg_adj_mask(data, val_ratio, test_ratio)
         data = split_forget_retain(data, df_ratio, subset)
     else:
-        data = get_label_poisoned_data(data, df_ratio, args.random_seed)
+        data, flipped_indices = get_label_poisoned_data(args, data, df_ratio, args.random_seed)
+        # need to define df_mask and dr_mask
+        # once those are done we can also define sdf_mask for gnndelete to work
+        # size of df mask should be number of edges in data.train_mask
+
+        # Create a subgraph containing only the nodes in the train mask
+
+        # if we are doing label flip
+        train_nodes = torch.where(data.train_mask)[0]
+        train_edges, _ = subgraph(train_nodes, data.edge_index, relabel_nodes=True)
+
+        data.df_mask = torch.zeros(data.edge_index.shape[1], dtype=torch.bool)
+        data.dr_mask = torch.zeros(data.edge_index.shape[1], dtype=torch.bool)
+        
+        for node in flipped_indices:
+            # df mask should be all the edges connected to node
+            node_tensor = torch.tensor([node], dtype=torch.long)
+            _, local_edges, _, mask = k_hop_subgraph(
+                node_tensor, 1, data.edge_index, num_nodes=data.num_nodes)
+            data.df_mask[mask] = True
+        
+        data.dr_mask = ~data.df_mask
+        # we just create sdf masks also 
+
     return data
 
 torch.autograd.set_detect_anomaly(True)
 def main():
     args = parse_args()
-    original_path = os.path.join(args.checkpoint_dir, args.dataset, args.gnn, 'original_node', str(args.random_seed))
+    original_path = os.path.join(args.checkpoint_dir, args.dataset, args.gnn, 'lf_attack', 'in-' + str(args.df_size) + '-' + str(args.random_seed))
     attack_path_all = os.path.join(args.checkpoint_dir, args.dataset, args.gnn, 'member_infer_all', str(args.random_seed))
     args.attack_dir = attack_path_all
     if not os.path.exists(attack_path_all):
@@ -60,8 +85,9 @@ def main():
     print('Training args', args)
 
     # Model
-    model = get_model(args, data.sdf_node_1hop_mask, data.sdf_node_2hop_mask, num_nodes=data.num_nodes, num_edge_type=args.num_edge_type)
-    
+    # model = get_model(args, data.sdf_node_1hop_mask, data.sdf_node_2hop_mask, num_nodes=data.num_nodes, num_edge_type=args.num_edge_type) # this is for gnndelete
+    model = get_model(args, num_nodes=data.num_nodes, num_edge_type=args.num_edge_type)
+
     if args.unlearning_model != 'retrain':  # Start from trained GNN model
         if os.path.exists(os.path.join(original_path, 'pred_proba.pt')):
             logits_ori = torch.load(os.path.join(original_path, 'pred_proba.pt'))   # logits_ori: tensor.shape([num_nodes, num_nodes]), represent probability of edge existence between any two nodes
@@ -110,11 +136,13 @@ def main():
 
     # Train
     trainer = get_trainer(args)
+    print('Trainer: ', trainer)
     
     print(f"df mask: {data.df_mask.sum().item()}") # 5702 
     print(f"dr mask: {data.dr_mask.sum().item()}") # 108452 -> are these edges?
     print(f"length of data.x: {data.x.size(dim=0)}") # The length of the x is 19763.
-    trainer.train(model, data, optimizer, args)
+    unlearnt_model = copy.deepcopy(model)
+    trainer.train(unlearnt_model, data, optimizer, args)
 
     # Test
     if args.unlearning_model != 'retrain':
@@ -135,7 +163,7 @@ def main():
     else:
         retrain = None
     
-    test_results = trainer.test(model, data, model_retrain=retrain, attack_model_all=attack_model_all, attack_model_sub=attack_model_sub)
+    test_results = trainer.test(unlearnt_model, data, model_retrain=None, attack_model_all=attack_model_all, attack_model_sub=attack_model_sub)
     print(test_results[-1])
 
     trainer.save_log()
