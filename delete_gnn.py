@@ -38,17 +38,22 @@ def get_processed_data(args, val_ratio, test_ratio, df_ratio, subset='in'):
         # Create a subgraph containing only the nodes in the train mask
 
         # if we are doing label flip
-        train_nodes = torch.where(data.train_mask)[0]
-        train_edges, _ = subgraph(train_nodes, data.edge_index, relabel_nodes=True)
+        # train_nodes = torch.where(data.train_mask)[0]
+        # train_edges, _ = subgraph(train_nodes, data.edge_index, relabel_nodes=True)
 
         data.df_mask = torch.zeros(data.edge_index.shape[1], dtype=torch.bool)
         data.dr_mask = torch.zeros(data.edge_index.shape[1], dtype=torch.bool)
         
         for node in flipped_indices:
+            data.train_mask[node] = False
             # df mask should be all the edges connected to node
             node_tensor = torch.tensor([node], dtype=torch.long)
             _, local_edges, _, mask = k_hop_subgraph(
                 node_tensor, 1, data.edge_index, num_nodes=data.num_nodes)
+            
+            # print("-----------")
+            # print(local_edges)
+
             data.df_mask[mask] = True
         
         data.dr_mask = ~data.df_mask
@@ -140,7 +145,9 @@ def main():
     
     print(f"df mask: {data.df_mask.sum().item()}") # 5702 
     print(f"dr mask: {data.dr_mask.sum().item()}") # 108452 -> are these edges?
+    print(data.df_mask.sum().item() + data.dr_mask.sum().item() == data.edge_index.size(1)) # True
     print(f"length of data.x: {data.x.size(dim=0)}") # The length of the x is 19763.
+
     unlearnt_model = copy.deepcopy(model)
     trainer.train(unlearnt_model, data, optimizer, args)
 
@@ -163,7 +170,7 @@ def main():
     else:
         retrain = None
     
-    test_results = trainer.test(unlearnt_model, data, model_retrain=None, attack_model_all=attack_model_all, attack_model_sub=attack_model_sub)
+    test_results = trainer.test(unlearnt_model, data, model_retrain=None, attack_model_all=attack_model_all, attack_model_sub=attack_model_sub, is_dr = True)
     print(test_results[-1])
 
     trainer.save_log()

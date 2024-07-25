@@ -299,7 +299,7 @@ class NodeClassificationTrainer(Trainer):
             print(loss)
 
             if (epoch+1) % args.valid_freq == 0:
-                valid_loss, dt_acc, dt_f1, valid_log = self.eval(model, data, 'val')
+                valid_loss, dt_acc, dt_f1, valid_log, msc_rate = self.eval(model, data, 'val')
 
                 train_log = {
                     'epoch': epoch,
@@ -342,8 +342,18 @@ class NodeClassificationTrainer(Trainer):
         self.trainer_log['best_epoch'] = best_epoch
         self.trainer_log['best_valid_acc'] = best_valid_acc
 
+    def misclassification_rate(self, true_labels, pred_labels, class1 = 0, class2 = 1):
+        class1_to_class2 = ((true_labels == class1) & (pred_labels == class2)).sum().item()
+        class2_to_class1 = ((true_labels == class2) & (pred_labels == class1)).sum().item()
+        
+        total_class1 = (true_labels == class1).sum().item()
+        total_class2 = (true_labels == class2).sum().item()
+        
+        misclassification_rate = (class1_to_class2 + class2_to_class1) / (total_class1 + total_class2)
+        return misclassification_rate
+
     @torch.no_grad()
-    def eval(self, model, data, stage='val', pred_all=False):
+    def eval(self, model, data, stage='val', pred_all=False, is_dr = False):
         model.eval()
 
         if self.args.eval_on_cpu:
@@ -353,7 +363,11 @@ class NodeClassificationTrainer(Trainer):
         #     mask = data.dtrain_mask
         # else:
         #     mask = data.dr_mask
-        z = F.log_softmax(model(data.x, data.edge_index), dim=1)
+
+        if(is_dr):
+            z = F.log_softmax(model(data.x, data.edge_index[:, data.dr_mask]), dim=1)
+        else:
+            z = F.log_softmax(model(data.x, data.edge_index), dim=1)
 
         # DT AUC AUP
         loss = F.nll_loss(z[data.val_mask], data.y[data.val_mask]).cpu().item()
@@ -403,19 +417,22 @@ class NodeClassificationTrainer(Trainer):
         else:
             logit_all_pair = None
 
+        msc_rate = self.misclassification_rate(data.y[data.val_mask].cpu(), pred)
+
         log = {
             f'{stage}_loss': loss,
             f'{stage}_dt_acc': dt_acc,
             f'{stage}_dt_f1': dt_f1,
+            f'{stage}_missclassification rate': msc_rate,
         }
 
         if self.args.eval_on_cpu:
             model = model.to(device)
 
-        return loss, dt_acc, dt_f1, log
+        return loss, dt_acc, dt_f1, log, msc_rate
 
     @torch.no_grad()
-    def test(self, model, data, model_retrain=None, attack_model_all=None, attack_model_sub=None, ckpt='best'):
+    def test(self, model, data, model_retrain=None, attack_model_all=None, attack_model_sub=None, ckpt='best', is_dr = False):
 
         if ckpt == 'best':    # Load best ckpt
             ckpt = torch.load(os.path.join(self.args.checkpoint_dir, 'model_best.pt'))
@@ -425,7 +442,7 @@ class NodeClassificationTrainer(Trainer):
             pred_all = False
         else:
             pred_all = True
-        loss, dt_acc, dt_f1, test_log = self.eval(model, data, 'test', pred_all)
+        loss, dt_acc, dt_f1, test_log, msc_rate = self.eval(model, data, 'test', pred_all, is_dr)
 
         self.trainer_log['dt_loss'] = loss
         self.trainer_log['dt_acc'] = dt_acc

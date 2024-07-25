@@ -243,7 +243,7 @@ class RetrainTrainerNode(NodeClassificationTrainer):
             total_step = 0
             total_loss = 0
             
-            z = model(data.x, data.train_pos_edge_index[:, data.dr_mask])
+            z = model(data.x, data.edge_index[:, data.dr_mask])
             loss = F.nll_loss(z[data.train_mask], data.y[data.train_mask])
 
             loss.backward()

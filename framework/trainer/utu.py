@@ -114,6 +114,7 @@ class UtUTrainerNode(NodeClassificationTrainer):
         best_metric = 0
         loss_fct = nn.MSELoss()
         
+        print('shape: ', data.edge_index[:, data.dr_mask].shape)
         z = model(data.x, data.edge_index[:, data.dr_mask]) # df mask = edges connected to the node
         # Save 
         ckpt = {
