@@ -253,5 +253,6 @@ class ContrastiveNodeUnlearnTrainer(NodeClassificationTrainer):
         
         if args.request == "node":
             self.train_node(model, data, optimizer, args, attacked_idx, logits_ori, attack_model_all, attack_model_sub)
-
+        elif args.request == "edge":
+            self.train_edge(model, data, optimizer, args, attacked_idx, logits_ori, attack_model_all, attack_model_sub)
 
