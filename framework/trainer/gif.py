@@ -1,5 +1,5 @@
 import os
-import wandb
+#import wandb
 import time
 from tqdm import tqdm, trange
 import torch
@@ -29,7 +29,7 @@ class GIFTrainer(Trainer):
         grad_all, grad1, grad2 = None, None, None
         out1 = model(data.x, data.train_pos_edge_index)
         out2 = model(data.x, data.train_pos_edge_index[:, data.dr_mask])
-            
+
         mask1 = mask2 = data.sdf_node_2hop_mask
 
         logits = model.decode(out1, data.train_pos_edge_index[:, data.dr_mask], neg_edge_index)
@@ -72,7 +72,7 @@ class GIFTrainer(Trainer):
                 h_estimate    = [ v1 + (1-damp)*h_estimate1 - hv1/scale
                             for v1, h_estimate1, hv1 in zip(v, h_estimate, hv)]
 
-        
+
         # breakpoint()
         params_change = [h_est / scale for h_est in h_estimate]
         params_esti   = [p1 + p2 for p1, p2 in zip(params_change, model_params)]
@@ -87,9 +87,9 @@ class GIFTrainer(Trainer):
         element_product = 0
         for grad_elem, v_elem in zip(grad_all, h_estimate):
             element_product += torch.sum(grad_elem * v_elem)
-        
+
         return_grads = grad(element_product, model_params, create_graph=True)
-        return return_grads   
+        return return_grads
 
     # @torch.no_grad()
     def train(self, model, data, optimizer, args, logits_ori=None, attack_model=None, attack_model_sub=None):
@@ -106,7 +106,7 @@ class GIFTrainer(Trainer):
         valid_loss, auc, aup, df_auc, df_aup, df_logit, _, log = self.eval(model, data, 'val')
 
         log['training_time'] = time
-        wandb_log(log)
+        #wandb_log(log)
         msg = [f'{i}: {j:>4d}' if isinstance(j, int) else f'{i}: {j:.4f}' for i, j in log.items()]
         tqdm.tqdm.write(' | '.join(msg))
         self.trainer_log['log'].append(log)

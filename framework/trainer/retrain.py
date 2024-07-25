@@ -1,6 +1,6 @@
 import os
 import time
-import wandb
+#import wandb
 from tqdm import tqdm, trange
 import numpy as np
 import torch
@@ -17,7 +17,7 @@ from ..utils import *
 device = torch.device('cuda') if torch.cuda.is_available() else torch.device('cpu')
 
 class RetrainTrainer(Trainer):
-    
+
     def train(self, model, data, optimizer, args, logits_ori=None, attack_model_all=None, attack_model_sub=None):
         if 'ogbl' in self.args.dataset:
             args.eval_on_cpu = False
@@ -42,7 +42,7 @@ class RetrainTrainer(Trainer):
             mi_logit_sub_before, mi_sucrate_sub_before = member_infer_attack(model, attack_model_sub, data)
             self.trainer_log['mi_logit_sub_before'] = mi_logit_sub_before
             self.trainer_log['mi_sucrate_sub_before'] = mi_sucrate_sub_before
-        
+
         for epoch in trange(args.epochs, desc='Unlearning'):
             model.train()
 
@@ -70,14 +70,14 @@ class RetrainTrainer(Trainer):
 
             end_time = time.time()
             epoch_time = end_time - start_time
-            
+
             step_log = {
                 'Epoch': epoch,
                 'train_loss': loss.item(),
                 'train_time': epoch_time
             }
             print(step_log)
-            wandb_log(step_log)
+            #wandb_log(step_log)
             msg = [f'{i}: {j:>4d}' if isinstance(j, int) else f'{i}: {j:.4f}' for i, j in step_log.items()]
             # tqdm.write(' | '.join(msg))
 
@@ -85,13 +85,13 @@ class RetrainTrainer(Trainer):
                 valid_loss, dt_auc, dt_aup, df_auc, df_aup, df_logit, logit_all_pair, valid_log = self.eval(model, data, 'val')
                 valid_log['Epoch'] = epoch
 
-                wandb_log(valid_log)
+                #wandb_log(valid_log)
                 msg = [f'{i}: {j:>4d}' if isinstance(j, int) else f'{i}: {j:.4f}' for i, j in valid_log.items()]
                 # tqdm.write(' | '.join(msg))
                 self.trainer_log['log'].append(valid_log)
-                
+
                 print(f'Epoch {epoch:04d} | Valid loss = {valid_loss:.4f} | DT AUC = {dt_auc:.4f} | DF AUC = {df_auc:.4f} | Best metric = {best_metric:.4f}')
-                
+
                 if dt_auc + df_auc > best_metric:
                     best_metric = dt_auc + df_auc
                     best_epoch = epoch
@@ -103,7 +103,7 @@ class RetrainTrainer(Trainer):
                     }
                     torch.save(ckpt, os.path.join(args.checkpoint_dir, 'model_best.pt'))
                     torch.save(z, os.path.join(args.checkpoint_dir, 'node_embeddings.pt'))
-        
+
         self.trainer_log['training_time'] = time.time() - start_time
 
         # Save
@@ -143,7 +143,7 @@ class RetrainTrainer(Trainer):
                 neg_edge_index = negative_sampling(
                     edge_index=train_pos_edge_index,
                     num_nodes=z.size(0))
-                
+
                 logits = model.decode(z, train_pos_edge_index, neg_edge_index)
                 label = get_link_labels(train_pos_edge_index, neg_edge_index)
                 loss = F.binary_cross_entropy_with_logits(logits, label)
@@ -157,7 +157,7 @@ class RetrainTrainer(Trainer):
                     'Epoch': epoch + (step+1) / batch_num,
                     'train_loss': loss.item(),
                 }
-                wandb_log(step_log)
+                #wandb_log(step_log)
                 msg = [f'{i}: {j:>4d}' if isinstance(j, int) else f'{i}: {j:.4f}' for i, j in step_log.items()]
                 tqdm.write(' | '.join(msg))
 
@@ -175,9 +175,9 @@ class RetrainTrainer(Trainer):
                     'train_loss': epoch_loss / batch_num,
                     'train_time': epoch_time,
                 }
-                
+
                 for log in [train_log, valid_log]:
-                    wandb_log(log)
+                    #wandb_log(log)
                     msg = [f'{i}: {j:>4d}' if isinstance(j, int) else f'{i}: {j:.4f}' for i, j in log.items()]
                     tqdm.write(' | '.join(msg))
                     self.trainer_log['log'].append(log)
@@ -208,7 +208,7 @@ class RetrainTrainer(Trainer):
 
         self.trainer_log['best_epoch'] = best_epoch
         self.trainer_log['best_metric'] = best_metric
-        
+
 class RetrainTrainerNode(NodeClassificationTrainer):
 
     def train(self, model, data, optimizer, args, logits_ori=None, attack_model_all=None, attack_model_sub=None):
@@ -235,14 +235,14 @@ class RetrainTrainerNode(NodeClassificationTrainer):
             mi_logit_sub_before, mi_sucrate_sub_before = member_infer_attack(model, attack_model_sub, data)
             self.trainer_log['mi_logit_sub_before'] = mi_logit_sub_before
             self.trainer_log['mi_sucrate_sub_before'] = mi_sucrate_sub_before
-        
+
         for epoch in trange(args.epochs, desc='Unlearning'):
             model.train()
 
             start_time = time.time()
             total_step = 0
             total_loss = 0
-            
+
             z = model(data.x, data.edge_index[:, data.dr_mask])
             loss = F.nll_loss(z[data.train_mask], data.y[data.train_mask])
 
@@ -256,14 +256,14 @@ class RetrainTrainerNode(NodeClassificationTrainer):
 
             end_time = time.time()
             epoch_time = end_time - start_time
-            
+
             step_log = {
                 'Epoch': epoch,
                 'train_loss': loss.item(),
                 'train_time': epoch_time
             }
             print(step_log)
-            wandb_log(step_log)
+            #wandb_log(step_log)
             msg = [f'{i}: {j:>4d}' if isinstance(j, int) else f'{i}: {j:.4f}' for i, j in step_log.items()]
             # tqdm.write(' | '.join(msg))
 
@@ -271,13 +271,13 @@ class RetrainTrainerNode(NodeClassificationTrainer):
                 valid_loss, dt_acc, dt_f1, valid_log = self.eval(model, data, 'val')
                 valid_log['Epoch'] = epoch
 
-                wandb_log(valid_log)
+                #wandb_log(valid_log)
                 msg = [f'{i}: {j:>4d}' if isinstance(j, int) else f'{i}: {j:.4f}' for i, j in valid_log.items()]
                 # tqdm.write(' | '.join(msg))
                 self.trainer_log['log'].append(valid_log)
-                
+
                 print(f'Epoch {epoch:04d} | Valid loss = {valid_loss:.4f} | DT ACC = {dt_acc:.4f} | DT F1 = {dt_f1:.4f} | Best metric = {best_metric:.4f}')
-                
+
                 if dt_acc > best_metric:
                     best_metric = dt_acc
                     best_epoch = epoch
@@ -289,7 +289,7 @@ class RetrainTrainerNode(NodeClassificationTrainer):
                     }
                     torch.save(ckpt, os.path.join(args.checkpoint_dir, 'model_best.pt'))
                     torch.save(z, os.path.join(args.checkpoint_dir, 'node_embeddings.pt'))
-        
+
         self.trainer_log['training_time'] = time.time() - start_time
 
         # Save
@@ -329,7 +329,7 @@ class RetrainTrainerNode(NodeClassificationTrainer):
                 neg_edge_index = negative_sampling(
                     edge_index=train_pos_edge_index,
                     num_nodes=z.size(0))
-                
+
                 logits = model.decode(z, train_pos_edge_index, neg_edge_index)
                 label = get_link_labels(train_pos_edge_index, neg_edge_index)
                 loss = F.binary_cross_entropy_with_logits(logits, label)
@@ -343,7 +343,7 @@ class RetrainTrainerNode(NodeClassificationTrainer):
                     'Epoch': epoch + (step+1) / batch_num,
                     'train_loss': loss.item(),
                 }
-                wandb_log(step_log)
+                #wandb_log(step_log)
                 msg = [f'{i}: {j:>4d}' if isinstance(j, int) else f'{i}: {j:.4f}' for i, j in step_log.items()]
                 tqdm.write(' | '.join(msg))
 
@@ -361,9 +361,9 @@ class RetrainTrainerNode(NodeClassificationTrainer):
                     'train_loss': epoch_loss / batch_num,
                     'train_time': epoch_time,
                 }
-                
+
                 for log in [train_log, valid_log]:
-                    wandb_log(log)
+                    #wandb_log(log)
                     msg = [f'{i}: {j:>4d}' if isinstance(j, int) else f'{i}: {j:.4f}' for i, j in log.items()]
                     tqdm.write(' | '.join(msg))
                     self.trainer_log['log'].append(log)

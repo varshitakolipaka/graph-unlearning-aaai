@@ -1,5 +1,5 @@
 import os
-import wandb
+#import wandb
 import pickle
 import torch
 from torch_geometric.seed import seed_everything
@@ -44,23 +44,23 @@ def main():
 
         # data.dtrain_mask = torch.ones(data.train_pos_edge_index.shape[1], dtype=torch.bool)
         # data.edge_index_mask = data.dtrain_mask.repeat(2)
-        
+
     else:
         data.dtrain_mask = torch.ones(data.train_pos_edge_index.shape[1], dtype=torch.bool)
 
     # To undirected
     train_pos_edge_index = to_undirected(data.train_pos_edge_index)
     data.train_pos_edge_index = train_pos_edge_index
-    
+
     data.dtrain_mask = torch.ones(data.train_pos_edge_index.shape[1], dtype=torch.bool)
     assert is_undirected(data.train_pos_edge_index)
 
 
     print('Undirected dataset:', data)
-    wandb.init(config=args, group="learning", name="{}_{}".format(args.dataset, args.gnn), mode=args.mode)
+    #wandb.init(config=args, group="learning", name="{}_{}".format(args.dataset, args.gnn), mode=args.mode)
     # Model
     model = get_model(args, num_nodes=data.num_nodes, num_edge_type=args.num_edge_type).to(device)
-    wandb.watch(model, log_freq=100)
+    #wandb.watch(model, log_freq=100)
     optimizer = torch.optim.Adam(model.parameters(), lr=args.lr)#, weight_decay=args.weight_decay)
 
     # Train
@@ -72,7 +72,7 @@ def main():
     test_results = trainer.test(model, data)
     trainer.save_log()
     print(test_results[-1])
-    wandb.finish()
+    #wandb.finish()
 
 
 if __name__ == "__main__":

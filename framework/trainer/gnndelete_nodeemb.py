@@ -1,7 +1,7 @@
 import os, math
 import copy
 import time
-import wandb
+#import wandb
 from tqdm import tqdm, trange
 import torch
 import torch.nn as nn
@@ -33,7 +33,7 @@ def centering(K):
     unit = torch.ones([n, n], device=K.device)
     I = torch.eye(n, device=K.device)
     H = I - unit / n
-    return torch.matmul(torch.matmul(H, K), H)  
+    return torch.matmul(torch.matmul(H, K), H)
 
 def rbf(X, sigma=None):
     GX = torch.matmul(X, X.T)
@@ -47,7 +47,7 @@ def rbf(X, sigma=None):
 
 def kernel_HSIC(X, Y, sigma=None):
     return torch.sum(centering(rbf(X, sigma)) * centering(rbf(Y, sigma)))
-        
+
 def linear_HSIC(X, Y):
     L_X = torch.matmul(X, X.T)
     L_Y = torch.matmul(Y, Y.T)
@@ -74,7 +74,7 @@ def get_loss_fct(name):
     #     loss_fct = BoundedKLDMean
     # elif name == 'cosine':
     #     loss_fct = CosineDistanceMean
-    
+
     if name == 'kld_mean':
         loss_fct = BoundedKLDMean
     elif name == 'kld_sum':
@@ -95,7 +95,7 @@ def get_loss_fct(name):
         raise NotImplementedError
 
     return loss_fct
-    
+
 class GNNDeleteNodeembTrainer(Trainer):
 
     def train(self, model, data, optimizer, args, logits_ori=None, attack_model_all=None, attack_model_sub=None):
@@ -114,13 +114,13 @@ class GNNDeleteNodeembTrainer(Trainer):
         best_metric = 0
         loss_fct = get_loss_fct(self.args.loss_fct)
 
-        # 
+        #
         non_df_node_mask = torch.ones(data.x.shape[0], dtype=torch.bool, device=data.x.device)
         non_df_node_mask[data.directed_df_edge_index.flatten().unique()] = False
 
         data.sdf_node_1hop_mask_non_df_mask = data.sdf_node_1hop_mask & non_df_node_mask
         data.sdf_node_2hop_mask_non_df_mask = data.sdf_node_2hop_mask & non_df_node_mask
-        
+
         # Original node embeddings
         with torch.no_grad():
             z1_ori, z2_ori = model.get_original_embeddings(data.x, data.train_pos_edge_index, return_all_emb=True)
@@ -168,7 +168,7 @@ class GNNDeleteNodeembTrainer(Trainer):
                 # loss = loss_l + self.args.alpha * loss_r
                 loss.backward()
                 optimizer.step()
-            
+
             elif self.args.loss_type == 'both_layerwise':
                 #### alpha * loss_r + (1 - alpha) * loss_l
                 loss_l = loss_l1 + loss_l2
@@ -187,7 +187,7 @@ class GNNDeleteNodeembTrainer(Trainer):
 
                 loss = loss1 + loss2
 
-                
+
             elif self.args.loss_type == 'only2_layerwise':
                 loss_l = loss_l1 + loss_l2
                 loss_r = loss_r1 + loss_r2
@@ -221,7 +221,7 @@ class GNNDeleteNodeembTrainer(Trainer):
                 loss_r = loss_r1
 
                 loss = loss_l + self.args.alpha * loss_r
-                
+
                 loss.backward()
                 optimizer.step()
                 optimizer.zero_grad()
@@ -239,19 +239,19 @@ class GNNDeleteNodeembTrainer(Trainer):
                 'train_loss_l': loss_l.item(),
                 'train_time': epoch_time
             }
-            wandb_log(step_log)
+            #wandb_log(step_log)
             msg = [f'{i}: {j:>4d}' if isinstance(j, int) else f'{i}: {j:.4f}' for i, j in step_log.items()]
-            
+
             # tqdm.tqdm.write("Hello World!")
             tqdm.tqdm.write(' | '.join(msg))
 
             if (epoch + 1) % self.args.valid_freq == 0:
                 valid_loss, dt_auc, dt_aup, df_auc, df_aup, df_logit, logit_all_pair, valid_log = self.eval(model, data, 'val')
                 valid_log['Epoch'] = epoch
-                
+
                 # save df_logit
 
-                wandb_log(valid_log)
+                #wandb_log(valid_log)
                 msg = [f'{i}: {j:>4d}' if isinstance(j, int) else f'{i}: {j:.4f}' for i, j in valid_log.items()]
                 tqdm.tqdm.write(' | '.join(msg))
                 self.trainer_log['log'].append(valid_log)
@@ -363,7 +363,7 @@ class GNNDeleteNodeembTrainer(Trainer):
                     'train_loss_r': loss_r.item(),
                     'train_time': end_time - start_time
                 }
-                wandb_log(step_log)
+                #wandb_log(step_log)
                 msg = [f'{i}: {j:>4d}' if isinstance(j, int) else f'{i}: {j:.4f}' for i, j in step_log.items()]
                 tqdm.tqdm.write(' | '.join(msg))
 
@@ -371,7 +371,7 @@ class GNNDeleteNodeembTrainer(Trainer):
                 valid_loss, dt_auc, dt_aup, df_auc, df_aup, df_logit, logit_all_pair, valid_log = self.eval(model, data, 'val')
 
                 valid_log['Epoch'] = epoch
-                wandb_log(valid_log)
+                #wandb_log(valid_log)
                 msg = [f'{i}: {j:>4d}' if isinstance(j, int) else f'{i}: {j:.4f}' for i, j in valid_log.items()]
                 tqdm.tqdm.write(' | '.join(msg))
                 self.trainer_log['log'].append(valid_log)

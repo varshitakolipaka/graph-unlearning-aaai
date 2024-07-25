@@ -2,7 +2,8 @@ import os
 import copy
 import json
 from framework.trainer.label_poison import get_label_poisoned_data
-import wandb
+from framework.trainer.edge_poison import get_edge_poisoned_data
+# import wandb
 import pickle
 import argparse
 import torch
@@ -21,7 +22,7 @@ from framework.data_loader import split_forget_retain, train_test_split_edges_no
 # from train_mi import load_mi_models
 
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
-
+forget="edge"
 
 def get_processed_data(args, val_ratio, test_ratio, df_ratio, subset='in'):
     '''pend for future use'''
@@ -29,7 +30,7 @@ def get_processed_data(args, val_ratio, test_ratio, df_ratio, subset='in'):
     if args.request == 'edge':
         data = train_test_split_edges_no_neg_adj_mask(data, val_ratio, test_ratio)
         data = split_forget_retain(data, df_ratio, subset)
-    else:
+    elif forget=="node":
         data, flipped_indices = get_label_poisoned_data(args, data, df_ratio, args.random_seed)
         # need to define df_mask and dr_mask
         # once those are done we can also define sdf_mask for gnndelete to work
@@ -43,21 +44,31 @@ def get_processed_data(args, val_ratio, test_ratio, df_ratio, subset='in'):
 
         data.df_mask = torch.zeros(data.edge_index.shape[1], dtype=torch.bool)
         data.dr_mask = torch.zeros(data.edge_index.shape[1], dtype=torch.bool)
-        
+
         for node in flipped_indices:
             data.train_mask[node] = False
             # df mask should be all the edges connected to node
             node_tensor = torch.tensor([node], dtype=torch.long)
             _, local_edges, _, mask = k_hop_subgraph(
                 node_tensor, 1, data.edge_index, num_nodes=data.num_nodes)
-            
+
             # print("-----------")
             # print(local_edges)
 
             data.df_mask[mask] = True
-        
+
         data.dr_mask = ~data.df_mask
-        # we just create sdf masks also 
+        # we just create sdf masks also
+
+    elif forget=="edge":
+        #Return type: new edge index, to_indices, from_indices
+        augmented_edges, poisoned_indices = get_edge_poisoned_data(args, data, df_ratio, args.random_seed)
+        data.edge_index= augmented_edges
+        data.df_mask = torch.zeros(data.edge_index.shape[1], dtype=torch.bool)
+        data.dr_mask = torch.zeros(data.edge_index.shape[1], dtype=torch.bool)
+
+        data.df_mask[poisoned_indices] = True
+        data.dr_mask = ~data.df_mask
 
     return data
 
@@ -75,7 +86,7 @@ def main():
         os.makedirs(shadow_path_all, exist_ok=True)
 
     args.checkpoint_dir = os.path.join(
-        args.checkpoint_dir, args.dataset, args.gnn, args.unlearning_model, 
+        args.checkpoint_dir, args.dataset, args.gnn, args.unlearning_model,
         '-'.join([str(i) for i in [args.df, args.df_size, args.random_seed]]))
     os.makedirs(args.checkpoint_dir, exist_ok=True)
     seed_everything(args.random_seed)
@@ -83,7 +94,7 @@ def main():
     # Dataset
     data = get_processed_data(args, val_ratio=0.05, test_ratio=0.05, df_ratio=args.df_size)
     print('Directed dataset:', data)
-    
+
     if args.gnn not in ['rgcn', 'rgat']:
         args.in_dim = data.x.shape[1]
 
@@ -103,7 +114,7 @@ def main():
 
         model_ckpt = torch.load(os.path.join(original_path, 'model_best.pt'), map_location=device)
         model.load_state_dict(model_ckpt['model_state'], strict=False)
-   
+
     else:       # Initialize a new GNN model
         retrain = None
         logits_ori = None
@@ -129,9 +140,9 @@ def main():
         ]
         print('parameters_to_optimize', [n for n, p in model.named_parameters()])
         optimizer = torch.optim.Adam(parameters_to_optimize, lr=args.lr)
-    
-    wandb.init(config=args, project="GNNDelete", group="over_unlearn", name=get_run_name(args), mode=args.mode)
-    wandb.watch(model, log_freq=100)
+
+    # wandb.init(config=args, project="GNNDelete", group="over_unlearn", name=get_run_name(args), mode=args.mode)
+    # wandb.watch(model, log_freq=100)
 
     # tqdm.tqdm.write('Hola')
 
@@ -142,8 +153,8 @@ def main():
     # Train
     trainer = get_trainer(args)
     print('Trainer: ', trainer)
-    
-    print(f"df mask: {data.df_mask.sum().item()}") # 5702 
+
+    print(f"df mask: {data.df_mask.sum().item()}") # 5702
     print(f"dr mask: {data.dr_mask.sum().item()}") # 108452 -> are these edges?
     print(data.df_mask.sum().item() + data.dr_mask.sum().item() == data.edge_index.size(1)) # True
     print(f"length of data.x: {data.x.size(dim=0)}") # The length of the x is 19763.
@@ -154,8 +165,8 @@ def main():
     # Test
     if args.unlearning_model != 'retrain':
         retrain_path = os.path.join(
-            'checkpoint', args.dataset, args.gnn, 'retrain', 
-            '-'.join([str(i) for i in [args.df, args.df_size, args.random_seed]]), 
+            'checkpoint', args.dataset, args.gnn, 'retrain',
+            '-'.join([str(i) for i in [args.df, args.df_size, args.random_seed]]),
             'model_best.pt')
         if os.path.exists(retrain_path):
             retrain_ckpt = torch.load(retrain_path, map_location=device)
@@ -169,12 +180,12 @@ def main():
             retrain = None
     else:
         retrain = None
-    
+
     test_results = trainer.test(unlearnt_model, data, model_retrain=None, attack_model_all=attack_model_all, attack_model_sub=attack_model_sub, is_dr = True)
     print(test_results[-1])
 
     trainer.save_log()
-    wandb.finish()
+    # wandb.finish()
 
 
 if __name__ == "__main__":

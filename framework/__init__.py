@@ -13,6 +13,7 @@ trainer_mapping = {
     'original': Trainer,
     'original_node': NodeClassificationTrainer,
     'lf_attack': NodeClassificationTrainer,
+    'edge_attack': NodeClassificationTrainer,
     'retrain': RetrainTrainer,
     'retrain_node': RetrainTrainerNode,
     'gradient_ascent': GradientAscentTrainer,
@@ -40,7 +41,7 @@ def get_model(args, mask_1hop=None, mask_2hop=None, num_nodes=None, num_edge_typ
 
 def get_trainer(args):
     return trainer_mapping[args.unlearning_model](args)
-    
+
 def get_shadow_model(args, mask_1hop=None, mask_2hop=None, num_nodes=None, num_edge_type=None):
     model_mapping = {'gcn': GCN, 'gat': GAT, 'gin': GIN}
 

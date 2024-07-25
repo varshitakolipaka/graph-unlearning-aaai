@@ -1,6 +1,6 @@
 import os
 import json
-import wandb
+#import wandb
 import numpy as np
 import torch
 import torch.nn as nn
@@ -21,8 +21,8 @@ class MIAttackTrainer(Trainer):
     def __init__(self, args):
         self.args = args
         self.trainer_log = {
-            'unlearning_model': 'member_infer', 
-            'dataset': args.dataset, 
+            'unlearning_model': 'member_infer',
+            'dataset': args.dataset,
             'seed': args.random_seed,
             'shadow_log': [],
             'attack_log': []}
@@ -47,7 +47,7 @@ class MIAttackTrainer(Trainer):
                 edge_index=data.test_pos_edge_index,
                 num_nodes=data.num_nodes,
                 num_neg_samples=data.test_pos_edge_index.shape[1])
-            
+
             z = model(data.x, data.test_pos_edge_index)
             logits = model.decode(z, data.test_pos_edge_index, neg_edge_index)
             label = get_link_labels(data.test_pos_edge_index, neg_edge_index)
@@ -60,18 +60,18 @@ class MIAttackTrainer(Trainer):
 
             if (epoch+1) % 500 == 0:
                 valid_loss, auc, aup, df_logit, _ = self.eval_shadow(model, data, 'val')
-                
+
                 log = {
                     'shadow_epoch': epoch,
                     'shadow_train_loss': loss.item(),
                     'shadow_valid_loss': valid_loss,
                     'shadow_valid_auc': auc,
-                    'shadow_valid_aup': aup, 
+                    'shadow_valid_aup': aup,
                     'shadow_df_logit': df_logit
                 }
-                # wandb.log(log)
+                # #wandb.log(log)
                 self.trainer_log['shadow_log'].append(log)
-                
+
                 msg = [f'{i}: {j:>4d}' if isinstance(j, int) else f'{i}: {j:.4f}' for i, j in log.items()]
                 tqdm.write(' | '.join(msg))
 
@@ -117,12 +117,12 @@ class MIAttackTrainer(Trainer):
             f'{stage}_aup': aup,
             f'{stage}_df_logit': df_logit,
         }
-        # wandb.log(log)
+        # #wandb.log(log)
         msg = [f'{i}: {j:.4f}' if isinstance(j, (np.floating, float)) else f'{i}: {j:>4d}' for i, j in log.items()]
         tqdm.write(' | '.join(msg))
 
         return loss, auc, aup, df_logit, None
-    
+
     def train_attack(self, model, train_loader, valid_loader, optimizer, leak, args):
         loss_fct = nn.CrossEntropyLoss()
         best_auc = 0
@@ -145,12 +145,12 @@ class MIAttackTrainer(Trainer):
             valid_loss, valid_acc, valid_auc, valid_f1 = self.eval_attack(model, valid_loader)
 
             log = {
-                'attack_train_loss': train_loss / len(train_loader), 
+                'attack_train_loss': train_loss / len(train_loader),
                 'attack_valid_loss': valid_loss,
-                'attack_valid_acc': valid_acc, 
-                'attack_valid_auc': valid_auc, 
+                'attack_valid_acc': valid_acc,
+                'attack_valid_auc': valid_auc,
                 'attack_valid_f1': valid_f1}
-            # wandb.log(log)
+            # #wandb.log(log)
             self.trainer_log['attack_log'].append(log)
 
             msg = [f'{i}: {j:>4d}' if isinstance(j, int) else f'{i}: {j:.4f}' for i, j in log.items()]
@@ -162,7 +162,7 @@ class MIAttackTrainer(Trainer):
                 best_epoch = epoch
                 self.trainer_log['attack_best_auc'] = valid_auc
                 self.trainer_log['attack_best_epoch'] = epoch
-                
+
                 ckpt = {
                     'model_state': model.state_dict(),
                     'optimizer_state': optimizer.state_dict(),
@@ -171,7 +171,7 @@ class MIAttackTrainer(Trainer):
                     torch.save(ckpt, os.path.join(args.attack_dir, f'{leak}_attack_model_best.pt'))
                 else:
                     torch.save(ckpt, os.path.join(args.attack_dir, f'{leak}_gd_attack_model_best.pt'))
-        
+
     @torch.no_grad()
     def eval_attack(self, model, eval_loader):
         loss_fct = nn.CrossEntropyLoss()
@@ -181,10 +181,10 @@ class MIAttackTrainer(Trainer):
             logits = model(x.to(device))
             loss = loss_fct(logits, y.to(device))
             _, p = torch.max(logits, 1)
-            
+
             pred.extend(p.cpu())
             label.extend(y)
-        
+
         pred = torch.stack(pred)
         label = torch.stack(label)
 
@@ -207,12 +207,12 @@ class MIAttackTrainer(Trainer):
         # neg_subset = all_neg[:, sample_idx]
 
         present_edge_index = torch.cat([data.test_pos_edge_index, data.test_neg_edge_index], dim=-1)  # 6342
-        
+
         if 'sub' in self.args.unlearning_model:
             absent_edge_index = torch.cat([data.val_pos_edge_index, data.val_neg_edge_index], dim=-1)
         else:   #if 'all' in self.args.unlearning_model:
             absent_edge_index = torch.cat([data.val_pos_edge_index, data.val_neg_edge_index], dim=-1)  # 123671
-        
+
         edge_index = torch.cat([present_edge_index, absent_edge_index], dim=-1)  # E (6342 + 6342)
 
         if leak == 'posterior':

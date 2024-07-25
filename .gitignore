@@ -3,8 +3,8 @@ data/
 checkpoint*/
 data
 checkpoint*
-wandb
-wandb/
+#wandb
+#wandb/
 results/
 *csv
 

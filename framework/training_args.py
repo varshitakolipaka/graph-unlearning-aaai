@@ -10,17 +10,21 @@ num_edge_type_mapping = {
 
 def parse_args():
     parser = argparse.ArgumentParser()
-    
+
+    #Attack type
+    parser.add_argument('--attack_type', type=str, default='label',
+                        help='attack type', choices=["label", "edge"])
+
     # Model
     parser.add_argument('--unlearning_model', type=str, default='retrain',
                         help='unlearning method')
-    parser.add_argument('--gnn', type=str, default='gcn', 
+    parser.add_argument('--gnn', type=str, default='gcn',
                         help='GNN architecture')
-    parser.add_argument('--in_dim', type=int, default=128, 
+    parser.add_argument('--in_dim', type=int, default=128,
                         help='input dimension')
-    parser.add_argument('--hidden_dim', type=int, default=128, 
+    parser.add_argument('--hidden_dim', type=int, default=128,
                         help='hidden dimension')
-    parser.add_argument('--out_dim', type=int, default=64, 
+    parser.add_argument('--out_dim', type=int, default=64,
                         help='output dimension')
     parser.add_argument('--request', type=str, default='edge', help='unlearning request', choices=['node', 'edge'])
 
@@ -37,7 +41,7 @@ def parse_args():
                         help='dataset')
     parser.add_argument('--random_seed', type=int, default=42,
                         help='random seed')
-    parser.add_argument('--batch_size', type=int, default=2048, 
+    parser.add_argument('--batch_size', type=int, default=2048,
                         help='batch size for GraphSAINTRandomWalk sampler')
     parser.add_argument('--walk_length', type=int, default=2,
                         help='random walk length for GraphSAINTRandomWalk sampler')
@@ -45,17 +49,17 @@ def parse_args():
                         help='number of steps for GraphSAINTRandomWalk sampler')
 
     # Training
-    parser.add_argument("--suffix", type=str, default=None, 
-                        help="name suffix for wandb run")
-    parser.add_argument("--mode", type=str, default="disabled", 
-                        help="wandb mode")
-    parser.add_argument('--lr', type=float, default=0.025, 
+    parser.add_argument("--suffix", type=str, default=None,
+                        help="name suffix for #wandb run")
+    parser.add_argument("--mode", type=str, default="disabled",
+                        help="#wandb mode")
+    parser.add_argument('--lr', type=float, default=0.025,
                         help='initial learning rate')
-    parser.add_argument('--weight_decay', type=float, default=5e-7, 
+    parser.add_argument('--weight_decay', type=float, default=5e-7,
                         help='weight decay')
-    parser.add_argument('--optimizer', type=str, default='Adam', 
+    parser.add_argument('--optimizer', type=str, default='Adam',
                         help='optimizer to use')
-    parser.add_argument('--epochs', type=int, default=50, 
+    parser.add_argument('--epochs', type=int, default=50,
                         help='number of epochs to train')
     parser.add_argument('--valid_freq', type=int, default=30,
                         help='# of epochs to do validation')
@@ -71,9 +75,9 @@ def parse_args():
                         help='type of loss. one of {both_all, both_layerwise, only2_layerwise, only2_all, only1}')
 
     # GraphEraser
-    parser.add_argument('--num_clusters', type=int, default=10, 
+    parser.add_argument('--num_clusters', type=int, default=10,
                         help='top k for evaluation')
-    parser.add_argument('--kmeans_max_iters', type=int, default=1, 
+    parser.add_argument('--kmeans_max_iters', type=int, default=1,
                         help='top k for evaluation')
     parser.add_argument('--shard_size_delta', type=float, default=0.005)
     parser.add_argument('--terminate_delta', type=int, default=0)
@@ -94,15 +98,15 @@ def parse_args():
 
 
     # Evaluation
-    parser.add_argument('--topk', type=int, default=500, 
+    parser.add_argument('--topk', type=int, default=500,
                         help='top k for evaluation')
-    parser.add_argument('--eval_on_cpu', type=bool, default=False, 
+    parser.add_argument('--eval_on_cpu', type=bool, default=False,
                         help='whether to evaluate on CPU')
 
     # KG
-    parser.add_argument('--num_edge_type', type=int, default=None, 
+    parser.add_argument('--num_edge_type', type=int, default=None,
                         help='number of edges types')
-    
+
     # GIF
     parser.add_argument('--iteration', type=int, default=100)
     parser.add_argument('--scale', type=int, default=100000)
@@ -116,17 +120,17 @@ def parse_args():
     parser.add_argument('--scrubAlpha', type=float, default=1, help='KL from og_model constant for SCRUB, higher incentivizes closeness to ogmodel')
     parser.add_argument('--msteps', type=int, default=15, help='Maximization steps on forget set for SCRUB')
     parser.add_argument('--wd', type=float, default=0.0005, help='learning rate (default: 0.01)')
-    
+
     args = parser.parse_args()
 
-    if 'ogbl' in args.dataset:  # eval on cpu 
+    if 'ogbl' in args.dataset:  # eval on cpu
         args.eval_on_cpu = True
 
 
     if args.unlearning_model in ['original', 'retrain']:
         args.epochs = 50 # changed it to 200 from 2000
         args.valid_freq = 5
-        
+
         # For large graphs
         if args.gnn not in ['rgcn', 'rgat'] and 'ogbl' in args.dataset:
             args.epochs = 600
@@ -135,7 +139,7 @@ def parse_args():
             args.batch_size = 8192
 
     if 'gnndelete' in args.unlearning_model:
-        
+
         if args.gnn not in ['rgcn', 'rgat'] and 'ogbl' in args.dataset:
             args.epochs = 600
             args.valid_freq = 50
@@ -156,7 +160,7 @@ def parse_args():
     elif args.unlearning_model == 'finetune':
         args.epochs = 1000
         args.valid_freq = 100
-    
+
     elif args.unlearning_model == 'descent_to_delete':
         args.epochs = 1
 

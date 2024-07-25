@@ -1,13 +1,13 @@
 import numpy as np
 import torch
 import networkx as nx
-import wandb
+#import wandb
 import os
 from torch.nn import functional as F
 
 
-def wandb_log(log_dict):
-    wandb.log({key.replace("_", "/", 1): value for key, value in log_dict.items()})
+#def #wandb_log(log_dict):
+    #wandb.log({key.replace("_", "/", 1): value for key, value in log_dict.items()})
 
 def get_node_edge(graph):
     degree_sorted_ascend = sorted(graph.degree, key=lambda x: x[1])
@@ -17,21 +17,21 @@ def get_node_edge(graph):
 def h_hop_neighbor(G, node, h):
     path_lengths = nx.single_source_dijkstra_path_length(G, node)
     return [node for node, length in path_lengths.items() if length == h]
-                    
+
 def get_enclosing_subgraph(graph, edge_to_delete):
     subgraph = {0: [edge_to_delete]}
     s, t = edge_to_delete
-    
+
     neighbor_s = []
     neighbor_t = []
     for h in range(1, 2+1):
         neighbor_s += h_hop_neighbor(graph, s, h)
         neighbor_t += h_hop_neighbor(graph, t, h)
-        
+
         nodes = neighbor_s + neighbor_t + [s, t]
-        
+
         subgraph[h] = list(graph.subgraph(nodes).edges())
-        
+
     return subgraph
 
 @torch.no_grad()
@@ -60,7 +60,7 @@ def negative_sampling_kg(edge_index, edge_type):
         new_index = torch.randperm(old_source.shape[0])
         new_source = old_source[new_index]
         edge_index_copy[0, mask] = new_source
-    
+
     return edge_index_copy
 
 def get_run_name(args):
@@ -72,22 +72,22 @@ def get_run_name(args):
 
 
 class EarlyStopping:
-    """Early stops the training if validation loss doesn't improve after a given patience. 
+    """Early stops the training if validation loss doesn't improve after a given patience.
     From https://github.com/Bjarten/early-stopping-pytorch.
         Args:
             patience (int): How long to wait after last time validation loss improved.
                             Default: 7
-            verbose (bool): If True, prints a message for each validation loss improvement. 
+            verbose (bool): If True, prints a message for each validation loss improvement.
                             Default: False
             delta (float): Minimum change in the monitored quantity to qualify as an improvement.
                             Default: 0
             path (str): Path for the checkpoint to be saved to.
                             Default: 'checkpoint.pt'
             trace_func (function): trace print function.
-                            Default: print            
+                            Default: print
     """
     def __init__(self, patience=7, verbose=False, delta=0, path='checkpoint.pt', trace_func=print):
-        
+
         self.patience = patience
         self.verbose = verbose
         self.counter = 0
@@ -97,7 +97,7 @@ class EarlyStopping:
         self.delta = delta
         self.path = path
         self.trace_func = trace_func
-        
+
     def __call__(self, score, model, z=None):
 
         # score = -score
@@ -160,7 +160,7 @@ class ParameterPerturber:
         self.min_layer = parameters["min_layer"]
         self.max_layer = parameters["max_layer"]
         self.forget_threshold = parameters["forget_threshold"] #unused
-        self.dampening_constant = parameters["dampening_constant"] #lambda 
+        self.dampening_constant = parameters["dampening_constant"] #lambda
         self.selection_weighting = parameters["selection_weighting"] #alpha
 
     def zerolike_params_dict(self, model: torch.nn) -> Dict[str, torch.Tensor]:
@@ -194,7 +194,7 @@ class ParameterPerturber:
         if dataloader:
             for data in tqdm.tqdm(dataloader):
                 self.opt.zero_grad()
-                
+
                 out = self.model(data)
                 loss = criterion(out, data.y)
                 loss.backward()
@@ -263,7 +263,7 @@ class ParameterPerturber:
                 p[locations] = p[locations].mul(update)
 
 
-# default values: 
+# default values:
 # "dampening_constant" lambda: 1,
 # "selection_weighting" alpha: 10 * model_size_scaler,
 # model_size_scaler = 1
@@ -292,7 +292,7 @@ class LinearLR(_LRScheduler):
         optimizer (Optimizer): Wrapped optimizer.
         T (int): Total number of training epochs or iterations.
         last_epoch (int): The index of last epoch or iteration. Default: -1.
-        
+
     .. _Budgeted Training\: Rethinking Deep Neural Network Training Under
     Resource Constraints:
         https://arxiv.org/abs/1905.04753
@@ -312,7 +312,7 @@ class LinearLR(_LRScheduler):
 
     def _get_closed_form_lr(self):
         return self.get_lr()
-    
+
 
 def cutmix(x, y, alpha=1.0):
     assert(alpha > 0)
@@ -350,13 +350,13 @@ def rand_bbox(size, lam):
 
     return bbx1, bby1, bbx2, bby2
 
-    
+
 def seed_everything(seed):
     """
     Function that sets seed for pseudo-random number generators in: pytorch, numpy, python.random
 
     Args:
-        seed: the integer value seed for global random state 
+        seed: the integer value seed for global random state
     """
     random.seed(seed)
     np.random.seed(seed)
@@ -372,14 +372,14 @@ class Model_with_TTA(torch.nn.Module):
         self.model = model
         self.mult_fact = mult_fact
         self.tta_type = tta_type
-        
+
     def forward(self, x):
         out = self.model(x)*self.mult_fact
         if self.tta_type == 'flip':
             out += self.model(torch.flip(x, dims=[3]))
             out /= 2
         return self.net(out)
-    
+
 
 def get_targeted_classes(dataset):
   if dataset == 'CIFAR10':

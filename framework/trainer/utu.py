@@ -1,6 +1,6 @@
 import os
 import time
-import wandb
+#import wandb
 from tqdm import tqdm, trange
 import numpy as np
 import torch
@@ -20,14 +20,14 @@ class UtUTrainer(Trainer):
 
     # def freeze_unused_mask(self, model, edge_to_delete, subgraph, h):
     #     gradient_mask = torch.zeros_like(delete_model.operator)
-    #     
+    #
     #     edges = subgraph[h]
     #     for s, t in edges:
     #         if s < t:
     #             gradient_mask[s, t] = 1
     #     gradient_mask = gradient_mask.to(device)
     #     model.operator.register_hook(lambda grad: grad.mul_(gradient_mask))
-    
+
     def train(self, model, data, optimizer, args, logits_ori=None, attack_model_all=None, attack_model_sub=None):
         if 'ogbl' in self.args.dataset:
             args.eval_on_cpu = False
@@ -89,16 +89,16 @@ class UtUTrainerNode(NodeClassificationTrainer):
 
     # def freeze_unused_mask(self, model, edge_to_delete, subgraph, h):
     #     gradient_mask = torch.zeros_like(delete_model.operator)
-    #     
+    #
     #     edges = subgraph[h]
     #     for s, t in edges:
     #         if s < t:
     #             gradient_mask[s, t] = 1
     #     gradient_mask = gradient_mask.to(device)
     #     model.operator.register_hook(lambda grad: grad.mul_(gradient_mask))
-    
+
     # dr, df masks
-    
+
     def train(self, model, data, optimizer, args, logits_ori=None, attack_model_all=None, attack_model_sub=None):
         if 'ogbl' in self.args.dataset:
             args.eval_on_cpu = False
@@ -113,10 +113,10 @@ class UtUTrainerNode(NodeClassificationTrainer):
 
         best_metric = 0
         loss_fct = nn.MSELoss()
-        
+
         print('shape: ', data.edge_index[:, data.dr_mask].shape)
         z = model(data.x, data.edge_index[:, data.dr_mask]) # df mask = edges connected to the node
-        # Save 
+        # Save
         ckpt = {
             'model_state': model.state_dict(),
             'optimizer_state': optimizer.state_dict(),

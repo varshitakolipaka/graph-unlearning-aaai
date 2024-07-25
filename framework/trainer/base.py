@@ -24,11 +24,10 @@ class Trainer:
     def __init__(self, args):
         self.args = args
         self.trainer_log = {
-            'unlearning_model': args.unlearning_model, 
-            'dataset': args.dataset, 
+            'unlearning_model': args.unlearning_model,
+            'dataset': args.dataset,
             'log': []}
         self.logit_all_pair = None
-        print("meoww")
         self.df_pos_edge = []
 
         # with open(os.path.join(self.args.checkpoint_dir, 'training_args.json'), 'w') as f:
@@ -48,7 +47,7 @@ class Trainer:
 
         model.deletion1.deletion_weight.register_hook(lambda grad: grad.mul_(grad_mask))
         model.deletion2.deletion_weight.register_hook(lambda grad: grad.mul_(grad_mask))
-    
+
     @torch.no_grad()
     def get_link_labels(self, pos_edge_index, neg_edge_index):
         E = pos_edge_index.size(1) + neg_edge_index.size(1)
@@ -63,7 +62,7 @@ class Trainer:
         if on_cpu:
             model = model.cpu()
             data = data.cpu()
-        
+
         z = model(data.x, data.train_pos_edge_index[:, data.dtrain_mask])
 
         model = model.to(original_device)
@@ -78,7 +77,7 @@ class Trainer:
         elif self.args.dataset in ['Physics', 'Reddit'] or 'ogbl' in self.args.dataset:
             args.eval_on_cpu = False
             return self.train_fullbatch(model, data, optimizer, args)
-        
+
         else:
             return self.train_fullbatch(model, data, optimizer, args)
 
@@ -96,8 +95,8 @@ class Trainer:
                 edge_index=data.train_pos_edge_index,
                 num_nodes=data.num_nodes,
                 num_neg_samples=data.dtrain_mask.sum())
-            
-            z = model(data.x, data.train_pos_edge_index) # get node embedding ig? 
+
+            z = model(data.x, data.train_pos_edge_index) # get node embedding ig?
             # edge = torch.cat([train_pos_edge_index, neg_edge_index], dim=-1)
             # logits = model.decode(z, edge[0], edge[1])
             logits = model.decode(z, data.train_pos_edge_index, neg_edge_index)
@@ -117,7 +116,7 @@ class Trainer:
                     'train_loss': loss.item()
                 }
                 log = {**train_log, **valid_log}
-                wandb_log(log)
+                #wandb_log(log)
                 for log in [train_log, valid_log]:
                     msg = [f'{i}: {j:>4d}' if isinstance(j, int) else f'{i}: {j:.4f}' for i, j in log.items()]
                     tqdm.tqdm.write(' | '.join(msg))
@@ -160,7 +159,7 @@ class Trainer:
 
         if self.args.eval_on_cpu:
             model = model.to('cpu')
-        
+
         if hasattr(data, 'dtrain_mask'):
             mask = data.dtrain_mask
         else:
@@ -180,12 +179,12 @@ class Trainer:
         else:
             # df_logit = model.decode(z, data.train_pos_edge_index[:, data.df_mask]).sigmoid().tolist()
             df_logit = model.decode(z, data.directed_df_edge_index).sigmoid().tolist()
-            
+
 
         if len(df_logit) > 0:
             df_auc = []
             df_aup = []
-        
+
             # Sample pos samples
             if len(self.df_pos_edge) == 0:
                 for i in range(5):
@@ -193,16 +192,16 @@ class Trainer:
                     idx = torch.randperm(data.train_pos_edge_index[:, data.dr_mask].shape[1])[:len(df_logit)]
                     mask[idx] = True
                     self.df_pos_edge.append(mask)
-            
+
             # Use cached pos samples
             for mask in self.df_pos_edge:
                 pos_logit = model.decode(z, data.train_pos_edge_index[:, data.dr_mask][:, mask]).sigmoid().tolist()
-                
+
                 logit = df_logit + pos_logit
                 label = [0] * len(df_logit) + [1] * len(pos_logit)
                 df_auc.append(roc_auc_score(label, logit))
                 df_aup.append(average_precision_score(label, logit))
-        
+
             df_auc = np.mean(df_auc)
             df_aup = np.mean(df_aup)
 
@@ -233,7 +232,7 @@ class Trainer:
 
     @torch.no_grad()
     def test(self, model, data, model_retrain=None, attack_model_all=None, attack_model_sub=None, ckpt='best'):
-        
+
         if ckpt == 'best' and self.args.unlearning_model != 'simple':    # Load best ckpt
             ckpt = torch.load(os.path.join(self.args.checkpoint_dir, 'model_best.pt'), map_location=device)
             model.load_state_dict(ckpt['model_state'])
@@ -271,13 +270,13 @@ class Trainer:
         self.trainer_log['mi_logit_all_after'], self.trainer_log['mi_logit_all_before'] = None, None
         with open(os.path.join(self.args.checkpoint_dir, 'trainer_log.json'), 'w') as f:
             json.dump(self.trainer_log, f)
-        
+
         # torch.save(self.logit_all_pair, os.path.join(self.args.checkpoint_dir, 'pred_proba.pt'))
 
 
 class KGTrainer(Trainer):
     pass
-        
+
 class NodeClassificationTrainer(Trainer):
     def train(self, model, data, optimizer, args):
         print("NODE CLASSIFICATION!")
@@ -295,7 +294,7 @@ class NodeClassificationTrainer(Trainer):
             loss.backward()
             optimizer.step()
             optimizer.zero_grad()
-            
+
             print(loss)
 
             if (epoch+1) % args.valid_freq == 0:
@@ -306,8 +305,8 @@ class NodeClassificationTrainer(Trainer):
                     'train_loss': loss.item()
                 }
                 log = {**train_log, **valid_log}
-                wandb_log(log)
-                
+                #wandb_log(log)
+
                 for log in [train_log, valid_log]:
                     msg = [f'{i}: {j:>4d}' if isinstance(j, int) else f'{i}: {j:.4f}' for i, j in log.items()]
                     # write(' | '.join(msg))
@@ -345,10 +344,10 @@ class NodeClassificationTrainer(Trainer):
     def misclassification_rate(self, true_labels, pred_labels, class1 = 0, class2 = 1):
         class1_to_class2 = ((true_labels == class1) & (pred_labels == class2)).sum().item()
         class2_to_class1 = ((true_labels == class2) & (pred_labels == class1)).sum().item()
-        
+
         total_class1 = (true_labels == class1).sum().item()
         total_class2 = (true_labels == class2).sum().item()
-        
+
         misclassification_rate = (class1_to_class2 + class2_to_class1) / (total_class1 + total_class2)
         return misclassification_rate
 
@@ -358,7 +357,7 @@ class NodeClassificationTrainer(Trainer):
 
         if self.args.eval_on_cpu:
             model = model.to('cpu')
-        
+
         # if hasattr(data, 'dtrain_mask'):
         #     mask = data.dtrain_mask
         # else:
@@ -384,7 +383,7 @@ class NodeClassificationTrainer(Trainer):
         # if len(df_logit) > 0:
         #     df_auc = []
         #     df_aup = []
-        
+
         #     # Sample pos samples
         #     if len(self.df_pos_edge) == 0:
         #         for i in range(500):
@@ -392,16 +391,16 @@ class NodeClassificationTrainer(Trainer):
         #             idx = torch.randperm(data.train_pos_edge_index[:, data.dr_mask].shape[1])[:len(df_logit)]
         #             mask[idx] = True
         #             self.df_pos_edge.append(mask)
-            
+
         #     # Use cached pos samples
         #     for mask in self.df_pos_edge:
         #         pos_logit = model.decode(z, data.train_pos_edge_index[:, data.dr_mask][:, mask]).sigmoid().tolist()
-                
+
         #         logit = df_logit + pos_logit
         #         label = [0] * len(df_logit) +  [1] * len(df_logit)
         #         df_auc.append(roc_auc_score(label, logit))
         #         df_aup.append(average_precision_score(label, logit))
-        
+
         #     df_auc = np.mean(df_auc)
         #     df_aup = np.mean(df_aup)
 

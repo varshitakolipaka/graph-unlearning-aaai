@@ -1,6 +1,6 @@
 import os
 import time
-import wandb
+#import wandb
 from tqdm import tqdm, trange
 import torch
 import torch.nn as nn
@@ -19,7 +19,7 @@ def weight(model):
     t = 0
     for p in model.parameters():
         t += torch.norm(p)
-    
+
     return t
 
 class GradientAscentTrainer(Trainer):
@@ -35,7 +35,7 @@ class GradientAscentTrainer(Trainer):
     def train_fullbatch(self, model, data, optimizer, args, logits_ori=None, attack_model_all=None, attack_model_sub=None):
         model = model.to(device)
         data = data.to(device)
-        
+
         start_time = time.time()
         best_metric = 0
 
@@ -64,21 +64,21 @@ class GradientAscentTrainer(Trainer):
 
             end_time = time.time()
             epoch_time = end_time - start_time
-            
+
             step_log = {
                 'Epoch': epoch,
                 'train_loss': loss.item(),
                 'train_time': epoch_time
             }
-            wandb_log(step_log)
+            #wandb_log(step_log)
             msg = [f'{i}: {j:>4d}' if isinstance(j, int) else f'{i}: {j:.4f}' for i, j in step_log.items()]
             tqdm.write(' | '.join(msg))
 
             if (epoch + 1) % self.args.valid_freq == 0:
                 valid_loss, dt_auc, dt_aup, df_auc, df_aup, df_logit, logit_all_pair, valid_log = self.eval(model, data, 'val')
                 valid_log['Epoch'] = epoch
-                
-                wandb_log(valid_log)
+
+                #wandb_log(valid_log)
                 msg = [f'{i}: {j:>4d}' if isinstance(j, int) else f'{i}: {j:.4f}' for i, j in valid_log.items()]
                 tqdm.write(' | '.join(msg))
                 self.trainer_log['log'].append(valid_log)
@@ -94,7 +94,7 @@ class GradientAscentTrainer(Trainer):
                     }
                     torch.save(ckpt, os.path.join(args.checkpoint_dir, 'model_best.pt'))
                     torch.save(z, os.path.join(args.checkpoint_dir, 'node_embeddings.pt'))
-        
+
         self.trainer_log['training_time'] = time.time() - start_time
 
         # Save
@@ -123,7 +123,7 @@ class GradientAscentTrainer(Trainer):
                 batch = batch.to(device)
 
                 z = model(batch.x, batch.edge_index[:, batch.dr_mask])
-                
+
                 # Positive and negative sample
                 neg_edge_index = negative_sampling(
                     edge_index=batch.edge_index[:, batch.df_mask],
@@ -153,9 +153,9 @@ class GradientAscentTrainer(Trainer):
                     'train_loss': epoch_loss / step,
                     'train_time': epoch_time / step,
                 }
-                
+
                 for log in [train_log, valid_log]:
-                    wandb_log(log)
+                    #wandb_log(log)
                     msg = [f'{i}: {j:>4d}' if isinstance(j, int) else f'{i}: {j:.4f}' for i, j in log.items()]
                     tqdm.write(' | '.join(msg))
                     self.trainer_log['log'].append(log)
