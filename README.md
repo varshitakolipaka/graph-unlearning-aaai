@@ -29,6 +29,18 @@ python train_gnn.py --dataset Cora
 python delete_gnn.py --dataset Cora --df_size 5.0 --unlearning_model utu
 ```
 
+To run utu node unlearning on edge attack:
+```python
+python attack_gnn.py --dataset Cora_p --df_size 0.2 --attack_type edge
+python delete_gnn.py --dataset Cora_p --df_size 0.2 --unlearning_model utu_node --request node --attack_type edge
+```
+
+To run utu node unlearning on edge attack:
+```python
+python attack_gnn.py --dataset Cora_p --df_size 0.2 --attack_type label
+python delete_gnn.py --dataset Cora_p --df_size 0.2 --unlearning_model utu_node --request node --attack_type label
+```
+
 ## Thanks
 Some of the code was forked from the code repository of [GNNDelete](https://github.com/mims-harvard/GNNDelete/).
 

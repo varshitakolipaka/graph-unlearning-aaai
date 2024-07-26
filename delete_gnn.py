@@ -22,7 +22,6 @@ from framework.data_loader import split_forget_retain, train_test_split_edges_no
 # from train_mi import load_mi_models
 
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
-forget="edge"
 
 def get_processed_data(args, val_ratio, test_ratio, df_ratio, subset='in'):
     '''pend for future use'''
@@ -30,7 +29,7 @@ def get_processed_data(args, val_ratio, test_ratio, df_ratio, subset='in'):
     if args.request == 'edge':
         data = train_test_split_edges_no_neg_adj_mask(data, val_ratio, test_ratio)
         data = split_forget_retain(data, df_ratio, subset)
-    elif forget=="node":
+    elif args.attack_type=="label":
         data, flipped_indices = get_label_poisoned_data(args, data, df_ratio, args.random_seed)
         # need to define df_mask and dr_mask
         # once those are done we can also define sdf_mask for gnndelete to work
@@ -60,7 +59,7 @@ def get_processed_data(args, val_ratio, test_ratio, df_ratio, subset='in'):
         data.dr_mask = ~data.df_mask
         # we just create sdf masks also
 
-    elif forget=="edge":
+    elif args.attack_type=="edge":
         #Return type: new edge index, to_indices, from_indices
         augmented_edges, poisoned_indices = get_edge_poisoned_data(args, data, df_ratio, args.random_seed)
         data.edge_index= augmented_edges
@@ -75,7 +74,7 @@ def get_processed_data(args, val_ratio, test_ratio, df_ratio, subset='in'):
 torch.autograd.set_detect_anomaly(True)
 def main():
     args = parse_args()
-    original_path = os.path.join(args.checkpoint_dir, args.dataset, args.gnn, 'lf_attack', 'in-' + str(args.df_size) + '-' + str(args.random_seed))
+    original_path = os.path.join(args.checkpoint_dir, args.dataset, args.gnn, args.attack_type, 'in-' + str(args.df_size) + '-' + str(args.random_seed))
     attack_path_all = os.path.join(args.checkpoint_dir, args.dataset, args.gnn, 'member_infer_all', str(args.random_seed))
     args.attack_dir = attack_path_all
     if not os.path.exists(attack_path_all):

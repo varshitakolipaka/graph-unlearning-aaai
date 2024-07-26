@@ -25,7 +25,7 @@ def main():
     if not os.path.exists(shadow_path_all):
         os.makedirs(shadow_path_all, exist_ok=True)
     args.checkpoint_dir = os.path.join(
-        args.checkpoint_dir, args.dataset, args.gnn, args.unlearning_model,
+        args.checkpoint_dir, args.dataset, args.gnn, args.attack_type,
         '-'.join([str(i) for i in [args.df, args.df_size, args.random_seed]]))
     os.makedirs(args.checkpoint_dir, exist_ok=True)
     seed_everything(args.random_seed)
