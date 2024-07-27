@@ -60,7 +60,7 @@ class EdgePoisonTrainer(NodeClassificationTrainer):
             if edge in poisoned_edges:
                 added_edge_indices.append(i)
 
-        return augmented_edge, torch.tensor(added_edge_indices, dtype=torch.long)
+        return augmented_edge, torch.tensor(added_edge_indices, dtype=torch.long), torch.tensor(list(set(poisoned_nodes1)) , dtype=torch.long)
         #torch.tensor(poisoned_nodes1 , dtype=torch.long), torch.tensor(poisoned_nodes2 , dtype=torch.long)
 
 
@@ -110,7 +110,7 @@ class EdgePoisonTrainer(NodeClassificationTrainer):
                 to_arr.append(n1)
                 from_arr.append(n2)
                 existing_edges.add(edge)
-                
+
                 poisoned_nodes1.append(n1)
                 poisoned_nodes2.append(n2)
                 poisoned_nodes1.append(n2)
@@ -133,7 +133,7 @@ class EdgePoisonTrainer(NodeClassificationTrainer):
             if edge in poisoned_edges:
                 added_edge_indices.append(i)
 
-        return augmented_edge, torch.tensor(added_edge_indices, dtype=torch.long)
+        return augmented_edge, torch.tensor(added_edge_indices, dtype=torch.long), torch.tensor(list(set(poisoned_nodes1)) , dtype=torch.long)
         #torch.tensor(poisoned_nodes1 , dtype=torch.long), torch.tensor(poisoned_nodes2, dtype=torch.long)
 
     def train(self, model, data, optimizer, args, logits_ori=None, attack_model_all=None, attack_model_sub=None):
@@ -181,5 +181,5 @@ class EdgePoisonTrainer(NodeClassificationTrainer):
 
 def get_edge_poisoned_data(args, data, epsilon, seed):
     eg_trainer = EdgePoisonTrainer(args)
-    aug, poisoned_indices = eg_trainer.edge_attack_specific_nodes(data, epsilon, seed)
-    return aug, poisoned_indices
+    aug, poisoned_indices, poisoned_nodes = eg_trainer.edge_attack_specific_nodes(data, epsilon, seed)
+    return aug, poisoned_indices, poisoned_nodes
