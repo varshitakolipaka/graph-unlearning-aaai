@@ -12,6 +12,7 @@ from trainers.gnndelete_ni import GNNDeleteNITrainer
 from trainers.gradient_ascent import GradientAscentTrainer
 # from trainers.gif import GIFTrainer
 from trainers.base import Trainer
+from trainers.utu import UtUTrainer
 
 def get_original_data(d):
     data_dir = './datasets'
@@ -98,6 +99,7 @@ def get_trainer(args, poisoned_model, poisoned_data, optimizer_unlearn) -> Train
         "gnndelete": GNNDeleteNodeembTrainer,
         "gnndelete_ni": GNNDeleteNITrainer,
         # "gif": GIFTrainer,
+        "utu": UtUTrainer
     }
     
     if args.unlearning_model in trainer_map:

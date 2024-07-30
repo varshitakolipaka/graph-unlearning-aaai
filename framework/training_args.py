@@ -12,7 +12,7 @@ def parse_args():
     parser = argparse.ArgumentParser()
 
     parser.add_argument('--attack_type', type=str, default='label', help='attack type', choices=["label", "edge", "random"])
-    parser.add_argument('--unlearning_model', type=str, default='gnndelete', help='unlearning method', choices=["original", "gradient_ascent", "gnndelete", "gnndelete_ni", "gif", "u2u", "contrastive", "retrain", "scrub"])
+    parser.add_argument('--unlearning_model', type=str, default='gnndelete', help='unlearning method', choices=["original", "gradient_ascent", "gnndelete", "gnndelete_ni", "gif", "utu", "contrastive", "retrain", "scrub"])
     parser.add_argument('--gnn', type=str, default='gcn', help='GNN architecture', choices=['gcn', 'gat', 'gin'])
     # parser.add_argument('--in_dim', type=int, default=128, help='input dimension')
     parser.add_argument('--hidden_dim', type=int, default=64, help='hidden dimension')
