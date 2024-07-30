@@ -7,6 +7,7 @@ from torch_geometric.datasets import CitationFull, Coauthor, Amazon, Planetoid, 
 from ogb.linkproppred import PygLinkPropPredDataset
 import torch_geometric.transforms as T
 
+from trainers.contrast import ContrastiveUnlearnTrainer
 from trainers.gnndelete import GNNDeleteNodeembTrainer
 from trainers.gnndelete_ni import GNNDeleteNITrainer
 from trainers.gradient_ascent import GradientAscentTrainer
@@ -88,6 +89,7 @@ def find_masks(data, poisoned_indices, attack_type="label"):
         data.dr_mask = torch.zeros(data.edge_index.shape[1], dtype=torch.bool)
         data.df_mask[poisoned_indices] = True
         data.dr_mask = ~data.df_mask
+    data.attacked_idx = poisoned_indices
     get_sdf_masks(data)
 
 
@@ -99,7 +101,8 @@ def get_trainer(args, poisoned_model, poisoned_data, optimizer_unlearn) -> Train
         "gnndelete": GNNDeleteNodeembTrainer,
         "gnndelete_ni": GNNDeleteNITrainer,
         "gif": GIFTrainer,
-        "utu": UtUTrainer
+        "utu": UtUTrainer,
+        "contrastive": ContrastiveUnlearnTrainer
     }
     
     if args.unlearning_model in trainer_map:

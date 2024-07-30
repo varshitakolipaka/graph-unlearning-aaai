@@ -18,7 +18,7 @@ def parse_args():
     parser.add_argument('--hidden_dim', type=int, default=64, help='hidden dimension')
     parser.add_argument('--unlearning_epochs', type=int, default=50, help='number of epochs to unlearn for')
     # parser.add_argument('--out_dim', type=int, default=64, help='output dimension')
-    parser.add_argument('--request', type=str, default='edge', help='unlearning request', choices=['node', 'edge'])
+    parser.add_argument('--request', type=str, default='node', help='unlearning request', choices=['node', 'edge'])
 
     # Data
     # parser.add_argument('--data_dir', type=str, default='./data', help='data dir')
@@ -85,8 +85,8 @@ def parse_args():
 
 
     # contrastive
-    parser.add_argument('--contrastice_epochs_1', type=int, default=30, help="epochs for contrastive unlearning")
-    parser.add_argument('--contrastice_epochs_2', type=int, default=10, help="epochs for contrastive unlearning")
+    parser.add_argument('--contrastive_epochs_1', type=int, default=30, help="epochs for contrastive unlearning")
+    parser.add_argument('--contrastive_epochs_2', type=int, default=10, help="epochs for contrastive unlearning")
     parser.add_argument('--contrastive_margin', type=int, default=500, help="margin for the contrastive loss")
     parser.add_argument('--contrastive_lambda', type=float, default=0.8, help="weight for the task loss [1 - lambda] is used for the contrastive loss")
 
