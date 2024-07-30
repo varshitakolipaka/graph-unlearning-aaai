@@ -40,12 +40,23 @@ if "gnndelete" in args.unlearning_model:
 else:
     poisoned_model = GCN(poisoned_data.num_features, args.hidden_dim, poisoned_data.num_classes)
     
-optimizer = torch.optim.Adam(poisoned_model.parameters(), lr=args.unlearn_lr, weight_decay=5e-4)
+optimizer = torch.optim.Adam(poisoned_model.parameters(), lr=0.01, weight_decay=5e-4)
 poisoned_trainer = Trainer(poisoned_model, poisoned_data, optimizer)
 poisoned_trainer.train()
 
 print("==UNLEARNING==")
-optimizer_unlearn= utils.get_optimizer(args, poisoned_model)
+
 utils.find_masks(poisoned_data, poisoned_indices, attack_type=args.attack_type)
-unlearn_trainer= utils.get_trainer(args, poisoned_model, poisoned_data, optimizer_unlearn)
-unlearn_trainer.train()
+if "gnndelete" in args.unlearning_model:
+    unlearn_model = GCNDelete(poisoned_data.num_features, args.hidden_dim, poisoned_data.num_classes, mask_1hop=poisoned_data.sdf_node_1hop_mask, mask_2hop=poisoned_data.sdf_node_2hop_mask)
+    
+    # copy the weights from the poisoned model
+    unlearn_model.load_state_dict(poisoned_model.state_dict())
+    
+    optimizer_unlearn= utils.get_optimizer(args, unlearn_model)
+    unlearn_trainer= utils.get_trainer(args, unlearn_model, poisoned_data, optimizer_unlearn)
+    unlearn_trainer.train()
+else:
+    optimizer_unlearn= utils.get_optimizer(args, poisoned_model)
+    unlearn_trainer= utils.get_trainer(args, poisoned_model, poisoned_data, optimizer_unlearn)
+    unlearn_trainer.train()

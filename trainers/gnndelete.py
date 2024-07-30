@@ -109,12 +109,14 @@ class GNNDeleteNodeembTrainer(Trainer):
         for epoch in trange(self.args.unlearning_epochs, desc='Unlearning'):
             self.model.train()
 
-            neg_edge = neg_edge_index = negative_sampling(
-            edge_index=self.data.train_pos_edge_index,
-            num_nodes=self.data.num_nodes,
-            num_neg_samples=self.data.df_mask.sum())
+            neg_edge = negative_sampling(
+                edge_index=self.data.train_pos_edge_index,
+                num_nodes=self.data.num_nodes,
+                num_neg_samples=self.data.df_mask.sum())
 
             start_time = time.time()
+            
+            # Forward pass
             z1, z2 = self.model(self.data.x, self.data.train_pos_edge_index[:, self.data.sdf_mask], return_all_emb=True)
 
             pos_edge = self.data.train_pos_edge_index[:, self.data.df_mask]
@@ -190,6 +192,7 @@ class GNNDeleteNodeembTrainer(Trainer):
             
             end_time = time.time()
             epoch_time = end_time - start_time
+
 
         train_acc, msc_rate, f1 = self.evaluate(is_dr=True)
         print(f'Train Acc: {train_acc}, Misclassification: {msc_rate},  F1 Score: {f1}')
