@@ -7,6 +7,12 @@ from torch_geometric.datasets import CitationFull, Coauthor, Amazon, Planetoid, 
 from ogb.linkproppred import PygLinkPropPredDataset
 import torch_geometric.transforms as T
 
+from trainers.gnndelete import GNNDeleteNodeembTrainer
+from trainers.gnndelete_ni import GNNDeleteNITrainer
+from trainers.gradient_ascent import GradientAscentTrainer
+from trainers.gif import GIFTrainer
+from trainers.base import Trainer
+
 def get_original_data(d):
     data_dir = './datasets'
     if d in ['Cora', 'PubMed', 'DBLP']:
@@ -82,3 +88,36 @@ def find_masks(data, poisoned_indices, attack_type="label"):
         data.df_mask[poisoned_indices] = True
         data.dr_mask = ~data.df_mask
     get_sdf_masks(data)
+
+
+def get_trainer(args, poisoned_model, poisoned_data, optimizer_unlearn):
+    if(args.unlearning_model=="original"):
+        return Trainer(poisoned_model, poisoned_data, optimizer_unlearn, args)
+    elif(args.unlearning_model=="gradient_ascent"):
+        return GradientAscentTrainer(poisoned_model, poisoned_data, optimizer_unlearn, args)
+    elif(args.unlearning_model=="gnndelete"):
+        return GNNDeleteNodeembTrainer(poisoned_model, poisoned_data, optimizer_unlearn, args)
+    elif(args.unlearning_model=="gnndelete_ni"):
+        return GNNDeleteNITrainer(poisoned_model, poisoned_data, optimizer_unlearn, args)
+    elif(args.unlearning_model=="gif"):
+        return GIFTrainer(poisoned_model, poisoned_data, optimizer_unlearn, args)
+
+def get_optimizer(args, poisoned_model):
+    if 'gnndelete' in args.unlearning_model:
+        parameters_to_optimize = [
+            {'params': [p for n, p in poisoned_model.named_parameters() if 'del' in n], 'weight_decay': args.weight_decay}
+        ]
+        print('parameters_to_optimize', [n for n, p in poisoned_model.named_parameters() if 'del' in n])
+        if 'layerwise' in args.loss_type:
+            optimizer1 = torch.optim.Adam(poisoned_model.deletion1.parameters(), lr=args.unlearn_lr)
+            optimizer2 = torch.optim.Adam(poisoned_model.deletion2.parameters(), lr=args.unlearn_lr)
+            optimizer_unlearn = [optimizer1, optimizer2]
+        else:
+            optimizer_unlearn = torch.optim.Adam(parameters_to_optimize, lr=args.unlearn_lr)
+    else:
+        parameters_to_optimize = [
+            {'params': [p for n, p in poisoned_model.named_parameters()], 'weight_decay': args.weight_decay}
+        ]
+        print('parameters_to_optimize', [n for n, p in poisoned_model.named_parameters()])
+        optimizer_unlearn = torch.optim.Adam(parameters_to_optimize, lr=args.unlearn_lr)
+    return optimizer_unlearn

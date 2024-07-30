@@ -88,21 +88,7 @@ class GNNDeleteNodeembTrainer(Trainer):
         self.args= args
 
     def train(self):
-        # if 'ogbl' in self.args.dataset:
-        #     args.eval_on_cpu = False
-        #     return self.train_fullbatch(model, data, optimizer, args, logits_ori, attack_model_all, attack_model_sub)
-        # else:
         return self.train_fullbatch()
-
-    def misclassification_rate(self, true_labels, pred_labels, class1 = 0, class2 = 1):
-        class1_to_class2 = ((true_labels == class1) & (pred_labels == class2)).sum().item()
-        class2_to_class1 = ((true_labels == class2) & (pred_labels == class1)).sum().item()
-
-        total_class1 = (true_labels == class1).sum().item()
-        total_class2 = (true_labels == class2).sum().item()
-
-        misclassification_rate = (class1_to_class2 + class2_to_class1) / (total_class1 + total_class2)
-        return misclassification_rate
 
     def train_fullbatch(self):
         self.model = self.model.to(device)

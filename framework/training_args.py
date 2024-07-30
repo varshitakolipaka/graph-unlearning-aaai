@@ -78,7 +78,6 @@ def parse_args():
 
     # Scrub
     parser.add_argument('--unlearn_iters', type=int, default=50, help='number of epochs to train (default: 31)')
-    # parser.add_argument('--unlearn_lr', type=float, default=1e-2, help='learning rate (default: 0.025)')
     parser.add_argument('--kd_T', type=float, default=4, help='Knowledge distilation temperature for SCRUB')
     parser.add_argument('--scrubAlpha', type=float, default=1, help='KL from og_model constant for SCRUB, higher incentivizes closeness to ogmodel')
     parser.add_argument('--msteps', type=int, default=15, help='Maximization steps on forget set for SCRUB')

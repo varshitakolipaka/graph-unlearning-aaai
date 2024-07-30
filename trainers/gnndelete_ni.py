@@ -1,12 +1,10 @@
 import os, math
 import copy
 import time
-import wandb
 from tqdm import tqdm, trange
 import torch
 import torch.nn as nn
 from torch_geometric.utils import negative_sampling, k_hop_subgraph
-from torch_geometric.loader import GraphSAINTRandomWalkSampler
 from .base import Trainer
 import torch.nn.functional as F
 
@@ -99,12 +97,7 @@ class GNNDeleteNITrainer(Trainer):
         self.args= args
 
     def train(self):
-        # args.alpha = 0.0
-        # if 'ogbl' in self.args.dataset:
-        #     args.eval_on_cpu = False
-        #     return self.train_fullbatch(model, data, self.optimizer, args, logits_ori, attack_model_all, attack_model_sub)
-
-        # else:
+        self.args.alpha = 0.0
         return self.train_fullbatch()
 
     def train_fullbatch(self):

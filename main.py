@@ -3,8 +3,6 @@ from framework import utils
 from framework.training_args import parse_args
 from models.deletion import GCNDelete
 from trainers.base import Trainer
-from trainers.gnndelete import GNNDeleteNodeembTrainer
-from trainers.gnndelete_ni import GNNDeleteNITrainer
 from attacks.edge_attack import edge_attack_random_nodes
 from attacks.label_flip import label_flip_attack
 
@@ -33,9 +31,7 @@ poisoned_trainer = Trainer(poisoned_model, poisoned_data, optimizer)
 poisoned_trainer.train()
 
 print("==UNLEARNING==")
+optimizer_unlearn= utils.get_optimizer(args, poisoned_model)
 utils.find_masks(poisoned_data, poisoned_indices, attack_type=args.attack_type)
-optimizer1 = torch.optim.Adam(poisoned_model.deletion1.parameters(), lr=0.025)
-optimizer2 = torch.optim.Adam(poisoned_model.deletion2.parameters(), lr=0.025)
-optimizer_unlearn = [optimizer1, optimizer2]
-gnndelete= GNNDeleteNITrainer(poisoned_model, poisoned_data, optimizer_unlearn, args)
-gnndelete.train()
+unlearn_trainer= utils.get_trainer(args, poisoned_model, poisoned_data, optimizer_unlearn)
+unlearn_trainer.train()
