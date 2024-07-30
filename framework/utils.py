@@ -10,7 +10,7 @@ import torch_geometric.transforms as T
 from trainers.gnndelete import GNNDeleteNodeembTrainer
 from trainers.gnndelete_ni import GNNDeleteNITrainer
 from trainers.gradient_ascent import GradientAscentTrainer
-from trainers.gif import GIFTrainer
+# from trainers.gif import GIFTrainer
 from trainers.base import Trainer
 
 def get_original_data(d):
@@ -71,7 +71,7 @@ def get_sdf_masks(data):
 
 
 def find_masks(data, poisoned_indices, attack_type="label"):
-    if attack_type == "label":
+    if attack_type == "label" or attack_type == "random":
         data.df_mask = torch.zeros(data.edge_index.shape[1], dtype=torch.bool)
         data.dr_mask = torch.zeros(data.edge_index.shape[1], dtype=torch.bool)
         for node in poisoned_indices:
@@ -90,17 +90,20 @@ def find_masks(data, poisoned_indices, attack_type="label"):
     get_sdf_masks(data)
 
 
-def get_trainer(args, poisoned_model, poisoned_data, optimizer_unlearn):
-    if(args.unlearning_model=="original"):
-        return Trainer(poisoned_model, poisoned_data, optimizer_unlearn, args)
-    elif(args.unlearning_model=="gradient_ascent"):
-        return GradientAscentTrainer(poisoned_model, poisoned_data, optimizer_unlearn, args)
-    elif(args.unlearning_model=="gnndelete"):
-        return GNNDeleteNodeembTrainer(poisoned_model, poisoned_data, optimizer_unlearn, args)
-    elif(args.unlearning_model=="gnndelete_ni"):
-        return GNNDeleteNITrainer(poisoned_model, poisoned_data, optimizer_unlearn, args)
-    elif(args.unlearning_model=="gif"):
-        return GIFTrainer(poisoned_model, poisoned_data, optimizer_unlearn, args)
+def get_trainer(args, poisoned_model, poisoned_data, optimizer_unlearn) -> Trainer:
+    
+    trainer_map = {
+        "original": Trainer,
+        "gradient_ascent": GradientAscentTrainer,
+        "gnndelete": GNNDeleteNodeembTrainer,
+        "gnndelete_ni": GNNDeleteNITrainer,
+        # "gif": GIFTrainer,
+    }
+    
+    if args.unlearning_model in trainer_map:
+        return trainer_map[args.unlearning_model](poisoned_model, poisoned_data, optimizer_unlearn, args)
+    else:
+        raise NotImplementedError(f"{args.unlearning_model} not implemented yet")
 
 def get_optimizer(args, poisoned_model):
     if 'gnndelete' in args.unlearning_model:

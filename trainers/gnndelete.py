@@ -187,7 +187,7 @@ class GNNDeleteNodeembTrainer(Trainer):
 
             else:
                 raise NotImplementedError
-
+            
             end_time = time.time()
             epoch_time = end_time - start_time
 
