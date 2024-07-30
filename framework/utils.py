@@ -8,7 +8,7 @@ from ogb.linkproppred import PygLinkPropPredDataset
 import torch_geometric.transforms as T
 
 def get_original_data(d):
-    data_dir = './data'
+    data_dir = './datasets'
     if d in ['Cora', 'PubMed', 'DBLP']:
         dataset = CitationFull(os.path.join(data_dir, d), d, transform=T.NormalizeFeatures())
     elif d in ['Cora_p', 'PubMed_p', 'Citeseer_p']:
