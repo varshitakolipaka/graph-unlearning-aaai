@@ -15,7 +15,7 @@ device = torch.device('cuda') if torch.cuda.is_available() else torch.device('cp
 # dataset
 print("==TRAINING==")
 clean_data= utils.get_original_data(args.dataset)
-if args.unlearning_model=="gnndelete":
+if "gnndelete" in args.unlearning_model:
     clean_model = GCNDelete(clean_data.num_features, args.hidden_dim, clean_data.num_classes)
 else:
     clean_model = GCN(clean_data.num_features, args.hidden_dim, clean_data.num_classes)
@@ -35,7 +35,7 @@ elif args.attack_type=="random":
     poisoned_indices = torch.randperm(clean_data.num_nodes)[:int(clean_data.num_nodes*args.df_size)]
 poisoned_data= poisoned_data.to(device)
 
-if args.unlearning_model=="gnndelete":
+if "gnndelete" in args.unlearning_model:
     poisoned_model = GCNDelete(poisoned_data.num_features, args.hidden_dim, poisoned_data.num_classes)
 else:
     poisoned_model = GCN(poisoned_data.num_features, args.hidden_dim, poisoned_data.num_classes)
