@@ -1,14 +1,17 @@
 import os, math
 import copy
 import time
+import wandb
 from tqdm import tqdm, trange
 import torch
 import torch.nn as nn
-from torch_geometric.utils import negative_sampling
-import torch.nn.functional as F
+from torch_geometric.utils import negative_sampling, k_hop_subgraph
+from torch_geometric.loader import GraphSAINTRandomWalkSampler
 from .base import Trainer
+import torch.nn.functional as F
 
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+
 
 def BoundedKLDMean(logits, truth):
     return 1 - torch.exp(-F.kl_div(F.log_softmax(logits, -1), truth.softmax(-1), None, None, 'batchmean'))
@@ -62,6 +65,13 @@ def RBFCKA(X, Y, sigma=None):
 
 
 def get_loss_fct(name):
+    # if name == 'mse':
+    #     loss_fct = nn.MSELoss(reduction='mean')
+    # elif name == 'kld':
+    #     loss_fct = BoundedKLDMean
+    # elif name == 'cosine':
+    #     loss_fct = CosineDistanceMean
+
     if name == 'kld_mean':
         loss_fct = BoundedKLDMean
     elif name == 'kld_sum':
@@ -80,76 +90,90 @@ def get_loss_fct(name):
         loss_fct = RBFCKA
     else:
         raise NotImplementedError
+
     return loss_fct
 
-class GNNDeleteNodeembTrainer(Trainer):
+class GNNDeleteNITrainer(Trainer):
     def __init__(self, model, data, optimizer, args):
         super().__init__(model, data, optimizer)
         self.args= args
 
     def train(self):
+        # args.alpha = 0.0
         # if 'ogbl' in self.args.dataset:
         #     args.eval_on_cpu = False
-        #     return self.train_fullbatch(model, data, optimizer, args, logits_ori, attack_model_all, attack_model_sub)
+        #     return self.train_fullbatch(model, data, self.optimizer, args, logits_ori, attack_model_all, attack_model_sub)
+
         # else:
         return self.train_fullbatch()
-
-    def misclassification_rate(self, true_labels, pred_labels, class1 = 0, class2 = 1):
-        class1_to_class2 = ((true_labels == class1) & (pred_labels == class2)).sum().item()
-        class2_to_class1 = ((true_labels == class2) & (pred_labels == class1)).sum().item()
-
-        total_class1 = (true_labels == class1).sum().item()
-        total_class2 = (true_labels == class2).sum().item()
-
-        misclassification_rate = (class1_to_class2 + class2_to_class1) / (total_class1 + total_class2)
-        return misclassification_rate
 
     def train_fullbatch(self):
         self.model = self.model.to(device)
         self.data = self.data.to(device)
+        # early_stopping = EarlyStopping(patience=30, verbose=True, delta=1e-4, path=args.checkpoint_dir, trace_func=tqdm.write)
 
         best_metric = 0
         loss_fct = get_loss_fct(self.args.loss_fct)
+
         non_df_node_mask = torch.ones(self.data.x.shape[0], dtype=torch.bool, device=self.data.x.device)
         non_df_node_mask[self.data.directed_df_edge_index.flatten().unique()] = False
 
         self.data.sdf_node_1hop_mask_non_df_mask = self.data.sdf_node_1hop_mask & non_df_node_mask
         self.data.sdf_node_2hop_mask_non_df_mask = self.data.sdf_node_2hop_mask & non_df_node_mask
 
+
+        # Original node embeddings
         with torch.no_grad():
-            z1_ori, z2_ori = self.model.get_original_embeddings(self.data.x, self.data.train_pos_edge_index, return_all_emb=True)
+            z1_ori, z2_ori = self.model.get_original_embeddings(self.data.x, self.data.train_pos_edge_index[:, self.data.dr_mask], return_all_emb=True)
+
+
 
 
         for epoch in trange(self.args.unlearning_epochs, desc='Unlearning'):
             self.model.train()
 
-            neg_edge = neg_edge_index = negative_sampling(
-            edge_index=self.data.train_pos_edge_index,
-            num_nodes=self.data.num_nodes,
-            num_neg_samples=self.data.df_mask.sum())
-
             start_time = time.time()
-            z1, z2 = self.model(self.data.x, self.data.train_pos_edge_index[:, self.data.sdf_mask], return_all_emb=True)
+            z1, z2 = self.model(self.data.x, self.data.train_pos_edge_index[:, self.data.dr_mask], return_all_emb=True)
 
+            neg_edge = neg_edge_index = negative_sampling(
+                edge_index=self.data.train_pos_edge_index,
+                num_nodes=self.data.num_nodes,
+                num_neg_samples=self.data.df_mask.sum())
+
+            # Randomness
             pos_edge = self.data.train_pos_edge_index[:, self.data.df_mask]
+            # neg_edge = torch.randperm(data.num_nodes)[:pos_edge.view(-1).shape[0]].view(2, -1)
+
             embed1 = torch.cat([z1[pos_edge[0]], z1[pos_edge[1]]], dim=0)
             embed1_ori = torch.cat([z1_ori[neg_edge[0]], z1_ori[neg_edge[1]]], dim=0)
+
             embed2 = torch.cat([z2[pos_edge[0]], z2[pos_edge[1]]], dim=0)
             embed2_ori = torch.cat([z2_ori[neg_edge[0]], z2_ori[neg_edge[1]]], dim=0)
+
             loss_r1 = loss_fct(embed1, embed1_ori)
             loss_r2 = loss_fct(embed2, embed2_ori)
+
+            # Local causality
             loss_l1 = loss_fct(z1[self.data.sdf_node_1hop_mask_non_df_mask], z1_ori[self.data.sdf_node_1hop_mask_non_df_mask])
             loss_l2 = loss_fct(z2[self.data.sdf_node_2hop_mask_non_df_mask], z2_ori[self.data.sdf_node_2hop_mask_non_df_mask])
 
 
+            # Total loss
+            '''both_all, both_layerwise, only2_layerwise, only2_all, only1'''
             if self.args.loss_type == 'both_all':
                 loss_l = loss_l1 + loss_l2
                 loss_r = loss_r1 + loss_r2
+
+                #### alpha * loss_r + (1 - alpha) * loss_l
                 loss = self.args.alpha * loss_r + (1 - self.args.alpha) * loss_l
+
+                #### loss_r + lambda * loss_l
+                # loss = loss_l + self.args.alpha * loss_r
                 loss.backward()
                 self.optimizer.step()
 
             elif self.args.loss_type == 'both_layerwise':
+                #### alpha * loss_r + (1 - alpha) * loss_l
                 loss_l = loss_l1 + loss_l2
                 loss_r = loss_r1 + loss_r2
 
@@ -172,7 +196,13 @@ class GNNDeleteNodeembTrainer(Trainer):
                 loss_r = loss_r1 + loss_r2
 
                 self.optimizer[0].zero_grad()
+
+                #### alpha * loss_r + (1 - alpha) * loss_l
                 loss2 = self.args.alpha * loss_r2 + (1 - self.args.alpha) * loss_l2
+
+                #### loss_r + lambda * loss_l
+                # loss2 = loss_r2 + self.args.alpha * loss_l2
+
                 loss2.backward()
                 self.optimizer[1].step()
                 self.optimizer[1].zero_grad()

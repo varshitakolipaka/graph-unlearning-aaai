@@ -16,6 +16,7 @@ def parse_args():
     # parser.add_argument('--gnn', type=str, default='gcn', help='GNN architecture')
     # parser.add_argument('--in_dim', type=int, default=128, help='input dimension')
     parser.add_argument('--hidden_dim', type=int, default=256, help='hidden dimension')
+    parser.add_argument('--unlearning_epochs', type=int, default=50, help='number of epochs to unlearn for')
     # parser.add_argument('--out_dim', type=int, default=64, help='output dimension')
     parser.add_argument('--request', type=str, default='edge', help='unlearning request', choices=['node', 'edge'])
 
