@@ -56,6 +56,11 @@ if "gnndelete" in args.unlearning_model:
     optimizer_unlearn= utils.get_optimizer(args, unlearn_model)
     unlearn_trainer= utils.get_trainer(args, unlearn_model, poisoned_data, optimizer_unlearn)
     unlearn_trainer.train()
+elif "retrain" in args.unlearning_model:
+    unlearn_model = GCN(poisoned_data.num_features, args.hidden_dim, poisoned_data.num_classes)
+    optimizer_unlearn= utils.get_optimizer(args, unlearn_model)
+    unlearn_trainer= utils.get_trainer(args, unlearn_model, poisoned_data, optimizer_unlearn)
+    unlearn_trainer.train()
 else:
     optimizer_unlearn= utils.get_optimizer(args, poisoned_model)
     unlearn_trainer= utils.get_trainer(args, poisoned_model, poisoned_data, optimizer_unlearn)
