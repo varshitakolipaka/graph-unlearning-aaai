@@ -33,8 +33,15 @@ def edge_attack_random_nodes(data, epsilon, seed):
                 to_arr.append(n1)
                 from_arr.append(n2)
                 existing_edges.add(edge)
+
+                #forward add
                 poisoned_nodes1.append(n1)
                 poisoned_nodes2.append(n2)
+
+                #backward add
+                poisoned_nodes1.append(n2)
+                poisoned_nodes2.append(n1)
+
                 poisoned_edges.append(edge)
                 count += 1
 

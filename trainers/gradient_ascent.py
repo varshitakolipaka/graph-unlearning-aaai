@@ -44,7 +44,7 @@ class GradientAscentTrainer(Trainer):
                 num_neg_samples=self.data.df_mask.sum())
 
             z = self.model(self.data.x, self.data.train_pos_edge_index)
-            logits = self.model.decode(z, self.data.train_pos_edge_index[:, self.data.df_mask])
+            logits = self.model.decode(z, self.data.train_pos_edge_index[:, self.data.df_mask], neg_edge_index=neg_edge_index)
             label = torch.ones_like(logits, dtype=torch.float, device=device)
             loss = -F.binary_cross_entropy_with_logits(logits, label)
 
