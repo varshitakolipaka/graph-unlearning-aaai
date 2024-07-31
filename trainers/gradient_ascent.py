@@ -27,16 +27,15 @@ class GradientAscentTrainer(Trainer):
         return self.train_fullbatch()
 
     def train_fullbatch(self):
+        start_time = time.time()
         self.model = self.model.to(device)
         self.data = self.data.to(device)
 
-        start_time = time.time()
         best_metric = 0
 
         for epoch in trange(self.args.unlearning_epochs, desc='Unlearning'):
             self.model.train()
-
-            start_time = time.time()
+            
             # Positive and negative sample
             neg_edge_index = negative_sampling(
                 edge_index=self.data.train_pos_edge_index[:, self.data.df_mask],
@@ -53,8 +52,9 @@ class GradientAscentTrainer(Trainer):
             self.optimizer.step()
             self.optimizer.zero_grad()
 
-            end_time = time.time()
-            epoch_time = end_time - start_time
+        end_time = time.time()
 
         train_acc, msc_rate, f1 = self.evaluate(is_dr=True)
         print(f'Train Acc: {train_acc}, Misclassification: {msc_rate},  F1 Score: {f1}')
+        
+        return train_acc, msc_rate, end_time - start_time

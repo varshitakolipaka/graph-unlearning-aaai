@@ -6,6 +6,10 @@ __pycache__/
 # C extensions
 *.so
 
+# SQL
+graph_unlearning_hp_tuning.db
+graph_unlearning_hp_tuning_2.db
+
 # Distribution / packaging
 .Python
 build/

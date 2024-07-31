@@ -26,6 +26,8 @@ class Trainer:
         train_acc, msc_rate, f1 = self.evaluate()
         print(f'Train Acc: {train_acc}, Misclassification: {msc_rate},  F1 Score: {f1}')
 
+        return train_acc, msc_rate
+
     def misclassification_rate(self, true_labels, pred_labels, class1 = 0, class2 = 1):
         class1_to_class2 = ((true_labels == class1) & (pred_labels == class2)).sum().item()
         class2_to_class1 = ((true_labels == class2) & (pred_labels == class1)).sum().item()
@@ -36,14 +38,15 @@ class Trainer:
 
     def evaluate(self, is_dr=False):
         self.model.eval()
+        
         with torch.no_grad():
             if(is_dr):
                 z = F.log_softmax(self.model(self.data.x, self.data.edge_index[:, self.data.dr_mask]), dim=1)
             else:
                 z = F.log_softmax(self.model(self.data.x, self.data.edge_index), dim=1)
-            loss = F.nll_loss(z[self.data.val_mask], self.data.y[self.data.val_mask]).cpu().item()
-            pred = torch.argmax(z[self.data.val_mask], dim=1).cpu()
-            dt_acc = accuracy_score(self.data.y[self.data.val_mask].cpu(), pred)
-            dt_f1 = f1_score(self.data.y[self.data.val_mask].cpu(), pred, average='micro')
-            msc_rate = self.misclassification_rate(self.data.y[self.data.val_mask].cpu(), pred)
+            loss = F.nll_loss(z[self.data.test_mask], self.data.y[self.data.test_mask]).cpu().item()
+            pred = torch.argmax(z[self.data.test_mask], dim=1).cpu()
+            dt_acc = accuracy_score(self.data.y[self.data.test_mask].cpu(), pred)
+            dt_f1 = f1_score(self.data.y[self.data.test_mask].cpu(), pred, average='micro')
+            msc_rate = self.misclassification_rate(self.data.y[self.data.test_mask].cpu(), pred)
         return dt_acc, msc_rate, dt_f1

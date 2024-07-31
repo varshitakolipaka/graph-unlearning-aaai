@@ -101,6 +101,9 @@ class GNNDeleteNITrainer(Trainer):
         return self.train_fullbatch()
 
     def train_fullbatch(self):
+        
+        start_time = time.time()
+        
         self.model = self.model.to(device)
         self.data = self.data.to(device)
         # early_stopping = EarlyStopping(patience=30, verbose=True, delta=1e-4, path=args.checkpoint_dir, trace_func=tqdm.write)
@@ -121,11 +124,9 @@ class GNNDeleteNITrainer(Trainer):
 
 
 
-
         for epoch in trange(self.args.unlearning_epochs, desc='Unlearning'):
             self.model.train()
 
-            start_time = time.time()
             z1, z2 = self.model(self.data.x, self.data.train_pos_edge_index[:, self.data.dr_mask], return_all_emb=True)
 
             neg_edge = neg_edge_index = negative_sampling(
@@ -225,8 +226,8 @@ class GNNDeleteNITrainer(Trainer):
             else:
                 raise NotImplementedError
 
-            end_time = time.time()
-            epoch_time = end_time - start_time
-
+        end_time = time.time()
         train_acc, msc_rate, f1 = self.evaluate(is_dr=True)
         print(f'Train Acc: {train_acc}, Misclassification: {msc_rate},  F1 Score: {f1}')
+        
+        return train_acc, msc_rate, end_time - start_time

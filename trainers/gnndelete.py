@@ -91,6 +91,8 @@ class GNNDeleteNodeembTrainer(Trainer):
         return self.train_fullbatch()
 
     def train_fullbatch(self):
+        start_time = time.time()
+        
         self.model = self.model.to(device)
         self.data = self.data.to(device)
 
@@ -114,7 +116,7 @@ class GNNDeleteNodeembTrainer(Trainer):
                 num_nodes=self.data.num_nodes,
                 num_neg_samples=self.data.df_mask.sum())
 
-            start_time = time.time()
+            # start_time = time.time()
             
             # Forward pass
             z1, z2 = self.model(self.data.x, self.data.train_pos_edge_index[:, self.data.sdf_mask], return_all_emb=True)
@@ -190,9 +192,10 @@ class GNNDeleteNodeembTrainer(Trainer):
             else:
                 raise NotImplementedError
             
-            end_time = time.time()
-            epoch_time = end_time - start_time
-
-
+            # end_time = time.time()
+            # epoch_time = end_time - start_time
+        end_time = time.time()
         train_acc, msc_rate, f1 = self.evaluate(is_dr=True)
         print(f'Train Acc: {train_acc}, Misclassification: {msc_rate},  F1 Score: {f1}')
+        
+        return train_acc, msc_rate, end_time - start_time
