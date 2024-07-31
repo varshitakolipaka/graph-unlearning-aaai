@@ -59,5 +59,5 @@ def edge_attack_random_nodes(data, epsilon, seed):
         if edge in poisoned_edges:
             added_edge_indices.append(i)
     data.edge_index= augmented_edge
-    return data, torch.tensor(added_edge_indices, dtype=torch.long)
+    return data, torch.tensor(added_edge_indices, dtype=torch.long), torch.tensor(to_arr , dtype=torch.long), torch.tensor(from_arr , dtype=torch.long)
     # torch.tensor(list(set(poisoned_nodes1)) , dtype=torch.long)

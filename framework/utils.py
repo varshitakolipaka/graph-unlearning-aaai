@@ -94,7 +94,7 @@ def find_masks(data, poisoned_indices, attack_type="label"):
 
 
 def get_trainer(args, poisoned_model, poisoned_data, optimizer_unlearn) -> Trainer:
-    
+
     trainer_map = {
         "original": Trainer,
         "gradient_ascent": GradientAscentTrainer,
@@ -104,7 +104,7 @@ def get_trainer(args, poisoned_model, poisoned_data, optimizer_unlearn) -> Train
         "utu": UtUTrainer,
         "contrastive": ContrastiveUnlearnTrainer
     }
-    
+
     if args.unlearning_model in trainer_map:
         return trainer_map[args.unlearning_model](poisoned_model, poisoned_data, optimizer_unlearn, args)
     else:
@@ -129,3 +129,13 @@ def get_optimizer(args, poisoned_model):
         print('parameters_to_optimize', [n for n, p in poisoned_model.named_parameters()])
         optimizer_unlearn = torch.optim.Adam(parameters_to_optimize, lr=args.unlearn_lr)
     return optimizer_unlearn
+
+def cosine_similarity(gcn_clean, graph_clean, node_poisoned_1, node_poisoned_2):
+    cos = torch.nn.CosineSimilarity(dim=1, eps=1e-6)
+    with torch.no_grad():
+        x_clean = gcn_clean(graph_clean.x, graph_clean.edge_index)
+        clean_repr_1 = x_clean[node_poisoned_1]
+        clean_repr_2 = x_clean[node_poisoned_2]
+        cos_sim = cos(clean_repr_1, clean_repr_2)
+        cos1 = torch.mean(cos_sim).item()
+    return cos1

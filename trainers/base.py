@@ -25,6 +25,7 @@ class Trainer:
                 acc, msc_rate, f1 = self.evaluate()
         train_acc, msc_rate, f1 = self.evaluate()
         print(f'Train Acc: {train_acc}, Misclassification: {msc_rate},  F1 Score: {f1}')
+        return train_acc, msc_rate, f1
 
     def misclassification_rate(self, true_labels, pred_labels, class1 = 0, class2 = 1):
         class1_to_class2 = ((true_labels == class1) & (pred_labels == class2)).sum().item()

@@ -61,7 +61,7 @@ class GIFTrainer(Trainer):
         grad2 = grad(loss2, model_params, retain_graph=True, create_graph=True)
 
         return (grad_all, grad1, grad2)
-    
+
     def gif_approxi(self, args, model, res_tuple):
         '''
         res_tuple == (grad_all, grad1, grad2)
@@ -90,7 +90,7 @@ class GIFTrainer(Trainer):
                 param.add_(update)  # In-place update of the model parameters
 
         return time.time() - start_time, model
-    
+
     def hvps(self, grad_all, model_params, h_estimate):
         element_product = 0
         for grad_elem, v_elem in zip(grad_all, h_estimate):
@@ -98,7 +98,7 @@ class GIFTrainer(Trainer):
 
         return_grads = grad(element_product, model_params, create_graph=True)
         return return_grads
-    
+
     def train(self, logits_ori=None, attack_model=None, attack_model_sub=None):
         # model.train()
         self.model, self.data = self.model.to(device), self.data.to(device)
@@ -111,3 +111,5 @@ class GIFTrainer(Trainer):
 
         train_acc, msc_rate, f1 = self.evaluate(is_dr = True)
         print(f'Train Acc: {train_acc}, Misclassification: {msc_rate},  F1 Score: {f1}')
+        results= (train_acc, msc_rate, f1)
+        return self.model, self.data, results

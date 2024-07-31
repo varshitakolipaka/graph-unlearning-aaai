@@ -34,9 +34,9 @@ class ContrastiveUnlearnTrainer(Trainer):
     def contrastive_loss(self, pos_dist, neg_dist, margin, mask):
         # take the retained mask into account
         mask_cpu = mask.cpu()
-    
-        pos_dist = pos_dist[mask_cpu]
-        neg_dist = neg_dist[mask_cpu]
+
+        pos_dist = pos_dist[mask_cpu].type(torch.float)
+        neg_dist = neg_dist[mask_cpu].type(torch.float)
 
         pos_loss = torch.mean(pos_dist**2)
         neg_loss = torch.mean(F.relu(margin - neg_dist) ** 2)
@@ -176,22 +176,22 @@ class ContrastiveUnlearnTrainer(Trainer):
         return pos_dist, neg_dist
 
     def train_node(self):
-        
+
         # attacked idx must be a list of nodes
         model = self.model
         data = self.data
         args = self.args
         attacked_idx = self.attacked_idx
         optimizer = self.optimizer
-        
+
         model = model.to(device)
         data = data.to(device)
-        
+
         # set a mask for the attacked nodes
         data.retain_mask = data.train_mask.clone()
         data.retain_mask[attacked_idx] = False
         attacked_set = set(attacked_idx.tolist())
-        
+
         for epoch in trange(args.contrastive_epochs_1, desc="Unlearning 1"):
             pos_dist, neg_dist = self.get_distances(model, data, attacked_set)
             loss = self.unlearn_loss(
@@ -208,7 +208,7 @@ class ContrastiveUnlearnTrainer(Trainer):
             optimizer.step()
 
             print(f"Epoch {epoch+1}, Loss: {loss:.4f}", end="\r")
-            
+
         for epoch in trange(args.contrastive_epochs_2, desc="Unlearning 2"):
             pos_dist, neg_dist = self.get_distances(model, data, attacked_set)
             loss = self.unlearn_loss(
@@ -225,8 +225,8 @@ class ContrastiveUnlearnTrainer(Trainer):
             optimizer.step()
 
             print(f"Epoch {epoch+1}, Loss: {loss:.4f}", end="\r")
-        
-    
+
+
     def train_edge(self):
         # attack idx must be a list of tuples (u,v)
         model = self.model
@@ -234,7 +234,7 @@ class ContrastiveUnlearnTrainer(Trainer):
         args = self.args
         attacked_idx = self.attacked_idx
         optimizer = self.optimizer
-        
+
         for epoch in trange(args.contrastive_epochs_1, desc="Unlearning 1"):
             pos_dist, neg_dist = self.get_distances_edge(
                 model, data, attacked_idx
@@ -253,7 +253,7 @@ class ContrastiveUnlearnTrainer(Trainer):
             optimizer.step()
 
             print(f"Epoch {epoch+1}, Loss: {loss:.4f}", end="\r")
-            
+
         for epoch in trange(args.contrastive_epochs_2, desc="Unlearning 2"):
             pos_dist, neg_dist = self.get_distances(model, data, attacked_idx)
             loss = self.unlearn_loss(
@@ -270,11 +270,11 @@ class ContrastiveUnlearnTrainer(Trainer):
             optimizer.step()
 
             print(f"Epoch {epoch+1}, Loss: {loss:.4f}", end="\r")
-    
+
     def train(self):
-        
+
         # attack_idx is an extra needed parameter which is defined above in both node and edge functions
-        
+
         if self.args.request == "node":
             self.train_node()
         elif self.args.request == "edge":
@@ -282,3 +282,5 @@ class ContrastiveUnlearnTrainer(Trainer):
 
         train_acc, msc_rate, f1 = self.evaluate(is_dr=True)
         print(f'Train Acc: {train_acc}, Misclassification: {msc_rate},  F1 Score: {f1}')
+        results= (train_acc, msc_rate, f1)
+        return self.model, self.data, results
