@@ -47,21 +47,16 @@ class ContrastiveUnlearnTrainer(Trainer):
     def unlearn_loss(
         self, model, data, pos_dist, neg_dist, margin=1.0, lmda = 0.8
     ):
-        try:
-            mask = data.retain_mask
-        except:
-            mask = data.train_mask
+        if lmda == 1:
+            return self.task_loss(model, data)
         return lmda * self.task_loss(model, data) + (1 - lmda) * self.contrastive_loss(
-            pos_dist, neg_dist, margin, mask
+            pos_dist, neg_dist, margin, data.retain_mask
         )
 
 
-    def calc_distance(self, model, data, node, positive_samples, negative_samples):
+    def calc_distance(self, embeddings, node, positive_samples, negative_samples):
         # Contrastive loss
-        embeddings = model.conv1(data.x, data.edge_index)
-        embeddings = F.relu(embeddings)
-        embeddings = F.dropout(embeddings, training=model.training)
-        embeddings = model.conv2(embeddings, data.edge_index)
+
 
         anchor = embeddings[node].unsqueeze(0)
         positive = embeddings[positive_samples]
@@ -80,36 +75,59 @@ class ContrastiveUnlearnTrainer(Trainer):
 
         return pos_dist, neg_dist
 
+    def store_subset(self, data):
+        # store the subset of the idx in a dictionary
+        subset_dict = {}
+        for idx in range(len(data.train_mask)):
+            if data.retain_mask[idx]:
+                subset, edge_index, _, _ = k_hop_subgraph(idx, 2, data.edge_index)
+                subset_set = set(subset.tolist())
+                subset_dict[idx] = subset_set
+        self.subset_dict = subset_dict
+    
+    def store_edge_index_for_poison(self, data, idx):
+        edge_index_for_poison_dict = {}
+        for idx in range(len(data.train_mask)):
+            if data.retain_mask[idx]:
+                _, edge_index_for_poison, _, _ = k_hop_subgraph(
+                    idx, 1, data.edge_index
+                )
+                edge_index_for_poison_dict[idx] = edge_index_for_poison
+        self.edge_index_for_poison_dict = edge_index_for_poison_dict
 
     def get_distances(self, model, data, attacked_set):
         # get pos, neg distances for nodes beforehand
         pos_dist = []
         neg_dist = []
-        for idx in range(len(data.train_mask)):
+        
+        embeddings = model.conv1(data.x, data.edge_index)
+        embeddings = F.relu(embeddings)
+        embeddings = F.dropout(embeddings, training=model.training)
+        embeddings = model.conv2(embeddings, data.edge_index)
+        
+        # Precompute the size of pos_dist and neg_dist
+        num_masks = len(data.train_mask)
+        pos_dist = [0] * num_masks
+        neg_dist = [0] * num_masks
+
+        # Loop through the masks
+        for idx in range(num_masks):
             if data.retain_mask[idx]:
                 # Get K-hop subgraph
-                subset, edge_index, _, _ = k_hop_subgraph(idx, 2, data.edge_index)
-                subset_set = set(subset.tolist())
+                subset_set = self.subset_dict[idx]
 
                 # Define positive and negative samples
                 positive_samples = subset_set - attacked_set
                 negative_samples = attacked_set
 
-                if not positive_samples or not negative_samples:
-                    pos_dist.append(0)
-                    neg_dist.append(0)
-                    continue
-
-                positive_samples = list(positive_samples)
-                negative_samples = list(negative_samples)
-
-                # Compute distances
-                pos, neg = self.calc_distance(model, data, idx, positive_samples, negative_samples)
-                pos_dist.append(pos.item())
-                neg_dist.append(neg.item())
-            else:
-                pos_dist.append(0)
-                neg_dist.append(0)
+                if positive_samples and negative_samples:
+                    # Compute distances
+                    pos, neg = self.calc_distance(
+                        embeddings, idx, 
+                        list(positive_samples), list(negative_samples)
+                    )
+                    pos_dist[idx] = pos.item()
+                    neg_dist[idx] = neg.item()
 
         # convert to tensor
         pos_dist = torch.tensor(pos_dist)
@@ -122,53 +140,57 @@ class ContrastiveUnlearnTrainer(Trainer):
         # get pos, neg distances for nodes beforehand
         pos_dist = []
         neg_dist = []
+        
+        embeddings = model.conv1(data.x, data.edge_index)
+        embeddings = F.relu(embeddings)
+        embeddings = F.dropout(embeddings, training=model.training)
+        embeddings = model.conv2(embeddings, data.edge_index)
+        
         for idx in range(len(data.train_mask)):
-            # Get K-hop subgraph
-            subset, edge_index, _, _ = k_hop_subgraph(idx, 2, data.edge_index)
-            _, edge_index_for_poison, _, _ = k_hop_subgraph(
-                idx, 1, data.edge_index
-            )
-            subset_set = set(subset.tolist())
+            if data.retain_mask[idx]:
+                # Get K-hop subgraph
+                subset_set = self.subset_dict[idx]
+                edge_index_for_poison = self.edge_index_for_poison_dict[idx]
 
-            # convert edge_index to a list of tuples
-            edge_index_list = [
-                (edge_index_for_poison[0][i].item(), edge_index_for_poison[1][i].item())
-                for i in range(edge_index_for_poison.shape[1])
-            ]
-            # check for intersection between the edge_index_list and attacked_edge_list
-            attacked_edge_set = set(attacked_edge_list)
+                # convert edge_index to a list of tuples
+                edge_index_list = [
+                    (edge_index_for_poison[0][i].item(), edge_index_for_poison[1][i].item())
+                    for i in range(edge_index_for_poison.shape[1])
+                ]
+                # check for intersection between the edge_index_list and attacked_edge_list
+                attacked_edge_set = set(attacked_edge_list)
 
-            intersection = set(edge_index_list).intersection(attacked_edge_set)
+                intersection = set(edge_index_list).intersection(attacked_edge_set)
 
-            if intersection:
-                attacked_set = set()
-                for edge in intersection:
-                    # add the node which is not the idx
-                    u, v = edge
-                    if u == idx:
-                        attacked_set.add(v)
-                    else:
-                        attacked_set.add(u)
+                if intersection:
+                    attacked_set = set()
+                    for edge in intersection:
+                        # add the node which is not the idx
+                        u, v = edge
+                        if u == idx:
+                            attacked_set.add(v)
+                        else:
+                            attacked_set.add(u)
 
-                positive_samples = subset_set - attacked_set
-                negative_samples = attacked_set
-            else:
-                pos_dist.append(0)
-                neg_dist.append(0)
-                continue
+                    positive_samples = subset_set - attacked_set
+                    negative_samples = attacked_set
+                else:
+                    pos_dist.append(0)
+                    neg_dist.append(0)
+                    continue
 
-            if not positive_samples or not negative_samples:
-                pos_dist.append(0)
-                neg_dist.append(0)
-                continue
+                if not positive_samples or not negative_samples:
+                    pos_dist.append(0)
+                    neg_dist.append(0)
+                    continue
 
-            positive_samples = list(positive_samples)
-            negative_samples = list(negative_samples)
+                positive_samples = list(positive_samples)
+                negative_samples = list(negative_samples)
 
-            # Compute distances
-            pos, neg = self.calc_distance(model, data, idx, positive_samples, negative_samples)
-            pos_dist.append(pos.item())
-            neg_dist.append(neg.item())
+                # Compute distances
+                pos, neg = self.calc_distance(embeddings, idx, positive_samples, negative_samples)
+                pos_dist.append(pos.item())
+                neg_dist.append(neg.item())
 
         # convert to tensor
         pos_dist = torch.tensor(pos_dist)
@@ -187,9 +209,6 @@ class ContrastiveUnlearnTrainer(Trainer):
         model = model.to(device)
         data = data.to(device)
         
-        # set a mask for the attacked nodes
-        data.retain_mask = data.train_mask.clone()
-        data.retain_mask[attacked_idx] = False
         attacked_set = set(attacked_idx.tolist())
         
         for epoch in trange(args.contrastive_epochs_1, desc="Unlearning 1"):
@@ -206,16 +225,13 @@ class ContrastiveUnlearnTrainer(Trainer):
             optimizer.zero_grad()
             loss.backward()
             optimizer.step()
-
-            print(f"Epoch {epoch+1}, Loss: {loss:.4f}", end="\r")
             
         for epoch in trange(args.contrastive_epochs_2, desc="Unlearning 2"):
-            pos_dist, neg_dist = self.get_distances(model, data, attacked_set)
             loss = self.unlearn_loss(
                 model,
                 data,
-                pos_dist,
-                neg_dist,
+                None,
+                None,
                 margin=args.contrastive_margin,
                 lmda = 1
             )
@@ -223,8 +239,6 @@ class ContrastiveUnlearnTrainer(Trainer):
             optimizer.zero_grad()
             loss.backward()
             optimizer.step()
-
-            print(f"Epoch {epoch+1}, Loss: {loss:.4f}", end="\r")
         
     
     def train_edge(self):
@@ -251,16 +265,13 @@ class ContrastiveUnlearnTrainer(Trainer):
             optimizer.zero_grad()
             loss.backward()
             optimizer.step()
-
-            print(f"Epoch {epoch+1}, Loss: {loss:.4f}", end="\r")
             
         for epoch in trange(args.contrastive_epochs_2, desc="Unlearning 2"):
-            pos_dist, neg_dist = self.get_distances(model, data, attacked_idx)
             loss = self.unlearn_loss(
                 model,
                 data,
-                pos_dist,
-                neg_dist,
+                None,
+                None,
                 margin=args.contrastive_margin,
                 lmda = 1
             )
@@ -268,17 +279,22 @@ class ContrastiveUnlearnTrainer(Trainer):
             optimizer.zero_grad()
             loss.backward()
             optimizer.step()
-
-            print(f"Epoch {epoch+1}, Loss: {loss:.4f}", end="\r")
     
     def train(self):
         
         # attack_idx is an extra needed parameter which is defined above in both node and edge functions
-        
+        self.data.retain_mask = self.data.train_mask.clone()
+        self.store_subset(self.data)
+        start_time = time.time()
         if self.args.request == "node":
             self.train_node()
         elif self.args.request == "edge":
+            self.store_edge_index_for_poison(self.data, self.attacked_idx)
             self.train_edge()
-
+        end_time = time.time()
         train_acc, msc_rate, f1 = self.evaluate(is_dr=True)
         print(f'Train Acc: {train_acc}, Misclassification: {msc_rate},  F1 Score: {f1}')
+        
+        print(f"Training time: {end_time - start_time}")
+        
+        return train_acc, msc_rate, end_time - start_time
