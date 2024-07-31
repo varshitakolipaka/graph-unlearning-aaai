@@ -47,12 +47,10 @@ class ContrastiveUnlearnTrainer(Trainer):
     def unlearn_loss(
         self, model, data, pos_dist, neg_dist, margin=1.0, lmda = 0.8
     ):
-        try:
-            mask = data.retain_mask
-        except:
-            mask = data.train_mask
+        if lmda == 1:
+            return self.task_loss(model, data)
         return lmda * self.task_loss(model, data) + (1 - lmda) * self.contrastive_loss(
-            pos_dist, neg_dist, margin, mask
+            pos_dist, neg_dist, margin, data.retain_mask
         )
 
 
@@ -77,7 +75,7 @@ class ContrastiveUnlearnTrainer(Trainer):
 
         return pos_dist, neg_dist
 
-    def store_subset(self, data, idx):
+    def store_subset(self, data):
         # store the subset of the idx in a dictionary
         subset_dict = {}
         for idx in range(len(data.train_mask)):
@@ -107,7 +105,13 @@ class ContrastiveUnlearnTrainer(Trainer):
         embeddings = F.dropout(embeddings, training=model.training)
         embeddings = model.conv2(embeddings, data.edge_index)
         
-        for idx in range(len(data.train_mask)):
+        # Precompute the size of pos_dist and neg_dist
+        num_masks = len(data.train_mask)
+        pos_dist = [0] * num_masks
+        neg_dist = [0] * num_masks
+
+        # Loop through the masks
+        for idx in range(num_masks):
             if data.retain_mask[idx]:
                 # Get K-hop subgraph
                 subset_set = self.subset_dict[idx]
@@ -116,21 +120,14 @@ class ContrastiveUnlearnTrainer(Trainer):
                 positive_samples = subset_set - attacked_set
                 negative_samples = attacked_set
 
-                if not positive_samples or not negative_samples:
-                    pos_dist.append(0)
-                    neg_dist.append(0)
-                    continue
-
-                positive_samples = list(positive_samples)
-                negative_samples = list(negative_samples)
-
-                # Compute distances
-                pos, neg = self.calc_distance(embeddings, idx, positive_samples, negative_samples)
-                pos_dist.append(pos.item())
-                neg_dist.append(neg.item())
-            else:
-                pos_dist.append(0)
-                neg_dist.append(0)
+                if positive_samples and negative_samples:
+                    # Compute distances
+                    pos, neg = self.calc_distance(
+                        embeddings, idx, 
+                        list(positive_samples), list(negative_samples)
+                    )
+                    pos_dist[idx] = pos.item()
+                    neg_dist[idx] = neg.item()
 
         # convert to tensor
         pos_dist = torch.tensor(pos_dist)
@@ -230,12 +227,11 @@ class ContrastiveUnlearnTrainer(Trainer):
             optimizer.step()
             
         for epoch in trange(args.contrastive_epochs_2, desc="Unlearning 2"):
-            pos_dist, neg_dist = self.get_distances(model, data, attacked_set)
             loss = self.unlearn_loss(
                 model,
                 data,
-                pos_dist,
-                neg_dist,
+                None,
+                None,
                 margin=args.contrastive_margin,
                 lmda = 1
             )
@@ -271,12 +267,11 @@ class ContrastiveUnlearnTrainer(Trainer):
             optimizer.step()
             
         for epoch in trange(args.contrastive_epochs_2, desc="Unlearning 2"):
-            pos_dist, neg_dist = self.get_distances(model, data, attacked_idx)
             loss = self.unlearn_loss(
                 model,
                 data,
-                pos_dist,
-                neg_dist,
+                None,
+                None,
                 margin=args.contrastive_margin,
                 lmda = 1
             )
@@ -289,7 +284,7 @@ class ContrastiveUnlearnTrainer(Trainer):
         
         # attack_idx is an extra needed parameter which is defined above in both node and edge functions
         self.data.retain_mask = self.data.train_mask.clone()
-        self.store_subset(self.data, self.attacked_idx)
+        self.store_subset(self.data)
         start_time = time.time()
         if self.args.request == "node":
             self.train_node()
