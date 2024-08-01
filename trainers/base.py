@@ -26,10 +26,14 @@ class Trainer:
         train_acc, msc_rate, f1 = self.evaluate()
         print(f'Train Acc: {train_acc}, Misclassification: {msc_rate},  F1 Score: {f1}')
 
-    def get_silhouette_scores(self):
+    def get_silhouette_scores(self, graph_temp=None):
         self.model.eval()
         with torch.no_grad():
-            embeddings= self.model(self.data.x, self.data.edge_index)
+            if(graph_temp is None):
+                embeddings= self.model(self.data.x, self.data.edge_index)
+            else:
+                embeddings= self.model(graph_temp.x, graph_temp.edge_index)
+
             probabilites = F.softmax(embeddings, dim=1)
             _, predicted_labels= torch.max(probabilites, dim=1)
         return silhouette_score(embeddings, predicted_labels)

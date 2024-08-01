@@ -26,6 +26,8 @@ clean_trainer.train()
 score= clean_trainer.get_silhouette_scores()
 print(score)
 
+og_data= copy.deepcopy(clean_data)
+
 print("==POISONING==")
 if args.attack_type=="label":
     poisoned_data, poisoned_indices = label_flip_attack(clean_data, args.df_size, args.random_seed)
@@ -69,5 +71,5 @@ else:
     unlearn_trainer= utils.get_trainer(args, poisoned_model, poisoned_data, optimizer_unlearn)
     unlearn_trainer.train()
 
-score= unlearn_trainer.get_silhouette_scores()
+score= unlearn_trainer.get_silhouette_scores(graph_temp=og_data)
 print(score)
