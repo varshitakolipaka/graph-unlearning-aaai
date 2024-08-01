@@ -89,7 +89,7 @@ def find_masks(data, poisoned_indices, attack_type="label"):
     if attack_type == "label" or attack_type == "random":
         if "scrub" in args.unlearning_model:
             data.df_mask = torch.zeros(data.num_nodes, dtype=torch.bool)  # of size num nodes
-            data.dr_mask = torch.ones(data.num_nodes, dtype=torch.bool)  # of size num nodes
+            data.dr_mask = data.train_mask
             data.df_mask[poisoned_indices] = True
             data.dr_mask[poisoned_indices] = False
         else:
