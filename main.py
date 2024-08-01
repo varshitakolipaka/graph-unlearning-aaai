@@ -70,10 +70,7 @@ elif "retrain" in args.unlearning_model:
 else:
     optimizer_unlearn= utils.get_optimizer(args, poisoned_model)
     unlearn_trainer= utils.get_trainer(args, poisoned_model, poisoned_data, optimizer_unlearn)
-    if "scrub" in args.unlearning_model:
-        unlearn_trainer.train(clean_data)
-    else:
-        unlearn_trainer.train()
+    unlearn_trainer.train()
 
 score= unlearn_trainer.get_silhouette_scores(graph_temp=og_data)
 print(score)

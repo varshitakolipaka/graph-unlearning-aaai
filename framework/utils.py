@@ -91,7 +91,7 @@ def find_masks(data, poisoned_indices, attack_type="label"):
             data.df_mask = torch.zeros(data.num_nodes, dtype=torch.bool)  # of size num nodes
             data.dr_mask = torch.ones(data.num_nodes, dtype=torch.bool)  # of size num nodes
             data.df_mask[poisoned_indices] = True
-            # data.dr_mask[poisoned_indices] = False
+            data.dr_mask[poisoned_indices] = False
         else:
             data.df_mask = torch.zeros(data.edge_index.shape[1], dtype=torch.bool)
             data.dr_mask = torch.zeros(data.edge_index.shape[1], dtype=torch.bool)

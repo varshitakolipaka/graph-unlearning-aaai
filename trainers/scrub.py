@@ -118,8 +118,7 @@ class ScrubTrainer(Trainer):
         return
     
     # scrub for label flipping
-    def unlearn_nc_lf(self, dataset):
-        train_mask = dataset.train_mask
+    def unlearn_nc_lf(self):
         forget_mask = self.poisoned_dataset.df_mask
         self.maximize=False
         while self.curr_step < self.opt.unlearn_iters:
@@ -130,12 +129,12 @@ class ScrubTrainer(Trainer):
 
             self.maximize=False
             print("Gradient Descent Step: ", self.curr_step)
-            self.train_one_epoch(data=dataset, mask=train_mask)
+            self.train_one_epoch(data=self.poisoned_dataset, mask=self.poisoned_dataset.dr_mask)
             train_acc, msc_rate, f1 = self.evaluate()
             print(f'Test Acc: {train_acc}, Misclassification: {msc_rate},  F1 Score: {f1}')
         return
-    def train(self, dataset):
-        self.unlearn_nc_lf(dataset)
+    def train(self):
+        self.unlearn_nc_lf()
     def get_save_prefix(self):
         self.unlearn_file_prefix = self.opt.pretrain_file_prefix+'/'+str(self.opt.deletion_size)+'_'+self.opt.unlearn_method+'_'+self.opt.exp_name
         self.unlearn_file_prefix += '_'+str(self.opt.unlearn_iters)+'_'+str(self.opt.k)
