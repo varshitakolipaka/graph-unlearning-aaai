@@ -3,7 +3,7 @@ import numpy as np
 import torch
 from torch_geometric.utils import k_hop_subgraph
 import os
-from torch_geometric.datasets import CitationFull, Coauthor, Amazon, Planetoid, Reddit2, Flickr
+from torch_geometric.datasets import CitationFull, Coauthor, Amazon, Planetoid, Reddit, Flickr, Twitch
 from ogb.linkproppred import PygLinkPropPredDataset
 import torch_geometric.transforms as T
 
@@ -27,15 +27,22 @@ def get_original_data(d):
     elif d in ['Amazon']:
         dataset = Amazon(os.path.join(data_dir, d), 'Photo', transform=T.NormalizeFeatures())
     elif d in ['Reddit']:
-        dataset = Reddit2(os.path.join(data_dir, d), transform=T.NormalizeFeatures())
+        dataset = Reddit(os.path.join(data_dir, d), transform=T.NormalizeFeatures())
     elif d in ['Flickr']:
         dataset = Flickr(os.path.join(data_dir, d), transform=T.NormalizeFeatures())
+    elif d in ['Twitch']:
+        dataset= Twitch(os.path.join(data_dir, d), name="RU", transform=T.NormalizeFeatures())
     elif 'ogbl' in d:
         dataset = PygLinkPropPredDataset(root=os.path.join(data_dir, d), name=d)
     else:
         raise NotImplementedError(f"{d} not supported.")
     data = dataset[0]
     data.num_classes= dataset.num_classes
+    try:
+        temp= data.train_mask
+    except:
+        split = T.RandomNodeSplit(num_val=0.1, num_test=0.2)
+        data= split(data)
     return data
 
 def seed_everything(seed):
@@ -95,7 +102,7 @@ def find_masks(data, poisoned_indices, attack_type="label"):
 
 
 def get_trainer(args, poisoned_model, poisoned_data, optimizer_unlearn) -> Trainer:
-    
+
     trainer_map = {
         "original": Trainer,
         "gradient_ascent": GradientAscentTrainer,
@@ -106,7 +113,7 @@ def get_trainer(args, poisoned_model, poisoned_data, optimizer_unlearn) -> Train
         "contrastive": ContrastiveUnlearnTrainer,
         "retrain": RetrainTrainer
     }
-    
+
     if args.unlearning_model in trainer_map:
         return trainer_map[args.unlearning_model](poisoned_model, poisoned_data, optimizer_unlearn, args)
     else:
