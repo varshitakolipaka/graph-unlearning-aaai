@@ -31,6 +31,7 @@ og_data= copy.deepcopy(clean_data)
 print("==POISONING==")
 if args.attack_type=="label":
     poisoned_data, poisoned_indices = label_flip_attack(clean_data, args.df_size, args.random_seed)
+    print("meowww")
 elif args.attack_type=="edge":
     poisoned_data, poisoned_indices = edge_attack_random_nodes(clean_data, args.df_size, args.random_seed)
 elif args.attack_type=="random":
@@ -69,7 +70,10 @@ elif "retrain" in args.unlearning_model:
 else:
     optimizer_unlearn= utils.get_optimizer(args, poisoned_model)
     unlearn_trainer= utils.get_trainer(args, poisoned_model, poisoned_data, optimizer_unlearn)
-    unlearn_trainer.train()
+    if "scrub" in args.unlearning_model:
+        unlearn_trainer.train(clean_data)
+    else:
+        unlearn_trainer.train()
 
 score= unlearn_trainer.get_silhouette_scores(graph_temp=og_data)
 print(score)

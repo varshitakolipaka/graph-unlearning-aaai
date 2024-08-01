@@ -6,6 +6,7 @@ import os
 from torch_geometric.datasets import CitationFull, Coauthor, Amazon, Planetoid, Reddit, Flickr, Twitch
 from ogb.linkproppred import PygLinkPropPredDataset
 import torch_geometric.transforms as T
+from framework.training_args import parse_args
 
 from trainers.contrast import ContrastiveUnlearnTrainer
 from trainers.gnndelete import GNNDeleteNodeembTrainer
@@ -15,6 +16,10 @@ from trainers.gif import GIFTrainer
 from trainers.base import Trainer
 from trainers.utu import UtUTrainer
 from trainers.retrain import RetrainTrainer
+from trainers.scrub import ScrubTrainer
+
+
+args = parse_args()
 
 def get_original_data(d):
     data_dir = './datasets'
@@ -82,22 +87,30 @@ def get_sdf_masks(data):
 
 def find_masks(data, poisoned_indices, attack_type="label"):
     if attack_type == "label" or attack_type == "random":
-        data.df_mask = torch.zeros(data.edge_index.shape[1], dtype=torch.bool)
-        data.dr_mask = torch.zeros(data.edge_index.shape[1], dtype=torch.bool)
-        for node in poisoned_indices:
-            data.train_mask[node] = False
-            node_tensor = torch.tensor([node], dtype=torch.long)
-            _, local_edges, _, mask = k_hop_subgraph(
-                node_tensor, 1, data.edge_index, num_nodes=data.num_nodes
-            )
-            data.df_mask[mask] = True
-        data.dr_mask = ~data.df_mask
+        if "scrub" in args.unlearning_model:
+            data.df_mask = torch.zeros(data.num_nodes, dtype=torch.bool)  # of size num nodes
+            data.dr_mask = torch.ones(data.num_nodes, dtype=torch.bool)  # of size num nodes
+            data.df_mask[poisoned_indices] = True
+            # data.dr_mask[poisoned_indices] = False
+        else:
+            data.df_mask = torch.zeros(data.edge_index.shape[1], dtype=torch.bool)
+            data.dr_mask = torch.zeros(data.edge_index.shape[1], dtype=torch.bool)
+            for node in poisoned_indices:
+                data.train_mask[node] = False
+                node_tensor = torch.tensor([node], dtype=torch.long)
+                _, local_edges, _, mask = k_hop_subgraph(
+                    node_tensor, 1, data.edge_index, num_nodes=data.num_nodes
+                )
+                data.df_mask[mask] = True
+            data.dr_mask = ~data.df_mask
     elif attack_type == "edge":
         data.df_mask = torch.zeros(data.edge_index.shape[1], dtype=torch.bool)
         data.dr_mask = torch.zeros(data.edge_index.shape[1], dtype=torch.bool)
         data.df_mask[poisoned_indices] = True
         data.dr_mask = ~data.df_mask
     data.attacked_idx = poisoned_indices
+    if "scrub" in args.unlearning_model:
+        return
     get_sdf_masks(data)
 
 
@@ -111,7 +124,8 @@ def get_trainer(args, poisoned_model, poisoned_data, optimizer_unlearn) -> Train
         "gif": GIFTrainer,
         "utu": UtUTrainer,
         "contrastive": ContrastiveUnlearnTrainer,
-        "retrain": RetrainTrainer
+        "retrain": RetrainTrainer,
+        "scrub": ScrubTrainer
     }
 
     if args.unlearning_model in trainer_map:
