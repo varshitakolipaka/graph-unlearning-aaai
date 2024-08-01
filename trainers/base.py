@@ -1,6 +1,6 @@
 import torch
 import torch.nn.functional as F
-from sklearn.metrics import accuracy_score, f1_score
+from sklearn.metrics import accuracy_score, f1_score, silhouette_score
 from tqdm import trange
 
 device = torch.device('cuda') if torch.cuda.is_available() else torch.device('cpu')
@@ -25,6 +25,14 @@ class Trainer:
                 acc, msc_rate, f1 = self.evaluate()
         train_acc, msc_rate, f1 = self.evaluate()
         print(f'Train Acc: {train_acc}, Misclassification: {msc_rate},  F1 Score: {f1}')
+
+    def get_silhouette_scores(self):
+        self.model.eval()
+        with torch.no_grad():
+            embeddings= self.model(self.data.x, self.data.edge_index)
+            probabilites = F.softmax(embeddings, dim=1)
+            _, predicted_labels= torch.max(probabilites, dim=1)
+        return silhouette_score(embeddings, predicted_labels)
 
     def misclassification_rate(self, true_labels, pred_labels, class1 = 0, class2 = 1):
         class1_to_class2 = ((true_labels == class1) & (pred_labels == class2)).sum().item()
