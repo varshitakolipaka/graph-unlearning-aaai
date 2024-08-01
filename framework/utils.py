@@ -3,8 +3,7 @@ import numpy as np
 import torch
 from torch_geometric.utils import k_hop_subgraph
 import os
-from torch_geometric.datasets import CitationFull, Coauthor, Amazon, Planetoid, Reddit2, Flickr
-from ogb.linkproppred import PygLinkPropPredDataset
+from torch_geometric.datasets import CitationFull, Coauthor, Amazon, Planetoid, Reddit2, Flickr, Twitch
 import torch_geometric.transforms as T
 
 from trainers.contrast import ContrastiveUnlearnTrainer
@@ -14,7 +13,7 @@ from trainers.gradient_ascent import GradientAscentTrainer
 from trainers.gif import GIFTrainer
 from trainers.base import Trainer
 from trainers.utu import UtUTrainer
-from trainers.retrain import RetrainTrainer
+from trainers.retrain import RetrainTrainer    
 
 def get_original_data(d):
     data_dir = './datasets'
@@ -30,12 +29,26 @@ def get_original_data(d):
         dataset = Reddit2(os.path.join(data_dir, d), transform=T.NormalizeFeatures())
     elif d in ['Flickr']:
         dataset = Flickr(os.path.join(data_dir, d), transform=T.NormalizeFeatures())
-    elif 'ogbl' in d:
-        dataset = PygLinkPropPredDataset(root=os.path.join(data_dir, d), name=d)
+    elif d in ['Twitch']:
+        dataset = Twitch(os.path.join(data_dir, d), "EN", transform=T.NormalizeFeatures())
     else:
         raise NotImplementedError(f"{d} not supported.")
     data = dataset[0]
+    
     data.num_classes= dataset.num_classes
+    return data
+
+def train_test_split(data, seed, train_ratio=0.1):
+    n = data.num_nodes
+    idx = np.arange(n)
+    np.random.seed(seed)
+    np.random.shuffle(idx)
+    train_idx = idx[:int(n*train_ratio)]
+    test_idx = idx[int(n*train_ratio):]
+    data.train_mask = torch.zeros(n, dtype=torch.bool)
+    data.train_mask[train_idx] = True
+    data.test_mask = torch.zeros(n, dtype=torch.bool)
+    data.test_mask[test_idx] = True
     return data
 
 def seed_everything(seed):
@@ -131,3 +144,12 @@ def get_optimizer(args, poisoned_model):
         print('parameters_to_optimize', [n for n, p in poisoned_model.named_parameters()])
         optimizer_unlearn = torch.optim.Adam(parameters_to_optimize, lr=args.unlearn_lr)
     return optimizer_unlearn
+
+def prints_stats(data):
+    # print the stats of the dataset
+    print("Number of nodes: ", data.num_nodes)
+    print("Number of edges: ", data.num_edges)
+    print("Number of features: ", data.num_features)
+    print("Number of classes: ", data.num_classes)
+    print("Number of training nodes: ", data.train_mask.sum().item())
+    print("Number of testing nodes: ", data.test_mask.sum().item())

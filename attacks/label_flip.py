@@ -18,5 +18,11 @@ def label_flip_attack(data, epsilon, seed):
     flip_indices_class2 = np.random.choice(class2_indices, num_flips // 2, replace=False)
     data.y[flip_indices_class1] = class2
     data.y[flip_indices_class2] = class1
+    
+    data.class1 = class1
+    data.class2 = class2
+    
+    print(f"Poisoned {num_flips} labels from class {class1} and class {class2}")
+    
     flipped_indices = np.concatenate([flip_indices_class1, flip_indices_class2])
     return data, flipped_indices

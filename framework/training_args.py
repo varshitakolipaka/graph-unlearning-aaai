@@ -11,6 +11,7 @@ num_edge_type_mapping = {
 def parse_args():
     parser = argparse.ArgumentParser()
 
+    parser.add_argument('--train_ratio', type=float, default=0.8, help='train ratio')
     parser.add_argument('--attack_type', type=str, default='label', help='attack type', choices=["label", "edge", "random"])
     parser.add_argument('--unlearning_model', type=str, default='gnndelete', help='unlearning method', choices=["original", "gradient_ascent", "gnndelete", "gnndelete_ni", "gif", "utu", "contrastive", "retrain", "scrub"])
     parser.add_argument('--gnn', type=str, default='gcn', help='GNN architecture', choices=['gcn', 'gat', 'gin'])
@@ -24,7 +25,7 @@ def parse_args():
     # parser.add_argument('--data_dir', type=str, default='./data', help='data dir')
     # parser.add_argument('--df', type=str, default='in', help='Df set to use')
     # parser.add_argument('--df_idx', type=str, default=None, help='indices of data to be deleted')
-    parser.add_argument('--df_size', type=float, default=0.2, help='Forgetting Fraction')
+    parser.add_argument('--df_size', type=float, default=0.3, help='Forgetting Fraction')
     parser.add_argument('--dataset', type=str, default='Cora_p', help='dataset')
     parser.add_argument('--random_seed', type=int, default=0, help='random seed')
     # parser.add_argument('--batch_size', type=int, default=2048, help='batch size for GraphSAINTRandomWalk sampler')
@@ -37,7 +38,7 @@ def parse_args():
     parser.add_argument('--unlearn_lr', type=float, default=0.025, help='initial learning rate')
     parser.add_argument('--weight_decay', type=float, default=5e-7, help='weight decay')
     parser.add_argument('--optimizer', type=str, default='Adam', help='optimizer to use')
-    parser.add_argument('--training_epochs', type=int, default=50, help='number of epochs to train')
+    parser.add_argument('--training_epochs', type=int, default=600, help='number of epochs to train')
     parser.add_argument('--valid_freq', type=int, default=30, help='# of epochs to do validation')
     parser.add_argument('--checkpoint_dir', type=str, default='./checkpoint', help='checkpoint folder')
     parser.add_argument('--alpha', type=float, default=0.5, help='alpha in loss function')
@@ -90,5 +91,5 @@ def parse_args():
     parser.add_argument('--contrastive_margin', type=int, default=500, help="margin for the contrastive loss")
     parser.add_argument('--contrastive_lambda', type=float, default=0.8, help="weight for the task loss [1 - lambda] is used for the contrastive loss")
 
-    args = parser.parse_args()
+    args = parser.parse_args(args=[])
     return args

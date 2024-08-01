@@ -15,6 +15,8 @@ device = torch.device('cuda') if torch.cuda.is_available() else torch.device('cp
 # dataset
 print("==TRAINING==")
 clean_data= utils.get_original_data(args.dataset)
+utils.train_test_split(clean_data, args.random_seed, args.train_ratio)
+utils.prints_stats(clean_data)
 if "gnndelete" in args.unlearning_model:
     clean_model = GCNDelete(clean_data.num_features, args.hidden_dim, clean_data.num_classes)
 else:
@@ -41,7 +43,7 @@ else:
     poisoned_model = GCN(poisoned_data.num_features, args.hidden_dim, poisoned_data.num_classes)
     
 optimizer = torch.optim.Adam(poisoned_model.parameters(), lr=0.01, weight_decay=5e-4)
-poisoned_trainer = Trainer(poisoned_model, poisoned_data, optimizer)
+poisoned_trainer = Trainer(poisoned_model, poisoned_data, optimizer, args.training_epochs)
 poisoned_trainer.train()
 
 print("==UNLEARNING==")

@@ -13,6 +13,9 @@ from functools import partial
 
 
 args = parse_args()
+args.unlearning_model = "contrastive"
+args.dataset = "Citeseer_p"
+print(args)
 utils.seed_everything(args.random_seed)
 device = torch.device('cuda') if torch.cuda.is_available() else torch.device('cpu')
 
@@ -20,6 +23,8 @@ def train():
     # dataset
     print("==TRAINING==")
     clean_data= utils.get_original_data(args.dataset)
+    utils.train_test_split(clean_data, args.random_seed, args.train_ratio)
+    utils.prints_stats(clean_data)
     if "gnndelete" in args.unlearning_model:
         clean_model = GCNDelete(clean_data.num_features, args.hidden_dim, clean_data.num_classes)
     else:
@@ -48,7 +53,7 @@ def poison(clean_data):
         poisoned_model = GCN(poisoned_data.num_features, args.hidden_dim, poisoned_data.num_classes)
     
     optimizer = torch.optim.Adam(poisoned_model.parameters(), lr=0.01, weight_decay=5e-4)
-    poisoned_trainer = Trainer(poisoned_model, poisoned_data, optimizer)
+    poisoned_trainer = Trainer(poisoned_model, poisoned_data, optimizer, args.training_epochs)
     poisoned_trainer.train()
     
     return poisoned_data, poisoned_indices, poisoned_model
@@ -107,7 +112,8 @@ hp_tuning_params_dict = {
         'weight_decay': (1e-5, 1e-1, "log"),
         'contrastive_margin': (1e1, 1e3, "log"),
         'contrastive_lambda': (0.0, 1.0, "float"),
-    }
+    },
+    'utu': {}
 }
 
 def set_hp_tuning_params(trial):
@@ -168,7 +174,14 @@ if __name__ == "__main__":
     print("==OPTIMIZING==")
 
     # Optimize the objective function
-    study.optimize(objective_func, n_trials=100)
+    
+    # reduce trials for utu and contrastive
+    if args.unlearning_model == 'utu':
+        study.optimize(objective_func, n_trials=1)
+    elif args.unlearning_model == 'contrastive':
+        study.optimize(objective_func, n_trials=30)
+    else:
+        study.optimize(objective_func, n_trials=100)
 
     # Print the best trial
     best_trial = study.best_trials
