@@ -28,7 +28,8 @@ def edge_attack_random_nodes(data, epsilon, seed):
     print(f"Adding {epsilon} Edges")
     while count < epsilon:
         n1 = random.randint(0, N-1)
-        n2 = random.randint(0, N-1)
+        remaining_nodes = [i for i in range(N) if i != n1 and data.y[i] != data.y[n1]]
+        n2 = random.choice(remaining_nodes)
         if n1 != n2 and data.y[n1] != data.y[n2]:
             edge = (min(n1, n2), max(n1, n2))
             if edge not in existing_edges:
