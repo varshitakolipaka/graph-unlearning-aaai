@@ -12,7 +12,7 @@ def parse_args():
     parser = argparse.ArgumentParser()
 
     parser.add_argument('--attack_type', type=str, default='label', help='attack type', choices=["label", "edge", "random"])
-    parser.add_argument('--unlearning_model', type=str, default='scrub', help='unlearning method', choices=["original", "gradient_ascent", "gnndelete", "gnndelete_ni", "gif", "utu", "contrastive", "retrain", "scrub"])
+    parser.add_argument('--unlearning_model', type=str, default='megu', help='unlearning method', choices=["original", "gradient_ascent", "gnndelete", "gnndelete_ni", "gif", "utu", "contrastive", "retrain", "scrub", "megu"])
     parser.add_argument('--gnn', type=str, default='gcn', help='GNN architecture', choices=['gcn', 'gat', 'gin'])
     # parser.add_argument('--in_dim', type=int, default=128, help='input dimension')
     parser.add_argument('--hidden_dim', type=int, default=64, help='hidden dimension')
@@ -24,7 +24,7 @@ def parse_args():
     # parser.add_argument('--data_dir', type=str, default='./data', help='data dir')
     # parser.add_argument('--df', type=str, default='in', help='Df set to use')
     # parser.add_argument('--df_idx', type=str, default=None, help='indices of data to be deleted')
-    parser.add_argument('--df_size', type=float, default=0.2, help='Forgetting Fraction')
+    parser.add_argument('--df_size', type=float, default=0.1, help='Forgetting Fraction')
     parser.add_argument('--dataset', type=str, default='Cora_p', help='dataset')
     parser.add_argument('--random_seed', type=int, default=0, help='random seed')
     # parser.add_argument('--batch_size', type=int, default=2048, help='batch size for GraphSAINTRandomWalk sampler')
@@ -35,7 +35,7 @@ def parse_args():
     # parser.add_argument("--suffix", type=str, default=None, help="name suffix for #wandb run")
     # parser.add_argument("--mode", type=str, default="disabled", help="#wandb mode")
     parser.add_argument('--unlearn_lr', type=float, default=0.015, help='initial learning rate')
-    parser.add_argument('--weight_decay', type=float, default=0.0001, help='weight decay')
+    parser.add_argument('--weight_decay', type=float, default=0.00005, help='weight decay')
     parser.add_argument('--optimizer', type=str, default='Adam', help='optimizer to use')
     parser.add_argument('--training_epochs', type=int, default=50, help='number of epochs to train')
     parser.add_argument('--valid_freq', type=int, default=30, help='# of epochs to do validation')
@@ -88,6 +88,18 @@ def parse_args():
     parser.add_argument('--contrastive_epochs_2', type=int, default=10, help="epochs for contrastive unlearning")
     parser.add_argument('--contrastive_margin', type=int, default=500, help="margin for the contrastive loss")
     parser.add_argument('--contrastive_lambda', type=float, default=0.8, help="weight for the task loss [1 - lambda] is used for the contrastive loss")
+
+    # megu
+    parser.add_argument('--is_vary', type=bool, default=False, help='control whether to use multiprocess')
+    parser.add_argument('--cuda', type=int, default=0, help='specify gpu')
+    parser.add_argument('--num_threads', type=int, default=1)
+    parser.add_argument('--inductive', type=str, default='normal', choices=['cluster-gcn', 'graphsaint', 'normal'])
+    parser.add_argument('--num_runs', type=int, default=2)
+    parser.add_argument('--batch_size', type=int, default=2048)
+    parser.add_argument('--test_batch_size', type=int, default=2048)
+    parser.add_argument('--kappa', type=float, default=0.01)
+    parser.add_argument('--alpha1', type=float, default=0.8)
+    parser.add_argument('--alpha2', type=float, default=0.5)
 
     args = parser.parse_args()
     return args

@@ -7,6 +7,7 @@ from models.models import GCN
 from trainers.base import Trainer
 from attacks.edge_attack import edge_attack_random_nodes
 from attacks.label_flip import label_flip_attack
+from trainers.megu import ExpMEGU
 
 args = parse_args()
 utils.seed_everything(args.random_seed)
@@ -67,10 +68,13 @@ elif "retrain" in args.unlearning_model:
     optimizer_unlearn= utils.get_optimizer(args, unlearn_model)
     unlearn_trainer= utils.get_trainer(args, unlearn_model, poisoned_data, optimizer_unlearn)
     unlearn_trainer.train()
+elif "megu" in args.unlearning_model:
+    optimizer_unlearn= utils.get_optimizer(args, poisoned_model)
+    ExpMEGU(args, poisoned_model, poisoned_data, optimizer_unlearn)
 else:
     optimizer_unlearn= utils.get_optimizer(args, poisoned_model)
     unlearn_trainer= utils.get_trainer(args, poisoned_model, poisoned_data, optimizer_unlearn)
     unlearn_trainer.train()
 
-score= unlearn_trainer.get_silhouette_scores(graph_temp=og_data)
-print(score)
+# score= unlearn_trainer.get_silhouette_scores(graph_temp=og_data)
+# print(score)
