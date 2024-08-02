@@ -6,7 +6,7 @@ import torch
 import torch.nn as nn
 from torch_geometric.utils import negative_sampling
 import torch.nn.functional as F
-from .base import Trainer
+from .base import Trainer, EdgeTrainer, member_infer_attack
 
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
@@ -193,6 +193,154 @@ class GNNDeleteNodeembTrainer(Trainer):
             end_time = time.time()
             epoch_time = end_time - start_time
 
-
         train_acc, msc_rate, f1 = self.evaluate(is_dr=True)
         print(f'Train Acc: {train_acc}, Misclassification: {msc_rate},  F1 Score: {f1}')
+
+class GNNDeleteEdgeTrainer(EdgeTrainer):
+    def __init__(self, model, data, optimizer, args):
+        super().__init__(args)
+        self.args= args
+
+    def train(self, model, data, optimizer, args, logits_ori=None, attack_model_all=None, attack_model_sub=None):
+        model = model.to(device)
+        data = data.to(device)
+        # early_stopping = EarlyStopping(patience=30, verbose=True, delta=1e-4, path=args.checkpoint_dir, trace_func=tqdm.write)
+
+        best_metric = 0
+        loss_fct = get_loss_fct(self.args.loss_fct)
+
+        # MI Attack before unlearning
+        if attack_model_all is not None:
+            mi_logit_all_before, mi_sucrate_all_before = member_infer_attack(model, attack_model_all, data)
+            
+            print('mi logit all before', mi_logit_all_before)
+            print('mi sucrate all before', mi_sucrate_all_before)
+        if attack_model_sub is not None:
+            mi_logit_sub_before, mi_sucrate_sub_before = member_infer_attack(model, attack_model_sub, data)
+
+        # 
+        non_df_node_mask = torch.ones(data.x.shape[0], dtype=torch.bool, device=data.x.device)
+        non_df_node_mask[data.directed_df_edge_index.flatten().unique()] = False
+
+        data.sdf_node_1hop_mask_non_df_mask = data.sdf_node_1hop_mask & non_df_node_mask
+        data.sdf_node_2hop_mask_non_df_mask = data.sdf_node_2hop_mask & non_df_node_mask
+
+        
+        # Original node embeddings
+        with torch.no_grad():
+            z1_ori, z2_ori = model.get_original_embeddings(data.x, data.train_pos_edge_index, return_all_emb=True)
+
+
+        for epoch in trange(args.unlearning_epochs, desc='Unlearning'):
+            model.train()
+
+            neg_edge = neg_edge_index = negative_sampling(
+            edge_index=data.train_pos_edge_index,
+            num_nodes=data.num_nodes,
+            num_neg_samples=data.df_mask.sum())
+
+            start_time = time.time()
+            z1, z2 = model(data.x, data.train_pos_edge_index[:, data.sdf_mask], return_all_emb=True)
+
+            # Randomness
+            pos_edge = data.train_pos_edge_index[:, data.df_mask]
+            # neg_edge = torch.randperm(data.num_nodes)[:pos_edge.view(-1).shape[0]].view(2, -1)
+
+            embed1 = torch.cat([z1[pos_edge[0]], z1[pos_edge[1]]], dim=0)
+            embed1_ori = torch.cat([z1_ori[neg_edge[0]], z1_ori[neg_edge[1]]], dim=0)
+
+            embed2 = torch.cat([z2[pos_edge[0]], z2[pos_edge[1]]], dim=0)
+            embed2_ori = torch.cat([z2_ori[neg_edge[0]], z2_ori[neg_edge[1]]], dim=0)
+
+            loss_r1 = loss_fct(embed1, embed1_ori)
+            loss_r2 = loss_fct(embed2, embed2_ori)
+
+            # Local causality
+            loss_l1 = loss_fct(z1[data.sdf_node_1hop_mask_non_df_mask], z1_ori[data.sdf_node_1hop_mask_non_df_mask])
+            loss_l2 = loss_fct(z2[data.sdf_node_2hop_mask_non_df_mask], z2_ori[data.sdf_node_2hop_mask_non_df_mask])
+
+
+            # Total loss
+            '''both_all, both_layerwise, only2_layerwise, only2_all, only1'''
+            if self.args.loss_type == 'both_all':
+                loss_l = loss_l1 + loss_l2
+                loss_r = loss_r1 + loss_r2
+
+                #### alpha * loss_r + (1 - alpha) * loss_l
+                loss = self.args.alpha * loss_r + (1 - self.args.alpha) * loss_l
+
+                #### loss_r + lambda * loss_l
+                # loss = loss_l + self.args.alpha * loss_r
+                loss.backward()
+                optimizer.step()
+            
+            elif self.args.loss_type == 'both_layerwise':
+                #### alpha * loss_r + (1 - alpha) * loss_l
+                loss_l = loss_l1 + loss_l2
+                loss_r = loss_r1 + loss_r2
+
+                loss1 = self.args.alpha * loss_r1 + (1 - self.args.alpha) * loss_l1
+                loss1.backward(retain_graph=True)
+
+                loss2 = self.args.alpha * loss_r2 + (1 - self.args.alpha) * loss_l2
+                loss2.backward(retain_graph=True)
+
+                optimizer[0].step()
+                optimizer[0].zero_grad()
+                optimizer[1].step()
+                optimizer[1].zero_grad()
+
+                loss = loss1 + loss2
+
+                
+            elif self.args.loss_type == 'only2_layerwise':
+                loss_l = loss_l1 + loss_l2
+                loss_r = loss_r1 + loss_r2
+
+                optimizer[0].zero_grad()
+
+                #### alpha * loss_r + (1 - alpha) * loss_l
+                loss2 = self.args.alpha * loss_r2 + (1 - self.args.alpha) * loss_l2
+
+                #### loss_r + lambda * loss_l
+                # loss2 = loss_r2 + self.args.alpha * loss_l2
+
+                loss2.backward()
+                optimizer[1].step()
+                optimizer[1].zero_grad()
+
+                loss = loss2
+
+            elif self.args.loss_type == 'only2_all':
+                loss_l = loss_l2
+                loss_r = loss_r2
+
+                loss = loss_l + self.args.alpha * loss_r
+
+                loss.backward()
+                optimizer.step()
+                optimizer.zero_grad()
+
+            elif self.args.loss_type == 'only1':
+                loss_l = loss_l1
+                loss_r = loss_r1
+
+                loss = loss_l + self.args.alpha * loss_r
+                
+                loss.backward()
+                optimizer.step()
+                optimizer.zero_grad()
+
+            else:
+                raise NotImplementedError
+
+            end_time = time.time()
+            epoch_time = end_time - start_time
+
+            if (epoch + 1) % self.args.valid_freq == 0:
+                valid_loss, dt_auc, dt_aup, df_auc, df_aup, df_logit, logit_all_pair, valid_log = self.eval(model, data, 'val')
+
+
+        # test(self, model, data, model_retrain=None, attack_model_all=None, attack_model_sub=None):
+        test_results = self.test(model, data, attack_model_all=attack_model_all, attack_model_sub=attack_model_sub)
+        print(test_results[-1])

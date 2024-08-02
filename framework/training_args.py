@@ -19,6 +19,7 @@ def parse_args():
     parser.add_argument('--unlearning_epochs', type=int, default=50, help='number of epochs to unlearn for')
     # parser.add_argument('--out_dim', type=int, default=64, help='output dimension')
     parser.add_argument('--request', type=str, default='node', help='unlearning request', choices=['node', 'edge'])
+    parser.add_argument('--is_mi', type=str, default='False', help='whether to use member inference', choices=['True', 'False'])
 
     # Data
     # parser.add_argument('--data_dir', type=str, default='./data', help='data dir')

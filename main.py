@@ -7,6 +7,7 @@ from models.models import GCN
 from trainers.base import Trainer
 from attacks.edge_attack import edge_attack_random_nodes
 from attacks.label_flip import label_flip_attack
+from mi_test import main
 
 args = parse_args()
 utils.seed_everything(args.random_seed)

@@ -9,7 +9,7 @@ import torch_geometric.transforms as T
 from framework.training_args import parse_args
 
 from trainers.contrast import ContrastiveUnlearnTrainer
-from trainers.gnndelete import GNNDeleteNodeembTrainer
+from trainers.gnndelete import GNNDeleteNodeembTrainer, GNNDeleteEdgeTrainer
 from trainers.gnndelete_ni import GNNDeleteNITrainer
 from trainers.gradient_ascent import GradientAscentTrainer
 from trainers.gif import GIFTrainer
@@ -121,6 +121,7 @@ def get_trainer(args, poisoned_model, poisoned_data, optimizer_unlearn) -> Train
         "gradient_ascent": GradientAscentTrainer,
         "gnndelete": GNNDeleteNodeembTrainer,
         "gnndelete_ni": GNNDeleteNITrainer,
+        "gnndelete_edge": GNNDeleteEdgeTrainer,
         "gif": GIFTrainer,
         "utu": UtUTrainer,
         "contrastive": ContrastiveUnlearnTrainer,
