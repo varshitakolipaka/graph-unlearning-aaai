@@ -13,8 +13,6 @@ from functools import partial
 
 
 args = parse_args()
-args.unlearning_model = "contrastive"
-args.dataset = "Citeseer_p"
 print(args)
 utils.seed_everything(args.random_seed)
 device = torch.device('cuda') if torch.cuda.is_available() else torch.device('cpu')
@@ -33,7 +31,8 @@ def train():
     optimizer = torch.optim.Adam(clean_model.parameters(), lr=0.01, weight_decay=5e-4)
     clean_trainer = Trainer(clean_model, clean_data, optimizer, args.training_epochs)
     clean_trainer.train()
-    
+    a_p, a_c = clean_trainer.subset_acc(class1=6, class2=1)
+    print(f'Clean Acc: {a_p}, Clean Acc: {a_c}')
     return clean_data
 
 def poison(clean_data):
@@ -55,7 +54,8 @@ def poison(clean_data):
     optimizer = torch.optim.Adam(poisoned_model.parameters(), lr=0.01, weight_decay=5e-4)
     poisoned_trainer = Trainer(poisoned_model, poisoned_data, optimizer, args.training_epochs)
     poisoned_trainer.train()
-    
+    a_p, a_c = poisoned_trainer.subset_acc()
+    print(f'Poisoned Acc: {a_p}, Clean Acc: {a_c}')
     return poisoned_data, poisoned_indices, poisoned_model
 
 def unlearn(poisoned_data, poisoned_indices, poisoned_model):
@@ -113,7 +113,14 @@ hp_tuning_params_dict = {
         'contrastive_margin': (1e1, 1e3, "log"),
         'contrastive_lambda': (0.0, 1.0, "float"),
     },
-    'utu': {}
+    'utu': {},
+    'scrub': {
+        'unlearn_iters': (10, 100, "int"),
+        # 'kd_T': (1, 10, "float"),
+        'scrubAlpha': (1e-6, 10, "log"),
+        'msteps': (10, 100, "int"),
+        # 'weight_decay': (1e-5, 1e-1, "log"),
+    }
 }
 
 def set_hp_tuning_params(trial):
@@ -137,8 +144,10 @@ def objective(trial, model, data):
     
     train_acc, msc_rate, time_taken = trainer.train()
     
+    poison_acc, clean_acc = trainer.subset_acc()
+    
     # We want to minimize misclassification rate and maximize accuracy
-    return [(1 - train_acc) + msc_rate, train_acc, msc_rate, time_taken]
+    return [train_acc, poison_acc, clean_acc]
 
         
 if __name__ == "__main__":
@@ -165,10 +174,10 @@ if __name__ == "__main__":
     # Create a study with TPE sampler
     study = optuna.create_study(
         sampler=TPESampler(),
-        directions=['minimize','maximize', 'minimize', 'minimize'],
+        directions=['maximize', 'maximize', 'maximize'],
         study_name=f"{args.dataset}_{args.attack_type}_{args.unlearning_model}",
         load_if_exists=True,
-        storage='sqlite:///graph_unlearning_hp_tuning.db',
+        storage='sqlite:///graph_unlearning_hp_tuning_2.db',
     )
     
     print("==OPTIMIZING==")

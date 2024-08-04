@@ -25,7 +25,7 @@ def parse_args():
     # parser.add_argument('--data_dir', type=str, default='./data', help='data dir')
     # parser.add_argument('--df', type=str, default='in', help='Df set to use')
     # parser.add_argument('--df_idx', type=str, default=None, help='indices of data to be deleted')
-    parser.add_argument('--df_size', type=float, default=0.3, help='Forgetting Fraction')
+    parser.add_argument('--df_size', type=float, default=0.2, help='Forgetting Fraction')
     parser.add_argument('--dataset', type=str, default='Cora_p', help='dataset')
     parser.add_argument('--random_seed', type=int, default=0, help='random seed')
     # parser.add_argument('--batch_size', type=int, default=2048, help='batch size for GraphSAINTRandomWalk sampler')
@@ -91,5 +91,5 @@ def parse_args():
     parser.add_argument('--contrastive_margin', type=int, default=500, help="margin for the contrastive loss")
     parser.add_argument('--contrastive_lambda', type=float, default=0.8, help="weight for the task loss [1 - lambda] is used for the contrastive loss")
 
-    args = parser.parse_args(args=[])
+    args = parser.parse_args()
     return args
