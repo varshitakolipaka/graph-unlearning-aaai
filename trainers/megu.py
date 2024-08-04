@@ -14,13 +14,7 @@ from torch_geometric.utils import k_hop_subgraph, to_scipy_sparse_matrix
 import scipy.sparse as sp
 from trainers.megu_utils import calc_f1
 import logging
-
-
-class Exp:
-    def __init__(self, args):
-        self.logger = logging.getLogger('exp')
-        self.args = args
-
+from .base import Trainer
 
 class GATE(torch.nn.Module):
     def __init__(self, dim):
@@ -72,68 +66,40 @@ def normalize_adj(adj, r=0.5):
     return adj_normalized
 
 
-class ExpMEGU(Exp):
+class ExpMEGU(Trainer):
     def __init__(self, args, model, data, optimizer):
-        super(ExpMEGU, self).__init__(args)
 
+        self.logger = logging.getLogger('exp')
+        self.args = args
         self.logger = logging.getLogger('ExpMEGU')
-
         self.data = data # instead of using load data
         self.model = model # poisoned model 
         self.device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
         self.num_feats = self.data.num_features
-        self.train_test_split()
+        self.train_indices = torch.where(self.data.train_mask)[0]
+        self.test_indices = torch.where(self.data.test_mask)[0]
+
         self.unlearning_request()
 
         self.target_model_name = self.args.gnn
-
-        # self.get_edge_indeces()
         self.determine_target_model()
 
         self.num_layers = 2
         self.adj = sparse_mx_to_torch_sparse_tensor(normalize_adj(to_scipy_sparse_matrix(self.data.edge_index)))
         self.neighbor_khop = self.neighbor_select(self.data.x)
 
+        self.target_model.model = self.model
+        dt_acc, msc_rate, dt_f1 = self.evaluate()
+        print("the poisoned model: ")
+        print(dt_acc, msc_rate, dt_f1)
 
-
-        run_f1 = np.empty(0)
-        run_f1_unlearning = np.empty(0)
-        unlearning_times = np.empty(0)
-        for run in range(self.args.num_runs):
-            # self.logger.info("Run %d" % run)
-
-            self.target_model.model = self.model
-
-            f1_score = self.evaluate(run)
-            print("F1 score of the poisoned model: ")
-            print(f1_score)
-            run_f1 = np.append(run_f1, f1_score)
-
-            # unlearning with MEGU
-            unlearning_time, f1_score_unlearning = self.megu_training()
-            unlearning_times = np.append(unlearning_times, unlearning_time)
-            run_f1_unlearning = np.append(run_f1_unlearning, f1_score_unlearning)
-            print("F1 score of the unlearnt model: ")
-            print(f1_score_unlearning)
-
-        # f1_score_avg = np.average(run_f1)
-        # f1_score_std = np.std(run_f1)
-        # self.logger.info(f"f1_score: avg={f1_score_avg:.4f}, std={f1_score_std:.4f}")
-        # self.logger.info(f"model training time: avg={np.average(training_times):.4f} seconds")
-
-        f1_score_unlearning_avg = str(np.average(run_f1_unlearning)).split('.')[1]
-        f1_score_unlearning_std = str(np.std(run_f1_unlearning)).split('.')[1]
-        unlearning_time_avg = np.average(unlearning_times)
-
-        f1_score_unlearning_avg = '.'.join((f1_score_unlearning_avg[0:2], f1_score_unlearning_avg[2:4]))
-        f1_score_unlearning_std = '.'.join((f1_score_unlearning_std[1:2], f1_score_unlearning_std[2:4]))
-        self.logger.info(
-            f"|Unlearn| f1_score: avg±std={f1_score_unlearning_avg}±{f1_score_unlearning_std} time: avg={np.average(unlearning_times):.4f}s")
-
-    def train_test_split(self):
-        self.train_indices = torch.where(self.data.train_mask)[0]
-        self.test_indices = torch.where(self.data.test_mask)[0]
+        self.megu_training()
+        self.model = self.target_model.model
+        
+        dt_acc, msc_rate, dt_f1 = self.evaluate()
+        print("the unlearnt model: ")
+        print(dt_acc, msc_rate, dt_f1)
 
     def unlearning_request(self):
 
@@ -194,25 +160,25 @@ class ExpMEGU(Exp):
 
         self.target_model = NodeClassifier(self.num_feats, num_classes, self.args, self.data)
 
-    def evaluate(self, run):
-        # self.logger.info('model evaluation')
+    # def evaluate(self, run):
+    #     # self.logger.info('model evaluation')
 
-        start_time = time.time()
-        self.target_model.model.eval()
-        out = self.target_model.model(self.data.x, self.data.edge_index)
-        y = self.data.y.cpu()
-        if self.args.dataset == 'ppi':
-            y_hat = torch.sigmoid(out).cpu().detach().numpy()
-            test_f1 = calc_f1(y, y_hat, self.data.test_mask, multilabel=True)
-        else:
-            y_hat = F.log_softmax(out, dim=1).cpu().detach().numpy()
-            test_f1 = calc_f1(y, y_hat, self.data.test_mask)
+    #     start_time = time.time()
+    #     self.target_model.model.eval()
+    #     out = self.target_model.model(self.data.x, self.data.edge_index)
+    #     y = self.data.y.cpu()
+    #     if self.args.dataset == 'ppi':
+    #         y_hat = torch.sigmoid(out).cpu().detach().numpy()
+    #         test_f1 = calc_f1(y, y_hat, self.data.test_mask, multilabel=True)
+    #     else:
+    #         y_hat = F.log_softmax(out, dim=1).cpu().detach().numpy()
+    #         test_f1 = calc_f1(y, y_hat, self.data.test_mask)
 
-        evaluate_time = time.time() - start_time
-        # self.logger.info(f"Evaluation cost {evaluate_time:.4f} seconds.")
+    #     evaluate_time = time.time() - start_time
+    #     # self.logger.info(f"Evaluation cost {evaluate_time:.4f} seconds.")
 
-        # self.logger.info(f"Final Test F1: {test_f1:.4f}")
-        return test_f1
+    #     # self.logger.info(f"Final Test F1: {test_f1:.4f}")
+    #     return test_f1
 
     def _train_model(self, run):
         # self.logger.info('training target models, run %s' % run)

@@ -24,7 +24,7 @@ def parse_args():
     # parser.add_argument('--data_dir', type=str, default='./data', help='data dir')
     # parser.add_argument('--df', type=str, default='in', help='Df set to use')
     # parser.add_argument('--df_idx', type=str, default=None, help='indices of data to be deleted')
-    parser.add_argument('--df_size', type=float, default=0.1, help='Forgetting Fraction')
+    parser.add_argument('--df_size', type=float, default=0.2, help='Forgetting Fraction')
     parser.add_argument('--dataset', type=str, default='Cora_p', help='dataset')
     parser.add_argument('--random_seed', type=int, default=0, help='random seed')
     # parser.add_argument('--batch_size', type=int, default=2048, help='batch size for GraphSAINTRandomWalk sampler')
@@ -34,7 +34,7 @@ def parse_args():
     # Training
     # parser.add_argument("--suffix", type=str, default=None, help="name suffix for #wandb run")
     # parser.add_argument("--mode", type=str, default="disabled", help="#wandb mode")
-    parser.add_argument('--unlearn_lr', type=float, default=0.015, help='initial learning rate')
+    parser.add_argument('--unlearn_lr', type=float, default=0.1, help='initial learning rate')
     parser.add_argument('--weight_decay', type=float, default=0.00005, help='weight decay')
     parser.add_argument('--optimizer', type=str, default='Adam', help='optimizer to use')
     parser.add_argument('--training_epochs', type=int, default=50, help='number of epochs to train')
@@ -97,9 +97,8 @@ def parse_args():
     parser.add_argument('--num_runs', type=int, default=2)
     parser.add_argument('--batch_size', type=int, default=2048)
     parser.add_argument('--test_batch_size', type=int, default=2048)
-    parser.add_argument('--kappa', type=float, default=0.01)
-    parser.add_argument('--alpha1', type=float, default=0.8)
-    parser.add_argument('--alpha2', type=float, default=0.5)
-
+    parser.add_argument('--kappa', type=float, default=0.35)
+    parser.add_argument('--alpha1', type=float, default=0.3)
+    parser.add_argument('--alpha2', type=float, default=0.8)
     args = parser.parse_args()
     return args
