@@ -12,6 +12,7 @@ from torch_geometric.utils import is_undirected, to_undirected, negative_samplin
 from trainers.base import EdgeTrainer
 from attacks.mi_attack import MIAttackTrainer
 from torch.utils.data import DataLoader, TensorDataset
+from sklearn.model_selection import train_test_split
 
 device = torch.device('cuda') if torch.cuda.is_available() else torch.device('cpu')
 
@@ -156,7 +157,6 @@ def get_processed_data(d, val_ratio=0.05, test_ratio=0.05):
     data.num_classes = dataset.num_classes
     data = train_test_split_edges_no_neg_adj_mask(data, val_ratio, test_ratio)
     return data
-
     
 def post_process_data(data, args, subset = 'in'):
     data = split_forget_retain(data, args.df_size, subset)
@@ -193,9 +193,9 @@ def main():
     print(test_results[-1])
 
     args.unlearning_model = temp
-    post_process_data(data, args)
+    post_process_data(data, args) # to get df, dr, sdf masks
 
-    print("==Membership Inference attack==")
+    print("==Membership Inference attack==") ## possibly wrong
     # Initialize MIAttackTrainer
     mia_trainer = MIAttackTrainer(args)
     # Train shadow model
@@ -203,9 +203,26 @@ def main():
     # Prepare attack training data
     feature, label = mia_trainer.prepare_attack_training_data(model, data, leak='posterior', all_neg=all_neg)
     # Create DataLoader for attack model
-    train_loader = DataLoader(TensorDataset(feature, label), batch_size=32, shuffle=True)
-    valid_loader = DataLoader(TensorDataset(feature, label), batch_size=32)
 
+    print("==========")
+    print(label.shape) 
+    
+    # do a 80-20 train test split of feature, label and use DataLoader to load it in train_loader and valid_loader
+    feature_tensor = torch.tensor(feature, dtype=torch.float32)
+    label_tensor = torch.tensor(label, dtype=torch.long)
+
+    # Split data into training and validation sets (80-20 split)
+    train_features, valid_features, train_labels, valid_labels = train_test_split(feature_tensor, label_tensor, test_size=0.2, random_state=args.random_seed)
+
+    # Create TensorDataset for training and validation sets
+    train_dataset = TensorDataset(train_features, train_labels)
+    valid_dataset = TensorDataset(valid_features, valid_labels)
+
+    # Create DataLoader for training and validation sets
+    train_loader = DataLoader(train_dataset, batch_size=64, shuffle=True)
+    valid_loader = DataLoader(valid_dataset, batch_size=64, shuffle=False)
+
+    # unsure what attack model here means
     attack_model = nn.Sequential(
         nn.Linear(feature.shape[1], 64),
         nn.ReLU(),
@@ -214,10 +231,6 @@ def main():
     attack_optimizer = torch.optim.Adam(attack_model.parameters(), lr=0.01, weight_decay=5e-4)
     # Train attack model
     mia_trainer.train_attack(attack_model, train_loader, valid_loader, attack_optimizer, leak='posterior', args=args)
-    # Evaluate attack model
-    eval_loss, eval_acc, eval_auc, eval_f1 = mia_trainer.eval_attack(attack_model, valid_loader)
-
-    print(f"Attack Model Evaluation - Loss: {eval_loss}, Accuracy: {eval_acc}, AUC: {eval_auc}, F1 Score: {eval_f1}")
 
     print("==UNLEARNING==")
     if "gnndelete" in args.unlearning_model:

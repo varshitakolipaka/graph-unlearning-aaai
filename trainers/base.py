@@ -20,7 +20,8 @@ def get_link_labels(pos_edge_index, neg_edge_index):
     link_labels[:pos_edge_index.size(1)] = 1.
     return link_labels
 
-# @torch.no_grad() THIS IS THE ORIGINAL uTu codebase giving error because of using attack_model.fc1:
+#  THIS IS THE ORIGINAL uTu codebase giving error because of using attack_model.fc1
+# @torch.no_grad():
 # def member_infer_attack(target_model, attack_model, data, logits=None):
 #     '''Membership inference attack'''
 
@@ -285,8 +286,8 @@ class EdgeTrainer:
         # MI Attack after unlearning
         if attack_model_all is not None:
             mi_logit_all_after, mi_sucrate_all_after = member_infer_attack(model, attack_model_all, data)
-            print(f'MI Attack (All) after unlearning: {mi_sucrate_all_after:.4f}')
-            print(f'MI Logit (All) after unlearning: {mi_logit_all_after}')
+            print(f'MI Attack succress rate (All) after unlearning: {mi_sucrate_all_after:.4f}')
+            # print(f'MI Logit (All) after unlearning: {mi_logit_all_after}')
 
         if attack_model_sub is not None:
             mi_logit_sub_after, mi_sucrate_sub_after = member_infer_attack(model, attack_model_sub, data)

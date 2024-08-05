@@ -213,8 +213,8 @@ class GNNDeleteEdgeTrainer(EdgeTrainer):
         if attack_model_all is not None:
             mi_logit_all_before, mi_sucrate_all_before = member_infer_attack(model, attack_model_all, data)
             
-            print('mi logit all before', mi_logit_all_before)
-            print('mi sucrate all before', mi_sucrate_all_before)
+            # print('mi logit all before', mi_logit_all_before)
+            print('mi succress rate all before', mi_sucrate_all_before)
         if attack_model_sub is not None:
             mi_logit_sub_before, mi_sucrate_sub_before = member_infer_attack(model, attack_model_sub, data)
 
@@ -340,7 +340,6 @@ class GNNDeleteEdgeTrainer(EdgeTrainer):
             if (epoch + 1) % self.args.valid_freq == 0:
                 valid_loss, dt_auc, dt_aup, df_auc, df_aup, df_logit, logit_all_pair, valid_log = self.eval(model, data, 'val')
 
-
         # test(self, model, data, model_retrain=None, attack_model_all=None, attack_model_sub=None):
         test_results = self.test(model, data, attack_model_all=attack_model_all, attack_model_sub=attack_model_sub)
-        print(test_results[-1])
+        print('===AFTER UNLEARNING===', test_results[-1])

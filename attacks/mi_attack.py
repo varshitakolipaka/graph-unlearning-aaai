@@ -44,8 +44,8 @@ class MIAttackTrainer(EdgeTrainer):
             
             z = model(data.x, data.test_pos_edge_index)
             logits = model.decode(z, data.test_pos_edge_index, neg_edge_index)
-            label = get_link_labels(data.test_pos_edge_index, neg_edge_index)
-            loss = F.binary_cross_entropy_with_logits(logits, label)
+            label = get_link_labels(data.test_pos_edge_index, neg_edge_index) # ground truth
+            loss = F.binary_cross_entropy_with_logits(logits, label) 
             loss.backward()
             optimizer.step()
             optimizer.zero_grad()
@@ -58,6 +58,9 @@ class MIAttackTrainer(EdgeTrainer):
                 if valid_loss < best_valid_loss:
                     best_valid_loss = valid_loss
                     best_epoch = epoch
+
+        valid_loss, auc, aup, df_logit, _ = self.eval_shadow(model, data, 'val')
+        print('AUC of the shadow model: ', auc)
 
         return torch.cat(all_neg, dim=-1)
 
@@ -102,6 +105,9 @@ class MIAttackTrainer(EdgeTrainer):
             if valid_auc > best_auc:
                 best_auc = valid_auc
                 best_epoch = epoch
+
+        valid_loss, valid_acc, valid_auc, valid_f1 = self.eval_attack(model, valid_loader)
+        print('AUC and accuracy of the attack model: ', valid_auc, valid_acc)
         
     @torch.no_grad()
     def eval_attack(self, model, eval_loader):
@@ -128,7 +134,7 @@ class MIAttackTrainer(EdgeTrainer):
             Absent edges (label = 0): validation data of shadow model (Valid pos and neg edges)
         '''
 
-        z = model(data.x, data.test_pos_edge_index) # torch.Size([19793, 64])
+        z = model(data.x, data.test_pos_edge_index) # torch.Size([19793, 64]) 
         # all_neg = negative_sampling(
         #     edge_index=data.train_pos_edge_index,
         #     num_nodes=data.num_nodes,
@@ -147,7 +153,7 @@ class MIAttackTrainer(EdgeTrainer):
         edge_index = torch.cat([present_edge_index, absent_edge_index], dim=-1)  # E (6342 + 6342)
 
         if leak == 'posterior':
-            feature1 = model.decode(z, edge_index).sigmoid().cpu()
+            feature1 = model.decode(z, edge_index).sigmoid().cpu() # get the logits of the test data
             feature0 = 1 - feature1
             feature = torch.stack([feature0, feature1], dim=1)
         elif leak == 'repr':
