@@ -20,6 +20,7 @@ def parse_args():
     parser.add_argument('--unlearning_epochs', type=int, default=50, help='number of epochs to unlearn for')
     # parser.add_argument('--out_dim', type=int, default=64, help='output dimension')
     parser.add_argument('--request', type=str, default='node', help='unlearning request', choices=['node', 'edge'])
+    parser.add_argument('--edge_attack_type', type=str, default='random', help='edge attack type', choices=['random', 'specific'])
 
     # Data
     # parser.add_argument('--data_dir', type=str, default='./data', help='data dir')
@@ -36,6 +37,7 @@ def parse_args():
     # parser.add_argument("--suffix", type=str, default=None, help="name suffix for #wandb run")
     # parser.add_argument("--mode", type=str, default="disabled", help="#wandb mode")
     parser.add_argument('--unlearn_lr', type=float, default=0.025, help='initial learning rate')
+    parser.add_argument('--train_lr', type=float, default=0.025, help='initial training rate')
     parser.add_argument('--weight_decay', type=float, default=5e-7, help='weight decay')
     parser.add_argument('--optimizer', type=str, default='Adam', help='optimizer to use')
     parser.add_argument('--training_epochs', type=int, default=600, help='number of epochs to train')

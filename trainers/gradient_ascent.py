@@ -1,6 +1,6 @@
 import os
 import time
-import wandb
+# import wandb
 from tqdm import tqdm, trange
 import torch
 import torch.nn as nn
@@ -35,7 +35,7 @@ class GradientAscentTrainer(Trainer):
 
         for epoch in trange(self.args.unlearning_epochs, desc='Unlearning'):
             self.model.train()
-            
+
             # Positive and negative sample
             neg_edge_index = negative_sampling(
                 edge_index=self.data.train_pos_edge_index[:, self.data.df_mask],
@@ -56,5 +56,5 @@ class GradientAscentTrainer(Trainer):
 
         train_acc, msc_rate, f1 = self.evaluate(is_dr=True)
         print(f'Train Acc: {train_acc}, Misclassification: {msc_rate},  F1 Score: {f1}')
-        
+
         return train_acc, msc_rate, end_time - start_time
