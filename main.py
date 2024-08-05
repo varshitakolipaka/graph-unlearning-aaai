@@ -26,14 +26,11 @@ optimizer = torch.optim.Adam(clean_model.parameters(), lr=0.01, weight_decay=5e-
 clean_trainer = Trainer(clean_model, clean_data, optimizer, args.training_epochs)
 clean_trainer.train()
 
-
 print("==POISONING==")
 print(args.attack_type)
 if args.attack_type=="label":
-    print("A")
     poisoned_data, poisoned_indices = label_flip_attack(clean_data, args.df_size, args.random_seed)
 elif args.attack_type=="edge":
-    print("B")
     poisoned_data, poisoned_indices = edge_attack_specific_nodes(clean_data, args.df_size, args.random_seed)
 elif args.attack_type=="random":
     poisoned_data = copy.deepcopy(clean_data)
@@ -48,7 +45,10 @@ else:
 optimizer = torch.optim.Adam(poisoned_model.parameters(), lr=0.01, weight_decay=5e-4)
 poisoned_trainer = Trainer(poisoned_model, poisoned_data, optimizer, args.training_epochs)
 poisoned_trainer.train()
-utils.find_masks(poisoned_data, poisoned_indices, attack_type=args.attack_type)
+utils.find_masks(poisoned_data, poisoned_indices, args, attack_type=args.attack_type)
+
+acc= poisoned_trainer.all_class_acc()
+acc= clean_trainer.all_class_acc()
 exit(0)
 
 print("==UNLEARNING==")

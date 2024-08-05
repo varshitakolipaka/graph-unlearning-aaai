@@ -74,7 +74,6 @@ def get_sdf_masks(data, args):
             num_nodes=data.num_nodes,
         )
     else:
-        print("HAHAHAHAHHHA")
         _, two_hop_edge, _, two_hop_mask = k_hop_subgraph(
             data.poisoned_nodes,
             2,

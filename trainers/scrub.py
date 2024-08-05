@@ -1,4 +1,4 @@
-import torch, torchmetrics, tqdm, copy, time
+import torch, tqdm, copy, time
 import numpy as np
 from os import makedirs
 from os.path import exists
@@ -33,7 +33,7 @@ class LinearLR(_LRScheduler):
         optimizer (Optimizer): Wrapped optimizer.
         T (int): Total number of training epochs or iterations.
         last_epoch (int): The index of last epoch or iteration. Default: -1.
-        
+
     .. _Budgeted Training\: Rethinking Deep Neural Network Training Under
     Resource Constraints:
         https://arxiv.org/abs/1905.04753
@@ -53,7 +53,7 @@ class LinearLR(_LRScheduler):
 
     def _get_closed_form_lr(self):
         return self.get_lr()
-    
+
 class ScrubTrainer(Trainer):
     def __init__(self, model, poisoned_dataset, optimizer, opt):
         super().__init__(model, poisoned_dataset, optimizer)
@@ -65,7 +65,7 @@ class ScrubTrainer(Trainer):
         self.poisoned_dataset = poisoned_dataset
 
 
-        self.scheduler = LinearLR(self.optimizer, T=self.opt.unlearn_iters*1.25, warmup_epochs=self.opt.unlearn_iters//100) # Spend 1% time in warmup, and stop 66% of the way through training 
+        self.scheduler = LinearLR(self.optimizer, T=self.opt.unlearn_iters*1.25, warmup_epochs=self.opt.unlearn_iters//100) # Spend 1% time in warmup, and stop 66% of the way through training
         self.og_model = copy.deepcopy(model)
         self.og_model.eval()
         opt.unlearn_iters = opt.unlearn_iters
@@ -89,7 +89,7 @@ class ScrubTrainer(Trainer):
         return
 
     def forward_pass(self, data, mask):
-        
+
         output = self.model(data.x, data.edge_index)
 
         with torch.no_grad():
@@ -97,14 +97,14 @@ class ScrubTrainer(Trainer):
 
         loss = F.cross_entropy(output[mask], data.y[mask])
         loss += self.opt.scrubAlpha * distill_kl_loss(output[mask], logit_t[mask], self.opt.kd_T)
-        
+
         if self.maximize:
             loss = -loss
 
         return loss
 
     def unlearn_nc(self, dataset, train_mask, forget_mask):
-        
+
         self.maximize=False
         while self.curr_step < self.opt.unlearn_iters:
             if self.curr_step < self.opt.msteps:
@@ -114,7 +114,7 @@ class ScrubTrainer(Trainer):
             self.maximize=False
             self.train_one_epoch(data=dataset, mask=train_mask)
         return
-    
+
     # scrub for label flipping
     def unlearn_nc_lf(self):
         attacked_indices = self.poisoned_dataset.attacked_idx
@@ -131,10 +131,10 @@ class ScrubTrainer(Trainer):
         train_acc, msc_rate, f1 = self.evaluate()
         print(f'Test Acc: {train_acc}, Misclassification: {msc_rate},  F1 Score: {f1}')
         return train_acc, msc_rate, 0
-    
+
     def train(self):
         return self.unlearn_nc_lf()
-    
+
     def get_save_prefix(self):
         self.unlearn_file_prefix = self.opt.pretrain_file_prefix+'/'+str(self.opt.deletion_size)+'_'+self.opt.unlearn_method+'_'+self.opt.exp_name
         self.unlearn_file_prefix += '_'+str(self.opt.unlearn_iters)+'_'+str(self.opt.k)

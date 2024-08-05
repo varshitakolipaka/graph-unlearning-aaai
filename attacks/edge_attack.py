@@ -95,36 +95,25 @@ def edge_attack_specific_nodes(data, epsilon, seed):
     poisoned_edges = set()
 
     # Use tqdm to show progress
-    with tqdm(total=epsilon, desc='Adding Poisoned Edges') as pbar:
-        while len(poisoned_edges) < epsilon:
-            n1 = np.random.choice(class1_indices.numpy())
-            n2 = np.random.choice(class2_indices.numpy())
-            edge = (min(n1, n2), max(n1, n2))
+    while len(poisoned_edges) < epsilon:
+        n1 = np.random.choice(class1_indices.numpy())
+        n2 = np.random.choice(class2_indices.numpy())
+        edge = (min(n1, n2), max(n1, n2))
 
-            if edge not in existing_edges and edge not in poisoned_edges:
-                to_arr.append(n1)
-                from_arr.append(n2)
-                poisoned_edges.add(edge)
-                poisoned_edges.add((n2, n1))
-                poisoned_nodes.add(n1)
-                poisoned_nodes.add(n2)
-                pbar.update(1)  # Update progress bar
+        if edge not in existing_edges and edge not in poisoned_edges:
+            to_arr.append(n1)
+            from_arr.append(n2)
+            poisoned_edges.add(edge)
+            poisoned_nodes.add(n1)
+            poisoned_nodes.add(n2)
 
     to_arr = torch.tensor(to_arr, dtype=torch.int64)
     from_arr = torch.tensor(from_arr, dtype=torch.int64)
     edge_index_to_add = torch.stack([to_arr, from_arr], dim=0)
     edge_index_to_add = utils.to_undirected(edge_index_to_add)
+
     data.poisoned_nodes= torch.tensor(list(poisoned_nodes), dtype=torch.long)
-    # Update edge_index
     augmented_edge = torch.cat([data.edge_index, edge_index_to_add], dim=1)
     data.edge_index = augmented_edge
-    nums= list(range(len(data.edge_index[0])-len(poisoned_edges), len(data.edge_index[0])))
+    nums= list(range(len(data.edge_index[0])-2*len(poisoned_edges), len(data.edge_index[0])))
     return data, torch.tensor(nums, dtype=torch.long)
-    # augmented_edge = utils.sort_edge_index(augmented_edge)
-
-    # # # Determine which added edges are poisoned
-    # augmented_edges_set = set((min(augmented_edge[0, i].item(), augmented_edge[1, i].item()),
-    #                            max(augmented_edge[0, i].item(), augmented_edge[1, i].item())) for i in range(augmented_edge.size(1)))
-
-    # added_edge_indices = [i for i, edge in enumerate(augmented_edges_set) if edge in poisoned_edges]
-
