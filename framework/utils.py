@@ -13,7 +13,7 @@ from trainers.gradient_ascent import GradientAscentTrainer
 from trainers.gif import GIFTrainer
 from trainers.base import Trainer
 from trainers.utu import UtUTrainer
-from trainers.retrain import RetrainTrainer    
+from trainers.retrain import RetrainTrainer
 
 def get_original_data(d):
     data_dir = './datasets'
@@ -34,7 +34,7 @@ def get_original_data(d):
     else:
         raise NotImplementedError(f"{d} not supported.")
     data = dataset[0]
-    
+
     data.num_classes= dataset.num_classes
     return data
 
@@ -58,21 +58,35 @@ def seed_everything(seed):
     torch.cuda.manual_seed_all(seed)
     return seed
 
-def get_sdf_masks(data):
-    _, two_hop_edge, _, two_hop_mask = k_hop_subgraph(
-        data.edge_index[:, data.df_mask].flatten().unique(),
-        2,
-        data.edge_index,
-        num_nodes=data.num_nodes,
-    )
+def get_sdf_masks(data, args):
+    if args.attack_type!="edge":
+        _, two_hop_edge, _, two_hop_mask = k_hop_subgraph(
+            data.edge_index[:, data.df_mask].flatten().unique(),
+            2,
+            data.edge_index,
+            num_nodes=data.num_nodes,
+        )
+        _, one_hop_edge, _, one_hop_mask = k_hop_subgraph(
+            data.edge_index[:, data.df_mask].flatten().unique(),
+            1,
+            data.edge_index,
+            num_nodes=data.num_nodes,
+        )
+    else:
+        print("HAHAHAHAHHHA")
+        _, two_hop_edge, _, two_hop_mask = k_hop_subgraph(
+            data.poisoned_nodes,
+            2,
+            data.edge_index,
+            num_nodes=data.num_nodes,
+        )
+        _, one_hop_edge, _, one_hop_mask = k_hop_subgraph(
+            data.poisoned_nodes,
+            1,
+            data.edge_index,
+            num_nodes=data.num_nodes,
+        )
     data.sdf_mask = two_hop_mask
-
-    _, one_hop_edge, _, one_hop_mask = k_hop_subgraph(
-        data.edge_index[:, data.df_mask].flatten().unique(),
-        1,
-        data.edge_index,
-        num_nodes=data.num_nodes,
-    )
     sdf_node_1hop = torch.zeros(data.num_nodes, dtype=torch.bool)
     sdf_node_2hop = torch.zeros(data.num_nodes, dtype=torch.bool)
 
@@ -86,7 +100,7 @@ def get_sdf_masks(data):
     data.sdf_mask = two_hop_mask
 
 
-def find_masks(data, poisoned_indices, attack_type="label"):
+def find_masks(data, poisoned_indices, args, attack_type="label"):
     if attack_type == "label" or attack_type == "random":
         data.df_mask = torch.zeros(data.edge_index.shape[1], dtype=torch.bool)
         data.dr_mask = torch.zeros(data.edge_index.shape[1], dtype=torch.bool)
@@ -101,14 +115,14 @@ def find_masks(data, poisoned_indices, attack_type="label"):
     elif attack_type == "edge":
         data.df_mask = torch.zeros(data.edge_index.shape[1], dtype=torch.bool)
         data.dr_mask = torch.zeros(data.edge_index.shape[1], dtype=torch.bool)
-        data.df_mask[poisoned_indices] = True
+        data.df_mask[poisoned_indices] = 1
         data.dr_mask = ~data.df_mask
     data.attacked_idx = poisoned_indices
-    get_sdf_masks(data)
+    get_sdf_masks(data, args)
 
 
 def get_trainer(args, poisoned_model, poisoned_data, optimizer_unlearn) -> Trainer:
-    
+
     trainer_map = {
         "original": Trainer,
         "gradient_ascent": GradientAscentTrainer,
@@ -119,7 +133,7 @@ def get_trainer(args, poisoned_model, poisoned_data, optimizer_unlearn) -> Train
         "contrastive": ContrastiveUnlearnTrainer,
         "retrain": RetrainTrainer
     }
-    
+
     if args.unlearning_model in trainer_map:
         return trainer_map[args.unlearning_model](poisoned_model, poisoned_data, optimizer_unlearn, args)
     else:

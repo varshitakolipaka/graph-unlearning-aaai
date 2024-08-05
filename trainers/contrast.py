@@ -34,9 +34,9 @@ class ContrastiveUnlearnTrainer(Trainer):
     def contrastive_loss(self, pos_dist, neg_dist, margin, mask):
         # take the retained mask into account
         mask_cpu = mask.cpu()
-    
-        pos_dist = pos_dist[mask_cpu]
-        neg_dist = neg_dist[mask_cpu]
+
+        pos_dist = pos_dist[mask_cpu].float()
+        neg_dist = neg_dist[mask_cpu].float()
 
         pos_loss = torch.mean(pos_dist**2)
         neg_loss = torch.mean(F.relu(margin - neg_dist) ** 2)
@@ -50,7 +50,7 @@ class ContrastiveUnlearnTrainer(Trainer):
         if lmda == 1:
             return self.task_loss(model, data)
         return lmda * self.task_loss(model, data) + (1 - lmda) * self.contrastive_loss(
-            pos_dist, neg_dist, margin, data.retain_mask
+            pos_dist, neg_dist, margin, data.train_mask
         )
 
 
@@ -84,7 +84,7 @@ class ContrastiveUnlearnTrainer(Trainer):
                 subset_set = set(subset.tolist())
                 subset_dict[idx] = subset_set
         self.subset_dict = subset_dict
-    
+
     def store_edge_index_for_poison(self, data, idx):
         edge_index_for_poison_dict = {}
         for idx in range(len(data.train_mask)):
@@ -99,12 +99,12 @@ class ContrastiveUnlearnTrainer(Trainer):
         # get pos, neg distances for nodes beforehand
         pos_dist = []
         neg_dist = []
-        
+
         embeddings = model.conv1(data.x, data.edge_index)
         embeddings = F.relu(embeddings)
         embeddings = F.dropout(embeddings, training=model.training)
         embeddings = model.conv2(embeddings, data.edge_index)
-        
+
         # Precompute the size of pos_dist and neg_dist
         num_masks = len(data.train_mask)
         pos_dist = [0] * num_masks
@@ -123,7 +123,7 @@ class ContrastiveUnlearnTrainer(Trainer):
                 if positive_samples and negative_samples:
                     # Compute distances
                     pos, neg = self.calc_distance(
-                        embeddings, idx, 
+                        embeddings, idx,
                         list(positive_samples), list(negative_samples)
                     )
                     pos_dist[idx] = pos.item()
@@ -140,14 +140,14 @@ class ContrastiveUnlearnTrainer(Trainer):
         # get pos, neg distances for nodes beforehand
         pos_dist = []
         neg_dist = []
-        
+
         embeddings = model.conv1(data.x, data.edge_index)
         embeddings = F.relu(embeddings)
         embeddings = F.dropout(embeddings, training=model.training)
         embeddings = model.conv2(embeddings, data.edge_index)
-        
+
         for idx in range(len(data.train_mask)):
-            if data.retain_mask[idx]:
+            if data.train_mask[idx]:
                 # Get K-hop subgraph
                 subset_set = self.subset_dict[idx]
                 edge_index_for_poison = self.edge_index_for_poison_dict[idx]
@@ -191,6 +191,9 @@ class ContrastiveUnlearnTrainer(Trainer):
                 pos, neg = self.calc_distance(embeddings, idx, positive_samples, negative_samples)
                 pos_dist.append(pos.item())
                 neg_dist.append(neg.item())
+            else:
+                pos_dist.append(0)
+                neg_dist.append(0)
 
         # convert to tensor
         pos_dist = torch.tensor(pos_dist)
@@ -198,19 +201,19 @@ class ContrastiveUnlearnTrainer(Trainer):
         return pos_dist, neg_dist
 
     def train_node(self):
-        
+
         # attacked idx must be a list of nodes
         model = self.model
         data = self.data
         args = self.args
         attacked_idx = self.attacked_idx
         optimizer = self.optimizer
-        
+
         model = model.to(device)
         data = data.to(device)
-        
+
         attacked_set = set(attacked_idx.tolist())
-        
+
         for epoch in trange(args.contrastive_epochs_1, desc="Unlearning 1"):
             pos_dist, neg_dist = self.get_distances(model, data, attacked_set)
             loss = self.unlearn_loss(
@@ -225,7 +228,7 @@ class ContrastiveUnlearnTrainer(Trainer):
             optimizer.zero_grad()
             loss.backward()
             optimizer.step()
-            
+
         for epoch in trange(args.contrastive_epochs_2, desc="Unlearning 2"):
             loss = self.unlearn_loss(
                 model,
@@ -239,8 +242,8 @@ class ContrastiveUnlearnTrainer(Trainer):
             optimizer.zero_grad()
             loss.backward()
             optimizer.step()
-        
-    
+
+
     def train_edge(self):
         # attack idx must be a list of tuples (u,v)
         model = self.model
@@ -248,7 +251,7 @@ class ContrastiveUnlearnTrainer(Trainer):
         args = self.args
         attacked_idx = self.attacked_idx
         optimizer = self.optimizer
-        
+
         for epoch in trange(args.contrastive_epochs_1, desc="Unlearning 1"):
             pos_dist, neg_dist = self.get_distances_edge(
                 model, data, attacked_idx
@@ -265,7 +268,7 @@ class ContrastiveUnlearnTrainer(Trainer):
             optimizer.zero_grad()
             loss.backward()
             optimizer.step()
-            
+
         for epoch in trange(args.contrastive_epochs_2, desc="Unlearning 2"):
             loss = self.unlearn_loss(
                 model,
@@ -279,9 +282,9 @@ class ContrastiveUnlearnTrainer(Trainer):
             optimizer.zero_grad()
             loss.backward()
             optimizer.step()
-    
+
     def train(self):
-        
+
         # attack_idx is an extra needed parameter which is defined above in both node and edge functions
         self.data.retain_mask = self.data.train_mask.clone()
         self.store_subset(self.data)
@@ -294,7 +297,7 @@ class ContrastiveUnlearnTrainer(Trainer):
         end_time = time.time()
         train_acc, msc_rate, f1 = self.evaluate(is_dr=True)
         print(f'Train Acc: {train_acc}, Misclassification: {msc_rate},  F1 Score: {f1}')
-        
+
         print(f"Training time: {end_time - start_time}")
-        
+
         return train_acc, msc_rate, end_time - start_time
