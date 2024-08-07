@@ -213,8 +213,9 @@ class GNNDeleteEdgeTrainer(EdgeTrainer):
         if attack_model_all is not None:
             mi_logit_all_before, mi_sucrate_all_before = member_infer_attack(model, attack_model_all, data)
             
-            # print('mi logit all before', mi_logit_all_before)
-            print('mi succress rate all before', mi_sucrate_all_before)
+            print('mi logit all before', mi_logit_all_before)
+            print("========================")
+            # print('mi succress rate all before', mi_sucrate_all_before)
         if attack_model_sub is not None:
             mi_logit_sub_before, mi_sucrate_sub_before = member_infer_attack(model, attack_model_sub, data)
 

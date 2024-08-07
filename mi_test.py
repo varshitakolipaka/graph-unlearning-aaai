@@ -13,6 +13,7 @@ from trainers.base import EdgeTrainer
 from attacks.mi_attack import MIAttackTrainer
 from torch.utils.data import DataLoader, TensorDataset
 from sklearn.model_selection import train_test_split
+from attacks.mi_attack import AttackModel
 
 device = torch.device('cuda') if torch.cuda.is_available() else torch.device('cpu')
 
@@ -193,7 +194,7 @@ def main():
     print(test_results[-1])
 
     args.unlearning_model = temp
-    post_process_data(data, args) # to get df, dr, sdf masks
+    data = post_process_data(data, args) # to get df, dr, sdf masks
 
     print("==Membership Inference attack==") ## possibly wrong
     # Initialize MIAttackTrainer
@@ -222,12 +223,9 @@ def main():
     train_loader = DataLoader(train_dataset, batch_size=64, shuffle=True)
     valid_loader = DataLoader(valid_dataset, batch_size=64, shuffle=False)
 
-    # unsure what attack model here means
-    attack_model = nn.Sequential(
-        nn.Linear(feature.shape[1], 64),
-        nn.ReLU(),
-        nn.Linear(64, 2)
-    )
+    # unsure what attack model here means does for the optimizer
+    attack_model = AttackModel(feature.shape[1])
+
     attack_optimizer = torch.optim.Adam(attack_model.parameters(), lr=0.01, weight_decay=5e-4)
     # Train attack model
     mia_trainer.train_attack(attack_model, train_loader, valid_loader, attack_optimizer, leak='posterior', args=args)
@@ -247,6 +245,16 @@ def main():
         optimizer_unlearn= utils.get_optimizer(args, unlearn_model)
         unlearn_trainer= utils.get_trainer(args, unlearn_model, data, optimizer_unlearn)
         unlearn_trainer.train()
+    elif "utu" in args.unlearning_model:
+        args.unlearning_model = "utu_edge"
+        optimizer_unlearn= utils.get_optimizer(args, model)
+        unlearn_trainer= utils.get_trainer(args, model, data, optimizer_unlearn)
+        unlearn_trainer.train(model, data, optimizer_unlearn, args, attack_model_all=attack_model)
+    elif "gif" in args.unlearning_model:
+        args.unlearning_model = "gif_edge"
+        optimizer_unlearn= utils.get_optimizer(args, model)
+        unlearn_trainer= utils.get_trainer(args, model, data, optimizer_unlearn)
+        unlearn_trainer.train(model, data, optimizer_unlearn, args, attack_model=attack_model)
     else:
         optimizer_unlearn= utils.get_optimizer(args, model)
         unlearn_trainer= utils.get_trainer(args, model, data, optimizer_unlearn)

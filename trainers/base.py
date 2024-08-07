@@ -21,47 +21,47 @@ def get_link_labels(pos_edge_index, neg_edge_index):
     return link_labels
 
 #  THIS IS THE ORIGINAL uTu codebase giving error because of using attack_model.fc1
-# @torch.no_grad():
-# def member_infer_attack(target_model, attack_model, data, logits=None):
-#     '''Membership inference attack'''
-
-#     edge = data.train_pos_edge_index[:, data.df_mask]  # Deleted edges in the training set
-#     z = target_model(data.x, data.train_pos_edge_index[:, data.dr_mask])
-#     if attack_model.fc1.in_features == 2:
-#         feature1 = target_model.decode(z, edge).sigmoid()
-#         feature0 = 1 - feature1
-#         feature = torch.stack([feature0, feature1], dim=1) # Posterior MI
-#     else:
-#         feature = torch.cat([z[edge[0]], z[edge][1]], dim=-1)  # Embedding/Repr. MI
-#     logits = attack_model(feature)
-#     _, pred = torch.max(logits, 1)
-#     suc_rate = 1 - pred.float().mean()  # label should be zero, aka if pred is 1(member) then attack success
-
-#     return torch.softmax(logits, dim=-1).squeeze().tolist(), suc_rate.cpu().item()
-
 @torch.no_grad()
 def member_infer_attack(target_model, attack_model, data, logits=None):
     '''Membership inference attack'''
 
     edge = data.train_pos_edge_index[:, data.df_mask]  # Deleted edges in the training set
     z = target_model(data.x, data.train_pos_edge_index[:, data.dr_mask])
-
-    # Check the number of input features of the first layer of attack_model
-    first_layer = list(attack_model.children())[0]
-    in_features = first_layer.in_features if isinstance(first_layer, nn.Linear) else None
-
-    if in_features == 2:
+    if attack_model.fc1.in_features == 2:
         feature1 = target_model.decode(z, edge).sigmoid()
         feature0 = 1 - feature1
-        feature = torch.stack([feature0, feature1], dim=1)  # Posterior MI
+        feature = torch.stack([feature0, feature1], dim=1) # Posterior MI
     else:
-        feature = torch.cat([z[edge[0]], z[edge[1]]], dim=-1)  # Embedding/Repr. MI
-
+        feature = torch.cat([z[edge[0]], z[edge][1]], dim=-1)  # Embedding/Repr. MI
     logits = attack_model(feature)
     _, pred = torch.max(logits, 1)
     suc_rate = 1 - pred.float().mean()  # label should be zero, aka if pred is 1(member) then attack success
 
     return torch.softmax(logits, dim=-1).squeeze().tolist(), suc_rate.cpu().item()
+
+# @torch.no_grad()
+# def member_infer_attack(target_model, attack_model, data, logits=None):
+#     '''Membership inference attack'''
+
+#     edge = data.train_pos_edge_index[:, data.df_mask]  # Deleted edges in the training set
+#     z = target_model(data.x, data.train_pos_edge_index[:, data.dr_mask])
+
+#     # Check the number of input features of the first layer of attack_model
+#     first_layer = list(attack_model.children())[0]
+#     in_features = first_layer.in_features if isinstance(first_layer, nn.Linear) else None
+
+#     if in_features == 2:
+#         feature1 = target_model.decode(z, edge).sigmoid()
+#         feature0 = 1 - feature1
+#         feature = torch.stack([feature0, feature1], dim=1)  # Posterior MI
+#     else:
+#         feature = torch.cat([z[edge[0]], z[edge[1]]], dim=-1)  # Embedding/Repr. MI
+
+#     logits = attack_model(feature)
+#     _, pred = torch.max(logits, 1)
+#     suc_rate = 1 - pred.float().mean()  # label should be zero, aka if pred is 1(member) then attack success
+
+#     return torch.softmax(logits, dim=-1).squeeze().tolist(), suc_rate.cpu().item()
 
 
 device = torch.device('cuda') if torch.cuda.is_available() else torch.device('cpu')
@@ -286,8 +286,9 @@ class EdgeTrainer:
         # MI Attack after unlearning
         if attack_model_all is not None:
             mi_logit_all_after, mi_sucrate_all_after = member_infer_attack(model, attack_model_all, data)
-            print(f'MI Attack succress rate (All) after unlearning: {mi_sucrate_all_after:.4f}')
-            # print(f'MI Logit (All) after unlearning: {mi_logit_all_after}')
+            # print(f'MI Attack succress rate (All) after unlearning: {mi_sucrate_all_after:.4f}')
+            print(f'MI Logit (All) after unlearning: {mi_logit_all_after}')
+            print("===============")
 
         if attack_model_sub is not None:
             mi_logit_sub_after, mi_sucrate_sub_after = member_infer_attack(model, attack_model_sub, data)

@@ -10,7 +10,7 @@ from torch_geometric.utils import negative_sampling
 from torch_geometric.loader import GraphSAINTRandomWalkSampler
 
 from .base import Trainer
-
+from .base import EdgeTrainer, member_infer_attack
 
 device = torch.device('cuda') if torch.cuda.is_available() else torch.device('cpu')
         
@@ -26,5 +26,28 @@ class UtUTrainer(Trainer):
         
         test_acc, msc_rate, f1 = self.evaluate(is_dr=True)
         print(f'Train Acc: {test_acc}, Misclassification: {msc_rate},  F1 Score: {f1}')
-        
 
+class UtUEdgeTrainer(EdgeTrainer):
+    def __init__(self, model, data, optimizer,args):
+        super().__init__(args)
+        self.args= args
+
+    def train(self, model, data, optimizer, args, logits_ori=None, attack_model_all=None, attack_model_sub=None):
+        model = model.to(device)
+        data = data.to(device)
+
+        best_metric = 0
+        loss_fct = nn.MSELoss()
+
+        # MI Attack before unlearning
+        if attack_model_all is not None:
+            mi_logit_all_before, mi_sucrate_all_before = member_infer_attack(model, attack_model_all, data)
+            print('mi logit all before', mi_logit_all_before)
+            print("========================")
+
+        if attack_model_sub is not None:
+            mi_logit_sub_before, mi_sucrate_sub_before = member_infer_attack(model, attack_model_sub, data)
+            
+        z = model(data.x, data.train_pos_edge_index[:, data.dr_mask])
+        test_results = self.test(model, data, attack_model_all=attack_model_all, attack_model_sub=attack_model_sub)
+        print('===AFTER UNLEARNING===', test_results[-1])

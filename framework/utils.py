@@ -12,9 +12,9 @@ from trainers.contrast import ContrastiveUnlearnTrainer
 from trainers.gnndelete import GNNDeleteNodeembTrainer, GNNDeleteEdgeTrainer
 from trainers.gnndelete_ni import GNNDeleteNITrainer
 from trainers.gradient_ascent import GradientAscentTrainer
-from trainers.gif import GIFTrainer
+from trainers.gif import GIFTrainer, GIFEdgeTrainer
 from trainers.base import Trainer
-from trainers.utu import UtUTrainer
+from trainers.utu import UtUTrainer, UtUEdgeTrainer
 from trainers.retrain import RetrainTrainer
 from trainers.scrub import ScrubTrainer
 
@@ -123,7 +123,9 @@ def get_trainer(args, poisoned_model, poisoned_data, optimizer_unlearn) -> Train
         "gnndelete_ni": GNNDeleteNITrainer,
         "gnndelete_edge": GNNDeleteEdgeTrainer,
         "gif": GIFTrainer,
+        "gif_edge": GIFEdgeTrainer,
         "utu": UtUTrainer,
+        "utu_edge": UtUEdgeTrainer,
         "contrastive": ContrastiveUnlearnTrainer,
         "retrain": RetrainTrainer,
         "scrub": ScrubTrainer

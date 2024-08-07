@@ -12,6 +12,17 @@ from trainers.base import get_link_labels, EdgeTrainer
 
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
+class AttackModel(nn.Module):
+    def __init__(self, num_features):
+        super(AttackModel, self).__init__()
+        self.fc1 = nn.Linear(num_features, 64)
+        self.fc2 = nn.Linear(64, 2)
+
+    def forward(self, x):
+        x = F.relu(self.fc1(x))
+        x = self.fc2(x)
+        return x
+
 class MIAttackTrainer(EdgeTrainer):
     '''This code is adapted from https://github.com/iyempissy/rebMIGraph'''
 
@@ -33,7 +44,7 @@ class MIAttackTrainer(EdgeTrainer):
 
         all_neg = []
         # Train shadow model using the test data
-        for epoch in trange(2000, desc='Train shadow model'):
+        for epoch in trange(500, desc='Train shadow model'):
             model.train()
 
             # Positive and negative sample
