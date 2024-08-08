@@ -12,6 +12,9 @@ def label_flip_attack(data, epsilon, seed):
     class2_indices = train_indices[data.y[train_indices] == class2]
     # Determine the number of flips
     num_flips = int(epsilon * len(train_indices))
+    
+    # truncate the number of flips to be not more than the number of samples in the minority class
+    num_flips = min(num_flips, len(class1_indices), len(class2_indices))
 
     # Randomly select indices to flip
     flip_indices_class1 = np.random.choice(class1_indices, num_flips // 2, replace=False)

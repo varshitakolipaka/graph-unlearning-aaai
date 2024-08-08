@@ -1,4 +1,5 @@
 import copy
+import os
 import torch
 from framework import utils
 from framework.training_args import parse_args
@@ -28,14 +29,28 @@ def train():
     else:
         clean_model = GCN(clean_data.num_features, args.hidden_dim, clean_data.num_classes)
 
-    optimizer = torch.optim.Adam(clean_model.parameters(), lr=0.01, weight_decay=5e-4)
+    optimizer = torch.optim.Adam(clean_model.parameters(), lr=args.train_lr, weight_decay=args.weight_decay)
     clean_trainer = Trainer(clean_model, clean_data, optimizer, args.training_epochs)
     clean_trainer.train()
-    a_p, a_c = clean_trainer.subset_acc(class1=6, class2=1)
-    print(f'Clean Acc: {a_p}, Clean Acc: {a_c}')
+    a_p, a_c = clean_trainer.subset_acc(class1=57, class2=33)
+    print(f'Poisoned Acc: {a_p}, Clean Acc: {a_c}')
     return clean_data
 
-def poison(clean_data):
+def poison(clean_data=None):
+    if clean_data is None:
+        # load the poisoned data and model and indices from np file
+        poisoned_data = torch.load(f'./data/{args.dataset}_{args.attack_type}_{args.df_size}_poisoned_data.pt')
+        poisoned_indices = torch.load(f'./data/{args.dataset}_{args.attack_type}_{args.df_size}_poisoned_indices.pt')
+        poisoned_model = torch.load(f'./data/{args.dataset}_{args.attack_type}_{args.df_size}_poisoned_model.pt')
+        
+        optimizer = torch.optim.Adam(poisoned_model.parameters(), lr=args.train_lr, weight_decay=args.weight_decay)
+        poisoned_trainer = Trainer(poisoned_model, poisoned_data, optimizer, args.training_epochs)
+        poisoned_trainer.evaluate()
+        a_p, a_c = poisoned_trainer.subset_acc()
+        print(f'Poisoned Acc: {a_p}, Clean Acc: {a_c}')
+
+        return poisoned_data, poisoned_indices, poisoned_model
+    
     print("==POISONING==")
     if args.attack_type=="label":
         poisoned_data, poisoned_indices = label_flip_attack(clean_data, args.df_size, args.random_seed)
@@ -51,9 +66,16 @@ def poison(clean_data):
     else:
         poisoned_model = GCN(poisoned_data.num_features, args.hidden_dim, poisoned_data.num_classes)
     
-    optimizer = torch.optim.Adam(poisoned_model.parameters(), lr=0.01, weight_decay=5e-4)
+    optimizer = torch.optim.Adam(poisoned_model.parameters(), lr=args.train_lr, weight_decay=args.weight_decay)
     poisoned_trainer = Trainer(poisoned_model, poisoned_data, optimizer, args.training_epochs)
     poisoned_trainer.train()
+    
+    # save the poisoned data and model and indices to np file
+    os.makedirs('./data', exist_ok=True)
+    torch.save(poisoned_data, f'./data/{args.dataset}_{args.attack_type}_{args.df_size}_poisoned_data.pt')
+    torch.save(poisoned_indices, f'./data/{args.dataset}_{args.attack_type}_{args.df_size}_poisoned_indices.pt')
+    torch.save(poisoned_model, f'./data/{args.dataset}_{args.attack_type}_{args.df_size}_poisoned_model.pt')
+    
     a_p, a_c = poisoned_trainer.subset_acc()
     print(f'Poisoned Acc: {a_p}, Clean Acc: {a_c}')
     return poisoned_data, poisoned_indices, poisoned_model
@@ -106,25 +128,32 @@ hp_tuning_params_dict = {
         'unlearning_epochs': (10, 100, "int"),
     },
     'contrastive': {
-        'contrastive_epochs_1': (5, 30, "int"),
-        'contrastive_epochs_2': (5, 30, "int"),
+        'contrastive_epochs_1': (5, 20, "int"),
+        'contrastive_epochs_2': (5, 20, "int"),
         'unlearn_lr': (1e-5, 1e-1, "log"),
         'weight_decay': (1e-5, 1e-1, "log"),
         'contrastive_margin': (1e1, 1e3, "log"),
         'contrastive_lambda': (0.0, 1.0, "float"),
+        'k_hop': (1, 3, "int"),
     },
     'utu': {},
     'scrub': {
-        'unlearn_iters': (10, 100, "int"),
+        'unlearn_iters': (10, 500, "int"),
         # 'kd_T': (1, 10, "float"),
         'scrubAlpha': (1e-6, 10, "log"),
         'msteps': (10, 100, "int"),
         # 'weight_decay': (1e-5, 1e-1, "log"),
-    }
+    },
+    'clean': {
+        'train_lr': (1e-5, 1e-1, "log"),
+        'weight_decay': (1e-5, 1e-1, "log"),
+        'training_epochs': (500, 3000, "int"),
+    },
 }
 
 def set_hp_tuning_params(trial):
-    hp_tuning_params = hp_tuning_params_dict[args.unlearning_model]
+    # hp_tuning_params = hp_tuning_params_dict[args.unlearning_model]
+    hp_tuning_params = hp_tuning_params_dict['clean']
     for hp, values in hp_tuning_params.items():
         if values[1] == "categorical":
             setattr(args, hp, trial.suggest_categorical(hp, values[0]))
@@ -144,17 +173,30 @@ def objective(trial, model, data):
     
     train_acc, msc_rate, time_taken = trainer.train()
     
-    poison_acc, clean_acc = trainer.subset_acc()
+    poison_acc, clean_acc = trainer.subset_acc(class1=57, class2=33)
     
     # We want to minimize misclassification rate and maximize accuracy
-    return [train_acc, poison_acc, clean_acc]
+    return [train_acc, poison_acc, clean_acc, time_taken]
+
+def objective_clean(trial, model, data):
+    # Define the hyperparameters to tune
+    set_hp_tuning_params(trial)
+    
+    optimizer = torch.optim.Adam(model.parameters(), lr=args.train_lr, weight_decay=args.weight_decay)
+    trainer = Trainer(model, data, optimizer, args.training_epochs)
+    
+    train_acc, msc_rate, time_taken = trainer.train()
+    
+    poison_acc, clean_acc = trainer.subset_acc(class1=57, class2=33)
+    
+    # We want to minimize misclassification rate and maximize accuracy
+    return [train_acc, poison_acc, clean_acc, time_taken]
 
         
 if __name__ == "__main__":
-    clean_data = train()
-    poisoned_data, poisoned_indices, poisoned_model = poison(clean_data)
+    # clean_data = train()
+    poisoned_data, poisoned_indices, poisoned_model = poison()
     # unlearn(poisoned_data, poisoned_indices, poisoned_model)
-    
     
     utils.find_masks(poisoned_data, poisoned_indices, attack_type=args.attack_type)
 
@@ -174,10 +216,10 @@ if __name__ == "__main__":
     # Create a study with TPE sampler
     study = optuna.create_study(
         sampler=TPESampler(),
-        directions=['maximize', 'maximize', 'maximize'],
+        directions=['maximize', 'maximize', 'maximize', 'minimize'],
         study_name=f"{args.dataset}_{args.attack_type}_{args.unlearning_model}",
         load_if_exists=True,
-        storage='sqlite:///graph_unlearning_hp_tuning_2.db',
+        storage='sqlite:///graph_unlearning_hp_tuning_cora_full.db',
     )
     
     print("==OPTIMIZING==")

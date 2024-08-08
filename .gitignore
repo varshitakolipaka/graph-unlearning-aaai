@@ -3,12 +3,13 @@ __pycache__/
 *.py[cod]
 *$py.class
 
+data/
+
 # C extensions
 *.so
 
 # SQL
-graph_unlearning_hp_tuning.db
-graph_unlearning_hp_tuning_2.db
+*.db
 
 # Distribution / packaging
 .Python

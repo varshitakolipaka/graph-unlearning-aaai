@@ -36,11 +36,11 @@ def parse_args():
     # Training
     # parser.add_argument("--suffix", type=str, default=None, help="name suffix for #wandb run")
     # parser.add_argument("--mode", type=str, default="disabled", help="#wandb mode")
-    parser.add_argument('--unlearn_lr', type=float, default=0.025, help='initial learning rate')
-    parser.add_argument('--train_lr', type=float, default=0.025, help='initial training rate')
-    parser.add_argument('--weight_decay', type=float, default=5e-7, help='weight decay')
+    parser.add_argument('--train_lr', type=float, default=0.005191475570177285, help='initial learning rate')
+    parser.add_argument('--unlearn_lr', type=float, default=0.025, help='unlearn learning rate')
+    parser.add_argument('--weight_decay', type=float, default=0.00016211813194850176, help='weight decay')
     parser.add_argument('--optimizer', type=str, default='Adam', help='optimizer to use')
-    parser.add_argument('--training_epochs', type=int, default=600, help='number of epochs to train')
+    parser.add_argument('--training_epochs', type=int, default=1268, help='number of epochs to train')
     parser.add_argument('--valid_freq', type=int, default=30, help='# of epochs to do validation')
     parser.add_argument('--checkpoint_dir', type=str, default='./checkpoint', help='checkpoint folder')
     parser.add_argument('--alpha', type=float, default=0.5, help='alpha in loss function')
@@ -92,6 +92,8 @@ def parse_args():
     parser.add_argument('--contrastive_epochs_2', type=int, default=10, help="epochs for contrastive unlearning")
     parser.add_argument('--contrastive_margin', type=int, default=500, help="margin for the contrastive loss")
     parser.add_argument('--contrastive_lambda', type=float, default=0.8, help="weight for the task loss [1 - lambda] is used for the contrastive loss")
+    parser.add_argument('--k_hop', type=int, default=2, help="number of hops for the data sampling")
+    parser.add_argument('--contrastive_eps', type=float, default=1e-3, help="fraction of non-neighbors to sample for contrastive loss")
 
     args = parser.parse_args()
     return args

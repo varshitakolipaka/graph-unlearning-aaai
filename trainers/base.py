@@ -1,3 +1,4 @@
+import time
 import torch
 import torch.nn.functional as F
 from sklearn.metrics import accuracy_score, f1_score, roc_auc_score
@@ -58,6 +59,7 @@ class Trainer:
     def train(self):
         losses = []
         self.data = self.data.to(device)
+        st = time.time()
         for epoch in trange(self.num_epochs, desc='Epoch'):
             self.model.train()
             z = F.log_softmax(self.model(self.data.x, self.data.edge_index), dim=1)
@@ -66,10 +68,11 @@ class Trainer:
             losses.append(loss)
             self.optimizer.step()
             self.optimizer.zero_grad()
+        time_taken = time.time() - st
         train_acc, msc_rate, f1 = self.evaluate()
         print(f'Train Acc: {train_acc}, Misclassification: {msc_rate},  F1 Score: {f1}')
         # plot_loss_vs_epochs(losses)
-        return train_acc, msc_rate
+        return train_acc, msc_rate, time_taken
 
     def all_class_acc(self):
         classes = list(range(self.data.num_classes))
@@ -114,7 +117,10 @@ class Trainer:
         for clean_class in clean_classes:
             clean_indices = (true_labels == clean_class)
             accs_clean.append(accuracy_score(true_labels[clean_indices].cpu(), pred_labels[clean_indices].cpu()))
-
+            
+        print(f'Poisoned class: {class1} -> {class2}')
+        # print(f'Poisoned class acc: {accs_poisoned} | Clean class acc: {accs_clean}')
+        # take average of the accs
         accs_poisoned = sum(accs_poisoned) / len(accs_poisoned)
         accs_clean = sum(accs_clean) / len(accs_clean)
 
