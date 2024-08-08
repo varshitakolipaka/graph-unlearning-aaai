@@ -108,7 +108,7 @@ class ContrastiveUnlearnTrainer(Trainer):
         cos = nn.CosineSimilarity()
         sim = cos(pfeatures, re_pfeatures)
 
-        alpha = 0.1
+        alpha = 0.3
         gamma = 0.1
         max_val = 0.
         while True:
@@ -138,25 +138,7 @@ class ContrastiveUnlearnTrainer(Trainer):
                 neighbor_nodes.append(idx.item())
 
         self.data.sample_mask = torch.from_numpy(np.isin(np.arange(self.data.num_nodes), neighbor_nodes))
-
-
-        # get the k-hop subgraph of attacked nodes, and add all the nodes in the subgraph to the sample_mask
-        sample_mask = torch.zeros(self.data.num_nodes, dtype=torch.bool)
-        for idx in self.attacked_idx:
-            idx_int = int(idx)
-            subset, _, _, _ = k_hop_subgraph(
-                idx_int, self.args.k_hop, self.data.edge_index
-            )
-            sample_mask[subset] = True
-
-        #print(f"Number of nodes in the sampling: {sample_mask.sum().item()}")
-
-        eps = self.args.contrastive_eps
-        # add eps fraction of non-neighbor training nodes to the sample_mask
-        num_to_add = int(eps * self.data.train_mask.sum().item())
-        # TODO: check if the non-neighbors are being sampled correctly
-
-        self.data.sample_mask = sample_mask
+        print(f"Number of nodes in the sampling: {self.data.sample_mask.sum().item()}")
 
     @time_it
     def task_loss(self):
