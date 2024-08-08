@@ -129,9 +129,11 @@ class GNNDeleteNodeembTrainer(Trainer):
             embed2_ori = torch.cat([z2_ori[neg_edge[0]], z2_ori[neg_edge[1]]], dim=0)
             embed3 = torch.cat([z3[pos_edge[0]], z3[pos_edge[1]]], dim=0)
             embed3_ori = torch.cat([z3_ori[neg_edge[0]], z3_ori[neg_edge[1]]], dim=0)
+
             loss_r1 = loss_fct(embed1, embed1_ori)
             loss_r2 = loss_fct(embed2, embed2_ori)
-            print(embed2.shape, embed2_ori.shape)
+            loss_r3 = loss_fct(embed3, embed3_ori)
+
             loss_r3 = loss_fct(embed3, embed3_ori)
             loss_l1 = loss_fct(z1[self.data.sdf_node_1hop_mask_non_df_mask], z1_ori[self.data.sdf_node_1hop_mask_non_df_mask])
             loss_l2 = loss_fct(z2[self.data.sdf_node_2hop_mask_non_df_mask], z2_ori[self.data.sdf_node_2hop_mask_non_df_mask])

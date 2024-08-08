@@ -57,8 +57,8 @@ class GCNDelete(GCN):
         x2 = self.deletion2(x2, mask_2hop)
         x = F.relu(x1)
 
-        x3 = self.conv2(x, edge_index)
-        x3 = self.deletion2(x3, mask_3hop)
+        x3 = self.conv3(x, edge_index)
+        x3 = self.deletion3(x3, mask_3hop)
 
         if return_all_emb:
             return x1, x2, x3
