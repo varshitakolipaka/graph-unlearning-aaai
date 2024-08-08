@@ -9,34 +9,24 @@ num_edge_type_mapping = {
 }
 
 def parse_args():
-    parser = argparse.ArgumentParser()
 
-    parser.add_argument('--attack_type', type=str, default='label', help='attack type', choices=["label", "edge", "random"])
+    parser = argparse.ArgumentParser()
+    parser.add_argument('--attack_type', type=str, default='random', help='attack type', choices=["label", "edge", "random"])
     parser.add_argument('--unlearning_model', type=str, default='megu', help='unlearning method', choices=["original", "gradient_ascent", "gnndelete", "gnndelete_ni", "gif", "utu", "contrastive", "retrain", "scrub", "megu"])
     parser.add_argument('--gnn', type=str, default='gcn', help='GNN architecture', choices=['gcn', 'gat', 'gin'])
-    # parser.add_argument('--in_dim', type=int, default=128, help='input dimension')
     parser.add_argument('--hidden_dim', type=int, default=64, help='hidden dimension')
-    parser.add_argument('--unlearning_epochs', type=int, default=50, help='number of epochs to unlearn for')
-    # parser.add_argument('--out_dim', type=int, default=64, help='output dimension')
+    parser.add_argument('--unlearning_epochs', type=int, default=500, help='number of epochs to unlearn for')
     parser.add_argument('--request', type=str, default='node', help='unlearning request', choices=['node', 'edge'])
 
     # Data
-    # parser.add_argument('--data_dir', type=str, default='./data', help='data dir')
-    # parser.add_argument('--df', type=str, default='in', help='Df set to use')
-    # parser.add_argument('--df_idx', type=str, default=None, help='indices of data to be deleted')
-    parser.add_argument('--df_size', type=float, default=0.2, help='Forgetting Fraction')
+    parser.add_argument('--df_size', type=float, default=0.1, help='Forgetting Fraction')
     parser.add_argument('--dataset', type=str, default='Cora_p', help='dataset')
     parser.add_argument('--random_seed', type=int, default=0, help='random seed')
-    # parser.add_argument('--batch_size', type=int, default=2048, help='batch size for GraphSAINTRandomWalk sampler')
-    # parser.add_argument('--walk_length', type=int, default=2, help='random walk length for GraphSAINTRandomWalk sampler')
-    # parser.add_argument('--num_steps', type=int, default=32, help='number of steps for GraphSAINTRandomWalk sampler')
 
     # Training
-    # parser.add_argument("--suffix", type=str, default=None, help="name suffix for #wandb run")
-    # parser.add_argument("--mode", type=str, default="disabled", help="#wandb mode")
     parser.add_argument('--unlearn_lr', type=float, default=0.1, help='initial learning rate')
     parser.add_argument('--weight_decay', type=float, default=0.00005, help='weight decay')
-    parser.add_argument('--optimizer', type=str, default='Adam', help='optimizer to use')
+    parser.add_argument('--optimizer', type=str, default='Aam', help='optimizer to use')
     parser.add_argument('--training_epochs', type=int, default=50, help='number of epochs to train')
     parser.add_argument('--valid_freq', type=int, default=30, help='# of epochs to do validation')
     parser.add_argument('--checkpoint_dir', type=str, default='./checkpoint', help='checkpoint folder')
@@ -63,7 +53,6 @@ def parse_args():
     parser.add_argument('--regen_subgraphs', action='store_true')
     parser.add_argument('--hop_neighbors', type=int, default=20)
 
-
     # Evaluation
     parser.add_argument('--topk', type=int, default=500, help='top k for evaluation')
     parser.add_argument('--eval_on_cpu', type=bool, default=False, help='whether to evaluate on CPU')
@@ -81,7 +70,6 @@ def parse_args():
     parser.add_argument('--kd_T', type=float, default=1, help='Knowledge distilation temperature for SCRUB')
     parser.add_argument('--scrubAlpha', type=float, default=1, help='KL from og_model constant for SCRUB, higher incentivizes closeness to ogmodel')
     parser.add_argument('--msteps', type=int, default=15, help='Maximization steps on forget set for SCRUB')
-
 
     # contrastive
     parser.add_argument('--contrastive_epochs_1', type=int, default=30, help="epochs for contrastive unlearning")

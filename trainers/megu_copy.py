@@ -15,7 +15,6 @@ import scipy.sparse as sp
 from trainers.megu_utils import calc_f1
 import logging
 from .base import Trainer
-import copy
 
 class GATE(torch.nn.Module):
     def __init__(self, dim):
@@ -68,14 +67,13 @@ def normalize_adj(adj, r=0.5):
 
 
 class ExpMEGU(Trainer):
-    def __init__(self, model, data, optimizer,  args):
-        super().__init__(model, data, optimizer)
+    def __init__(self, args, model, data, optimizer):
+
         self.logger = logging.getLogger('exp')
         self.args = args
         self.logger = logging.getLogger('ExpMEGU')
-        self.data = copy.deepcopy(data) 
-        print(data.df_mask.sum(), data.dr_mask.sum())
-        self.model = copy.deepcopy(model)
+        self.data = data # instead of using load data
+        self.model = model # poisoned model 
         self.device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
         self.num_feats = self.data.num_features
@@ -84,9 +82,24 @@ class ExpMEGU(Trainer):
 
         self.unlearning_request()
 
+        self.target_model_name = self.args.gnn
+        self.determine_target_model()
+
         self.num_layers = 2
         self.adj = sparse_mx_to_torch_sparse_tensor(normalize_adj(to_scipy_sparse_matrix(self.data.edge_index)))
         self.neighbor_khop = self.neighbor_select(self.data.x)
+
+        self.target_model.model = self.model
+        dt_acc, msc_rate, dt_f1 = self.evaluate()
+        print("the poisoned model: ")
+        print(dt_acc, msc_rate, dt_f1)
+
+        self.megu_training()
+        self.model = self.target_model.model
+        
+        dt_acc, msc_rate, dt_f1 = self.evaluate()
+        print("the unlearnt model: ")
+        print(dt_acc, msc_rate, dt_f1)
 
     def unlearning_request(self):
 
@@ -97,7 +110,6 @@ class ExpMEGU(Trainer):
 
         if self.args.request == 'node':
             unique_nodes = torch.where(self.data.df_mask)[0]
-            print(unique_nodes)
             self.data.edge_index_unlearn = self.update_edge_index_unlearn(unique_nodes)
 
         if self.args.request == 'edge':
@@ -139,10 +151,14 @@ class ExpMEGU(Trainer):
         remain_indices_not = unique_indices_not[
             sort_indices[np.searchsorted(unique_encode_not, valid_remain_encode, sorter=sort_indices)]]
         remain_indices = np.union1d(remain_indices, remain_indices_not)
-        print(f"Number of edges in update edge index unlearn:", len(edge_index[:, remain_indices]))
-        print(edge_index[:, remain_indices])
+
         return torch.from_numpy(edge_index[:, remain_indices])
-    
+
+    def determine_target_model(self):
+        # self.logger.info('target model: %s' % (self.args['target_model'],))
+        num_classes = self.data.num_classes
+
+        self.target_model = NodeClassifier(self.num_feats, num_classes, self.args, self.data)
 
     def neighbor_select(self, features):
         temp_features = features.clone()
@@ -156,6 +172,7 @@ class ExpMEGU(Trainer):
         alpha = 0.1
         gamma = 0.1
         max_val = 0.
+        
         while True:
             influence_nodes_with_unlearning_nodes = torch.nonzero(sim <= alpha).flatten().cpu()
             if len(influence_nodes_with_unlearning_nodes.view(-1)) > 0:
@@ -206,30 +223,29 @@ class ExpMEGU(Trainer):
 
         return y_soft
 
-    def train(self):
+    def megu_training(self):
         operator = GATE(self.data.num_classes).to(self.device)
 
         optimizer = torch.optim.SGD([
-            {'params': self.model.parameters()},
+            {'params': self.target_model.model.parameters()},
             {'params': operator.parameters()}
         ], lr=self.args.unlearn_lr)
 
         with torch.no_grad():
-            self.model.eval()
-            preds = self.model(self.data.x, self.data.edge_index)
+            self.target_model.model.eval()
+            preds = self.target_model.model(self.data.x, self.data.edge_index)
             if self.args.dataset == 'ppi':
                 preds = torch.sigmoid(preds).ge(0.5)
                 preds = preds.type_as(self.data.y)
             else:
                 preds = torch.argmax(preds, axis=1).type_as(self.data.y)
 
-
         start_time = time.time()
-        for epoch in range(30):
-            self.model.train()
+        for epoch in range(self.args.unlearning_epochs):
+            self.target_model.model.train()
             operator.train()
             optimizer.zero_grad()
-            out_ori = self.model(self.data.x_unlearn, self.data.edge_index_unlearn)
+            out_ori = self.target_model.model(self.data.x_unlearn, self.data.edge_index_unlearn)
             out = operator(out_ori)
 
             if self.args.dataset == 'ppi':
@@ -245,8 +261,8 @@ class ExpMEGU(Trainer):
             optimizer.step()
 
         unlearn_time = time.time() - start_time
-        self.model.eval()
-        test_out = self.model(self.data.x_unlearn, self.data.edge_index_unlearn)
+        self.target_model.model.eval()
+        test_out = self.target_model.model(self.data.x_unlearn, self.data.edge_index_unlearn)
         if self.args.dataset == 'ppi':
             out = torch.sigmoid(test_out)
         else:

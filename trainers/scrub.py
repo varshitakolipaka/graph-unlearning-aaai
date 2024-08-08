@@ -72,7 +72,7 @@ class ScrubTrainer(Trainer):
         self.opt.unlearn_iters = opt.unlearn_iters
 
     def set_model(self, model):
-        self.model = model
+        self.model = copy.deepcopy(model)
         self.model
 
     def train_one_epoch(self, data, mask):
