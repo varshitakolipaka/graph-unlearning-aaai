@@ -62,6 +62,8 @@ class ScrubTrainer(Trainer):
         self.best_model = None
         self.curr_step = 0
         self.set_model(model)
+        self.optimizer = optimizer
+
         self.poisoned_dataset = poisoned_dataset
 
 

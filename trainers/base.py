@@ -59,3 +59,19 @@ class Trainer:
             dt_f1 = f1_score(self.data.y[self.data.val_mask].cpu(), pred, average='micro')
             msc_rate = self.misclassification_rate(self.data.y[self.data.val_mask].cpu(), pred)
         return dt_acc, msc_rate, dt_f1
+    
+    def evaluate1(self, data, is_dr=False):
+        self.model.eval()
+        with torch.no_grad():
+            if(is_dr):
+                z = F.log_softmax(self.model(data.x, data.edge_index[:, data.dr_mask]), dim=1)
+            else:
+                z = F.log_softmax(self.model(data.x, data.edge_index), dim=1)
+                
+            pred = torch.argmax(z[data.val_mask], dim=1).cpu()
+            pred_df = torch.argmax(z[data.df_mask], dim=1).cpu()
+            dt_acc = accuracy_score(data.y[data.val_mask].cpu(), pred)
+            dt_f1 = f1_score(data.y[data.val_mask].cpu(), pred, average='micro')
+            df_acc = accuracy_score(data.y[data.df_mask].cpu(), pred_df)
+            df_f1 = f1_score(data.y[data.df_mask].cpu(), pred_df, average='micro')
+        return dt_acc, dt_f1, df_acc, df_f1

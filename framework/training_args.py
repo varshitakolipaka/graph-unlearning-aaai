@@ -11,12 +11,12 @@ num_edge_type_mapping = {
 def parse_args():
     parser = argparse.ArgumentParser()
 
-    parser.add_argument('--attack_type', type=str, default='label', help='attack type', choices=["label", "edge", "random"])
+    parser.add_argument('--attack_type', type=str, default='random', help='attack type', choices=["label", "edge", "random"])
     parser.add_argument('--unlearning_model', type=str, default='megu', help='unlearning method', choices=["original", "gradient_ascent", "gnndelete", "gnndelete_ni", "gif", "utu", "contrastive", "retrain", "scrub", "megu"])
     parser.add_argument('--gnn', type=str, default='gcn', help='GNN architecture', choices=['gcn', 'gat', 'gin'])
     # parser.add_argument('--in_dim', type=int, default=128, help='input dimension')
     parser.add_argument('--hidden_dim', type=int, default=64, help='hidden dimension')
-    parser.add_argument('--unlearning_epochs', type=int, default=50, help='number of epochs to unlearn for')
+    parser.add_argument('--unlearning_epochs', type=int, default=100, help='number of epochs to unlearn for')
     # parser.add_argument('--out_dim', type=int, default=64, help='output dimension')
     parser.add_argument('--request', type=str, default='node', help='unlearning request', choices=['node', 'edge'])
 
@@ -34,7 +34,7 @@ def parse_args():
     # Training
     # parser.add_argument("--suffix", type=str, default=None, help="name suffix for #wandb run")
     # parser.add_argument("--mode", type=str, default="disabled", help="#wandb mode")
-    parser.add_argument('--unlearn_lr', type=float, default=0.1, help='initial learning rate')
+    parser.add_argument('--unlearn_lr', type=float, default=1, help='initial learning rate')
     parser.add_argument('--weight_decay', type=float, default=0.00005, help='weight decay')
     parser.add_argument('--optimizer', type=str, default='Adam', help='optimizer to use')
     parser.add_argument('--training_epochs', type=int, default=50, help='number of epochs to train')

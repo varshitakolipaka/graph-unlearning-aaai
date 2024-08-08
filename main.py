@@ -54,6 +54,9 @@ print(score)
 print("==UNLEARNING==")
 
 utils.find_masks(poisoned_data, poisoned_indices, attack_type=args.attack_type)
+dt_acc, dt_f1, df_acc, df_f1 = poisoned_trainer.evaluate1(poisoned_data)
+print("Accuracies: ", dt_acc, dt_f1, df_acc, df_f1)
+
 if "gnndelete" in args.unlearning_model:
     unlearn_model = GCNDelete(poisoned_data.num_features, args.hidden_dim, poisoned_data.num_classes, mask_1hop=poisoned_data.sdf_node_1hop_mask, mask_2hop=poisoned_data.sdf_node_2hop_mask)
 
@@ -68,9 +71,7 @@ elif "retrain" in args.unlearning_model:
     optimizer_unlearn= utils.get_optimizer(args, unlearn_model)
     unlearn_trainer= utils.get_trainer(args, unlearn_model, poisoned_data, optimizer_unlearn)
     unlearn_trainer.train()
-elif "megu" in args.unlearning_model:
-    optimizer_unlearn= utils.get_optimizer(args, poisoned_model)
-    ExpMEGU(args, poisoned_model, poisoned_data, optimizer_unlearn)
+
 else:
     optimizer_unlearn= utils.get_optimizer(args, poisoned_model)
     unlearn_trainer= utils.get_trainer(args, poisoned_model, poisoned_data, optimizer_unlearn)
@@ -78,3 +79,7 @@ else:
 
 # score= unlearn_trainer.get_silhouette_scores(graph_temp=og_data)
 # print(score)
+
+
+dt_acc, dt_f1, df_acc, df_f1 = unlearn_trainer.evaluate1(poisoned_data)
+print("Unlearning Accuracies: ", dt_acc, dt_f1, df_acc, df_f1)

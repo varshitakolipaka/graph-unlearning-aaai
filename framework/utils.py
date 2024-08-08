@@ -86,6 +86,7 @@ def get_sdf_masks(data):
 
 
 def find_masks(data, poisoned_indices, attack_type="label"):
+    
     if attack_type == "label" or attack_type == "random":
         if "scrub" in args.unlearning_model or ("megu" in args.unlearning_model and "node" in args.request):
             data.df_mask = torch.zeros(data.num_nodes, dtype=torch.bool)  # of size num nodes
@@ -93,21 +94,23 @@ def find_masks(data, poisoned_indices, attack_type="label"):
             data.df_mask[poisoned_indices] = True
             data.dr_mask[poisoned_indices] = False
         else:
-            data.df_mask = torch.zeros(data.edge_index.shape[1], dtype=torch.bool)
-            data.dr_mask = torch.zeros(data.edge_index.shape[1], dtype=torch.bool)
-            for node in poisoned_indices:
-                data.train_mask[node] = False
-                node_tensor = torch.tensor([node], dtype=torch.long)
+            data.df_mask = torch.zeros(data.edge_index.shape[1], dtype=torch.bool) # all nodes
+            data.dr_mask = torch.zeros(data.edge_index.shape[1], dtype=torch.bool) # al nodes
+            for node in poisoned_indices: 
+                data.train_mask[node] = False # train mask doesn't include poisoned nodes -> this is the node retain mask
+                node_tensor = torch.tensor([node], dtype=torch.long) #
                 _, local_edges, _, mask = k_hop_subgraph(
                     node_tensor, 1, data.edge_index, num_nodes=data.num_nodes
                 )
-                data.df_mask[mask] = True
-            data.dr_mask = ~data.df_mask
+                data.df_mask[mask] = True 
+            data.dr_mask = ~data.df_mask 
+            
     elif attack_type == "edge":
         data.df_mask = torch.zeros(data.edge_index.shape[1], dtype=torch.bool)
         data.dr_mask = torch.zeros(data.edge_index.shape[1], dtype=torch.bool)
         data.df_mask[poisoned_indices] = True
         data.dr_mask = ~data.df_mask
+
     data.attacked_idx = poisoned_indices
     if "scrub" in args.unlearning_model or "megu" in args.unlearning_model:
         return

@@ -67,7 +67,8 @@ def normalize_adj(adj, r=0.5):
 
 
 class ExpMEGU(Trainer):
-    def __init__(self, args, model, data, optimizer):
+    def __init__(self, model, data, optimizer, args):
+        super().__init__(model, data, optimizer)
 
         self.logger = logging.getLogger('exp')
         self.args = args
@@ -94,7 +95,7 @@ class ExpMEGU(Trainer):
         print("the poisoned model: ")
         print(dt_acc, msc_rate, dt_f1)
 
-        self.megu_training()
+        self.train()
         self.model = self.target_model.model
         
         dt_acc, msc_rate, dt_f1 = self.evaluate()
@@ -160,35 +161,7 @@ class ExpMEGU(Trainer):
 
         self.target_model = NodeClassifier(self.num_feats, num_classes, self.args, self.data)
 
-    # def evaluate(self, run):
-    #     # self.logger.info('model evaluation')
 
-    #     start_time = time.time()
-    #     self.target_model.model.eval()
-    #     out = self.target_model.model(self.data.x, self.data.edge_index)
-    #     y = self.data.y.cpu()
-    #     if self.args.dataset == 'ppi':
-    #         y_hat = torch.sigmoid(out).cpu().detach().numpy()
-    #         test_f1 = calc_f1(y, y_hat, self.data.test_mask, multilabel=True)
-    #     else:
-    #         y_hat = F.log_softmax(out, dim=1).cpu().detach().numpy()
-    #         test_f1 = calc_f1(y, y_hat, self.data.test_mask)
-
-    #     evaluate_time = time.time() - start_time
-    #     # self.logger.info(f"Evaluation cost {evaluate_time:.4f} seconds.")
-
-    #     # self.logger.info(f"Final Test F1: {test_f1:.4f}")
-    #     return test_f1
-
-    def _train_model(self, run):
-        # self.logger.info('training target models, run %s' % run)
-
-        self.target_model.data = self.data
-
-        # self.data_store.save_target_model(run, self.target_model)
-        # self.logger.info(f"Model training time: {train_time:.4f}")
-
-        return train_time, res
 
     def neighbor_select(self, features):
         temp_features = features.clone()
@@ -252,7 +225,7 @@ class ExpMEGU(Trainer):
 
         return y_soft
 
-    def megu_training(self):
+    def train(self):
         operator = GATE(self.data.num_classes).to(self.device)
 
         optimizer = torch.optim.SGD([
@@ -271,7 +244,7 @@ class ExpMEGU(Trainer):
 
 
         start_time = time.time()
-        for epoch in range(30):
+        for epoch in range(self.args.unlearning_epochs):
             self.target_model.model.train()
             operator.train()
             optimizer.zero_grad()
