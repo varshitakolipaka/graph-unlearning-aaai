@@ -94,6 +94,7 @@ def parse_args():
     parser.add_argument('--contrastive_lambda', type=float, default=0.8, help="weight for the task loss [1 - lambda] is used for the contrastive loss")
     parser.add_argument('--k_hop', type=int, default=2, help="number of hops for the data sampling")
     parser.add_argument('--contrastive_eps', type=float, default=1e-3, help="fraction of non-neighbors to sample for contrastive loss")
+    parser.add_argument('--contrastive_frac', type=float, default=0.1, help="fraction of nodes to sample for contrastive loss")
 
     args = parser.parse_args()
     return args

@@ -37,14 +37,14 @@ class ContrastiveUnlearnTrainer(Trainer):
         self.criterion = torch.nn.CrossEntropyLoss()
 
     # def get_sample_points(self):
-    #     # get the k-hop subgraph of attacked nodes, and add all the nodes in the subgraph to the sample_mask
-    #     sample_mask = torch.zeros(self.data.num_nodes, dtype=torch.bool)
-    #     for idx in self.attacked_idx:
-    #         idx_int = int(idx)
-    #         subset, _, _, _ = k_hop_subgraph(
-    #             idx_int, self.args.k_hop, self.data.edge_index
-    #         )
-    #         sample_mask[subset] = True
+        # get the k-hop subgraph of attacked nodes, and add all the nodes in the subgraph to the sample_mask
+        # sample_mask = torch.zeros(self.data.num_nodes, dtype=torch.bool)
+        # for idx in self.attacked_idx:
+        #     idx_int = int(idx)
+        #     subset, _, _, _ = k_hop_subgraph(
+        #         idx_int, self.args.k_hop, self.data.edge_index
+        #     )
+        #     sample_mask[subset] = True
 
     #     #print(f"Number of nodes in the sampling: {sample_mask.sum().item()}")
 
@@ -54,18 +54,6 @@ class ContrastiveUnlearnTrainer(Trainer):
     #     # TODO: check if the non-neighbors are being sampled correctly
 
     #     self.data.sample_mask = sample_mask
-
-    def propagate(self, features, k, adj_norm):
-        feature_list = []
-
-        features= features.cpu()
-        adj_norm= adj_norm.cpu()
-        feature_list.append(features)
-
-        for i in range(k):
-            feature_list.append(torch.spmm(adj_norm, feature_list[-1]))
-        return feature_list[-1]
-
 
     def reverse_features(self, features):
         reverse_features = features.clone()
@@ -99,32 +87,53 @@ class ContrastiveUnlearnTrainer(Trainer):
 
     #MEGU HIN sampling
     def get_sample_points(self):
-        self.adj = self.sparse_mx_to_torch_sparse_tensor(self.normalize_adj(to_scipy_sparse_matrix(self.data.edge_index)))
+        subset, _, _, _ = k_hop_subgraph(
+            torch.tensor(self.attacked_idx), self.args.k_hop, self.data.edge_index
+        )
+        
+        # remove attacked nodes from the subset
+        subset = subset[~np.isin(subset.cpu(), self.attacked_idx)]
+        
+        og_logits = F.softmax(self.model(self.data.x, self.data.edge_index))
         temp_features = self.data.x.clone()
-        pfeatures = self.propagate(temp_features, self.args.k_hop, self.adj)
         reverse_feature = self.reverse_features(temp_features)
-        re_pfeatures = self.propagate(reverse_feature, self.args.k_hop, self.adj)
+        final_logits = F.softmax(self.model(reverse_feature, self.data.edge_index))
 
-        cos = nn.CosineSimilarity()
-        sim = cos(pfeatures, re_pfeatures)
+        diff = torch.abs(og_logits - final_logits)
+        
+        # average across all classes
+        diff = torch.mean(diff, dim=1)
+        
+        # take diffs of only the subset without the attacked nodes
+        diff = diff[subset]
 
-        alpha = 0.3
-        gamma = 0.1
-        max_val = 0.
-        while True:
-            influence_nodes_with_unlearning_nodes = torch.nonzero(sim <= alpha).flatten().cpu()
-            if len(influence_nodes_with_unlearning_nodes.view(-1)) > 0:
-                temp_max = torch.max(sim[influence_nodes_with_unlearning_nodes])
-            else:
-                alpha = alpha + gamma
-                continue
+        #  get the top 10% of the indices
+        frac = self.args.contrastive_frac
+        _, indices = torch.topk(diff, int(frac * len(subset)), largest=True)
+        
+        influence_nodes_with_unlearning_nodes = indices
+        
+        print(f"Nodes influenced: {len(influence_nodes_with_unlearning_nodes)}")
 
-            if temp_max == max_val:
-                break
+        self.data.sample_mask = torch.zeros(self.data.num_nodes, dtype=torch.bool)
+        self.data.sample_mask[influence_nodes_with_unlearning_nodes] = True
+        return
+        
+        # while True:
+        #     influence_nodes_with_unlearning_nodes = torch.nonzero(sim <= alpha).flatten().cpu()
+        #     if len(influence_nodes_with_unlearning_nodes.view(-1)) > 0:
+        #         temp_max = torch.max(sim[influence_nodes_with_unlearning_nodes])
+        #     else:
+        #         alpha = alpha + gamma
+        #         continue
 
-            max_val = temp_max
-            alpha = alpha + gamma
+        #     if temp_max == max_val:
+        #         break
 
+        #     max_val = temp_max
+        #     alpha = alpha + gamma
+        print("HEYYYYY")
+        print(alpha, gamma)
         neighborkhop, _, _, two_hop_mask = k_hop_subgraph(
             torch.tensor(self.attacked_idx),
             self.args.k_hop,
@@ -181,14 +190,15 @@ class ContrastiveUnlearnTrainer(Trainer):
     @time_it
     def store_subset(self):
         # store the subset of the idx in a dictionary
+        sample_idx = torch.where(self.data.sample_mask)[0]
         subset_dict = {}
-        for idx in trange(len(self.data.sample_mask), desc="Storing Subset"):
-            if self.data.sample_mask[idx]:
-                subset, _, _, _ = k_hop_subgraph(
-                    idx, self.args.k_hop, self.data.edge_index
-                )
-                subset_set = set(subset.tolist())
-                subset_dict[idx] = subset_set
+        for idx in sample_idx:
+            idx_ = idx.reshape(-1)
+            subset, _, _, _ = k_hop_subgraph(
+                idx_, self.args.k_hop, self.data.edge_index
+            )
+            subset_set = set(subset.tolist())
+            subset_dict[idx.item()] = subset_set
         self.subset_dict = subset_dict
 
     def store_edge_index_for_poison(self, data, idx):

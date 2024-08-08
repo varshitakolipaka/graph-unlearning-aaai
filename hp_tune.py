@@ -42,7 +42,7 @@ def poison(clean_data=None):
         poisoned_data = torch.load(f'./data/{args.dataset}_{args.attack_type}_{args.df_size}_poisoned_data.pt')
         poisoned_indices = torch.load(f'./data/{args.dataset}_{args.attack_type}_{args.df_size}_poisoned_indices.pt')
         poisoned_model = torch.load(f'./data/{args.dataset}_{args.attack_type}_{args.df_size}_poisoned_model.pt')
-        
+
         optimizer = torch.optim.Adam(poisoned_model.parameters(), lr=args.train_lr, weight_decay=args.weight_decay)
         poisoned_trainer = Trainer(poisoned_model, poisoned_data, optimizer, args.training_epochs)
         poisoned_trainer.evaluate()
@@ -50,7 +50,7 @@ def poison(clean_data=None):
         print(f'Poisoned Acc: {a_p}, Clean Acc: {a_c}')
 
         return poisoned_data, poisoned_indices, poisoned_model
-    
+
     print("==POISONING==")
     if args.attack_type=="label":
         poisoned_data, poisoned_indices = label_flip_attack(clean_data, args.df_size, args.random_seed)
@@ -65,17 +65,17 @@ def poison(clean_data=None):
         poisoned_model = GCNDelete(poisoned_data.num_features, args.hidden_dim, poisoned_data.num_classes)
     else:
         poisoned_model = GCN(poisoned_data.num_features, args.hidden_dim, poisoned_data.num_classes)
-    
+
     optimizer = torch.optim.Adam(poisoned_model.parameters(), lr=args.train_lr, weight_decay=args.weight_decay)
     poisoned_trainer = Trainer(poisoned_model, poisoned_data, optimizer, args.training_epochs)
     poisoned_trainer.train()
-    
+
     # save the poisoned data and model and indices to np file
     os.makedirs('./data', exist_ok=True)
     torch.save(poisoned_data, f'./data/{args.dataset}_{args.attack_type}_{args.df_size}_poisoned_data.pt')
     torch.save(poisoned_indices, f'./data/{args.dataset}_{args.attack_type}_{args.df_size}_poisoned_indices.pt')
     torch.save(poisoned_model, f'./data/{args.dataset}_{args.attack_type}_{args.df_size}_poisoned_model.pt')
-    
+
     a_p, a_c = poisoned_trainer.subset_acc()
     print(f'Poisoned Acc: {a_p}, Clean Acc: {a_c}')
     return poisoned_data, poisoned_indices, poisoned_model
@@ -86,10 +86,10 @@ def unlearn(poisoned_data, poisoned_indices, poisoned_model):
     utils.find_masks(poisoned_data, poisoned_indices, attack_type=args.attack_type)
     if "gnndelete" in args.unlearning_model:
         unlearn_model = GCNDelete(poisoned_data.num_features, args.hidden_dim, poisoned_data.num_classes, mask_1hop=poisoned_data.sdf_node_1hop_mask, mask_2hop=poisoned_data.sdf_node_2hop_mask)
-        
+
         # copy the weights from the poisoned model
         unlearn_model.load_state_dict(poisoned_model.state_dict())
-        
+
         optimizer_unlearn= utils.get_optimizer(args, unlearn_model)
         unlearn_trainer= utils.get_trainer(args, unlearn_model, poisoned_data, optimizer_unlearn)
         unlearn_trainer.train()
@@ -102,9 +102,9 @@ def unlearn(poisoned_data, poisoned_indices, poisoned_model):
         optimizer_unlearn= utils.get_optimizer(args, poisoned_model)
         unlearn_trainer= utils.get_trainer(args, poisoned_model, poisoned_data, optimizer_unlearn)
         unlearn_trainer.train()
-        
+
     print("==UNLEARNING DONE==")
-        
+
 hp_tuning_params_dict = {
     'gnndelete': {
         'unlearn_lr': (1e-5, 1e-1, "log"),
@@ -125,16 +125,17 @@ hp_tuning_params_dict = {
         'damp': (0.0, 1.0, "float"),
     },
     'gradient_ascent': {
-        'unlearning_epochs': (10, 100, "int"),
+        'unlearning_epochs': (10, 2000, "int"),
     },
     'contrastive': {
-        'contrastive_epochs_1': (5, 20, "int"),
+        'contrastive_epochs_1': (5, 60, "int"),
         'contrastive_epochs_2': (5, 20, "int"),
         'unlearn_lr': (1e-5, 1e-1, "log"),
         'weight_decay': (1e-5, 1e-1, "log"),
-        'contrastive_margin': (1e1, 1e3, "log"),
-        'contrastive_lambda': (0.0, 1.0, "float"),
-        'k_hop': (1, 3, "int"),
+        'contrastive_margin': (1, 1e3, "log"),
+        'contrastive_lambda': (0.0, 0.3, "float"),
+        'contrastive_frac': (0.01, 0.2, "float"),
+        'k_hop': (1, 2, "int"),
     },
     'utu': {},
     'scrub': {
@@ -152,8 +153,7 @@ hp_tuning_params_dict = {
 }
 
 def set_hp_tuning_params(trial):
-    # hp_tuning_params = hp_tuning_params_dict[args.unlearning_model]
-    hp_tuning_params = hp_tuning_params_dict['clean']
+    hp_tuning_params = hp_tuning_params_dict[args.unlearning_model]
     for hp, values in hp_tuning_params.items():
         if values[1] == "categorical":
             setattr(args, hp, trial.suggest_categorical(hp, values[0]))
@@ -167,50 +167,50 @@ def set_hp_tuning_params(trial):
 def objective(trial, model, data):
     # Define the hyperparameters to tune
     set_hp_tuning_params(trial)
-    
+
     optimizer = utils.get_optimizer(args, model)
     trainer = utils.get_trainer(args, model, data, optimizer)
-    
+
     train_acc, msc_rate, time_taken = trainer.train()
-    
+
     poison_acc, clean_acc = trainer.subset_acc(class1=57, class2=33)
-    
+
     # We want to minimize misclassification rate and maximize accuracy
     return [train_acc, poison_acc, clean_acc, time_taken]
 
 def objective_clean(trial, model, data):
     # Define the hyperparameters to tune
     set_hp_tuning_params(trial)
-    
+
     optimizer = torch.optim.Adam(model.parameters(), lr=args.train_lr, weight_decay=args.weight_decay)
     trainer = Trainer(model, data, optimizer, args.training_epochs)
-    
+
     train_acc, msc_rate, time_taken = trainer.train()
-    
+
     poison_acc, clean_acc = trainer.subset_acc(class1=57, class2=33)
-    
+
     # We want to minimize misclassification rate and maximize accuracy
     return [train_acc, poison_acc, clean_acc, time_taken]
 
-        
+
 if __name__ == "__main__":
     # clean_data = train()
     poisoned_data, poisoned_indices, poisoned_model = poison()
     # unlearn(poisoned_data, poisoned_indices, poisoned_model)
-    
-    utils.find_masks(poisoned_data, poisoned_indices, attack_type=args.attack_type)
+
+    utils.find_masks(poisoned_data, poisoned_indices, args, attack_type=args.attack_type)
 
     if "gnndelete" in args.unlearning_model:
         # Create a partial function with additional arguments
         model = GCNDelete(poisoned_data.num_features, args.hidden_dim, poisoned_data.num_classes, mask_1hop=poisoned_data.sdf_node_1hop_mask, mask_2hop=poisoned_data.sdf_node_2hop_mask)
-            
+
         # copy the weights from the poisoned model
         model.load_state_dict(poisoned_model.state_dict())
     else:
         model = poisoned_model
-    
+
     objective_func = partial(objective, model=model, data=poisoned_data)
-    
+
     print("==HYPERPARAMETER TUNING==")
 
     # Create a study with TPE sampler
@@ -219,24 +219,24 @@ if __name__ == "__main__":
         directions=['maximize', 'maximize', 'maximize', 'minimize'],
         study_name=f"{args.dataset}_{args.attack_type}_{args.unlearning_model}",
         load_if_exists=True,
-        storage='sqlite:///graph_unlearning_hp_tuning_cora_full.db',
+        storage='sqlite:///graph_unlearning_hp_tuning_cora_full_new.db',
     )
-    
+
     print("==OPTIMIZING==")
 
     # Optimize the objective function
-    
+
     # reduce trials for utu and contrastive
     if args.unlearning_model == 'utu':
         study.optimize(objective_func, n_trials=1)
     elif args.unlearning_model == 'contrastive':
-        study.optimize(objective_func, n_trials=30)
-    else:
         study.optimize(objective_func, n_trials=100)
+    else:
+        study.optimize(objective_func, n_trials=200)
 
     # Print the best trial
     best_trial = study.best_trials
     print(f'Best trial: Accuracy: {best_trial[0].values[0]}, Misclassification: {best_trial[0].values[1]}')
-    
+
     # Best hyperparameters
     print(f'Best hyperparameters: {best_trial[0].params}')

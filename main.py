@@ -52,13 +52,11 @@ poisoned_trainer = Trainer(poisoned_model, poisoned_data, optimizer, args.traini
 poisoned_trainer.train()
 utils.find_masks(poisoned_data, poisoned_indices, args, attack_type=args.attack_type)
 
-a, b, c, d= clean_trainer.subset_acc(poisoned_trainer.class1, poisoned_trainer.class2)
+a, b = clean_trainer.subset_acc(poisoned_trainer.class1, poisoned_trainer.class2)
 print(a, b)
 print(f"==Clean Model==\nAccuracy of poisoned classes: {a}, Accuracy of clean classes: {b}")
-print(f"==Clean Model==\nAUC of poisoned classes: {c}, AUC of clean classes: {d}")
-a, b, c, d= poisoned_trainer.subset_acc()
+a, b = poisoned_trainer.subset_acc()
 print(f"==Poisoned Model==\nAccuracy of poisoned classes: {a}, Accuracy of clean classes: {b}")
-print(f"==Poisoned Model==\nAUC of poisoned classes: {c}, AUC of clean classes: {d}")
 
 print("==UNLEARNING==")
 if "gnndelete" in args.unlearning_model:

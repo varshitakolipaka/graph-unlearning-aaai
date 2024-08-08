@@ -117,6 +117,7 @@ class ScrubTrainer(Trainer):
 
     # scrub for label flipping
     def unlearn_nc_lf(self):
+        st = time.time()
         attacked_indices = self.poisoned_dataset.attacked_idx
         forget_mask = torch.zeros(len(self.poisoned_dataset.train_mask), dtype=torch.bool)
         forget_mask[attacked_indices] = True
@@ -129,8 +130,9 @@ class ScrubTrainer(Trainer):
             self.maximize=False
             self.train_one_epoch(data=self.poisoned_dataset, mask=self.poisoned_dataset.train_mask)
         train_acc, msc_rate, f1 = self.evaluate()
+        time_taken = time.time() - st
         print(f'Test Acc: {train_acc}, Misclassification: {msc_rate},  F1 Score: {f1}')
-        return train_acc, msc_rate, 0
+        return train_acc, msc_rate, time_taken
 
     def train(self):
         return self.unlearn_nc_lf()

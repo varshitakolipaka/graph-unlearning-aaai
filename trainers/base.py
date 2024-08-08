@@ -127,7 +127,7 @@ class Trainer:
         # auc_poisoned = sum(roc_aucs_poisoned) / len(roc_aucs_poisoned)
         # auc_clean = sum(roc_aucs_clean) / len(roc_aucs_clean)
 
-        return accs_poisoned, accs_clean, None, None #, roc_aucs_poisoned, roc_aucs_clean
+        return accs_poisoned, accs_clean
 
 
 
