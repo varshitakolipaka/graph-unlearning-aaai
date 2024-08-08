@@ -38,23 +38,31 @@ class DeletionLayerKG(nn.Module):
         return x
 
 class GCNDelete(GCN):
-    def __init__(self, in_dim, hidden_dim, out_dim, mask_1hop=None, mask_2hop=None, **kwargs):
+    def __init__(self, in_dim, hidden_dim, out_dim, mask_1hop=None, mask_2hop=None, mask_3hop=None, **kwargs):
         super().__init__(in_dim, hidden_dim, out_dim)
         self.deletion1 = DeletionLayer(hidden_dim, mask_1hop)
-        self.deletion2 = DeletionLayer(out_dim, mask_2hop)
+        self.deletion2 = DeletionLayer(hidden_dim, mask_2hop)
+        self.deletion3 = DeletionLayer(out_dim, mask_3hop)
 
         self.conv1.requires_grad = False
         self.conv2.requires_grad = False
+        self.conv3.requires_grad = False
 
-    def forward(self, x, edge_index, mask_1hop=None, mask_2hop=None, return_all_emb=False):
+    def forward(self, x, edge_index, mask_1hop=None, mask_2hop=None, mask_3hop=None, return_all_emb=False):
         x1 = self.conv1(x, edge_index)
         x1 = self.deletion1(x1, mask_1hop)
         x = F.relu(x1)
+
         x2 = self.conv2(x, edge_index)
         x2 = self.deletion2(x2, mask_2hop)
+        x = F.relu(x1)
+
+        x3 = self.conv2(x, edge_index)
+        x3 = self.deletion2(x3, mask_3hop)
+
         if return_all_emb:
-            return x1, x2
-        return x2
+            return x1, x2, x3
+        return x3
 
     def get_original_embeddings(self, x, edge_index, return_all_emb=False):
         return super().forward(x, edge_index, return_all_emb)

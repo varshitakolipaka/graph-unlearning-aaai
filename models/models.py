@@ -17,7 +17,7 @@ class GCN(nn.Module):
         x = F.relu(x2)
         x3 = self.conv3(x, edge_index)
         if return_all_emb:
-            return x1, x2
+            return x1, x2, x3
         return x3
 
     def decode(self, z, pos_edge_index, neg_edge_index=None):

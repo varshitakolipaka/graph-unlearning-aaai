@@ -117,7 +117,7 @@ class Trainer:
         for clean_class in clean_classes:
             clean_indices = (true_labels == clean_class)
             accs_clean.append(accuracy_score(true_labels[clean_indices].cpu(), pred_labels[clean_indices].cpu()))
-            
+
         print(f'Poisoned class: {class1} -> {class2}')
         # print(f'Poisoned class acc: {accs_poisoned} | Clean class acc: {accs_clean}')
         # take average of the accs
@@ -157,9 +157,9 @@ class Trainer:
             dt_acc = accuracy_score(self.data.y[self.data.test_mask].cpu(), pred)
             dt_f1 = f1_score(self.data.y[self.data.test_mask].cpu(), pred, average='micro')
             msc_rate = self.misclassification_rate(self.data.y[self.data.test_mask].cpu(), pred)
-            auc = roc_auc_score(self.data.y[self.data.test_mask].cpu(), F.softmax(z[self.data.test_mask], dim=1).cpu(), multi_class='ovo')
+            # auc = roc_auc_score(self.data.y[self.data.test_mask].cpu(), F.softmax(z[self.data.test_mask], dim=1).cpu(), multi_class='ovo')
 
-        print("AUC: ",auc)
+        # print("AUC: ",auc)
 
         self.true = self.data.y[self.data.test_mask].cpu()
         self.pred = pred

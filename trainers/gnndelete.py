@@ -92,7 +92,7 @@ class GNNDeleteNodeembTrainer(Trainer):
 
     def train_fullbatch(self):
         start_time = time.time()
-        
+
         self.model = self.model.to(device)
         self.data = self.data.to(device)
 
@@ -103,9 +103,10 @@ class GNNDeleteNodeembTrainer(Trainer):
 
         self.data.sdf_node_1hop_mask_non_df_mask = self.data.sdf_node_1hop_mask & non_df_node_mask
         self.data.sdf_node_2hop_mask_non_df_mask = self.data.sdf_node_2hop_mask & non_df_node_mask
+        self.data.sdf_node_3hop_mask_non_df_mask = self.data.sdf_node_3hop_mask & non_df_node_mask
 
         with torch.no_grad():
-            z1_ori, z2_ori = self.model.get_original_embeddings(self.data.x, self.data.train_pos_edge_index, return_all_emb=True)
+            z1_ori, z2_ori, z3_ori = self.model.get_original_embeddings(self.data.x, self.data.train_pos_edge_index, return_all_emb=True)
 
 
         for epoch in trange(self.args.unlearning_epochs, desc='Unlearning'):
@@ -117,49 +118,57 @@ class GNNDeleteNodeembTrainer(Trainer):
                 num_neg_samples=self.data.df_mask.sum())
 
             # start_time = time.time()
-            
+
             # Forward pass
-            z1, z2 = self.model(self.data.x, self.data.train_pos_edge_index[:, self.data.sdf_mask], return_all_emb=True)
+            z1, z2, z3 = self.model(self.data.x, self.data.train_pos_edge_index[:, self.data.sdf_mask], return_all_emb=True)
 
             pos_edge = self.data.train_pos_edge_index[:, self.data.df_mask]
             embed1 = torch.cat([z1[pos_edge[0]], z1[pos_edge[1]]], dim=0)
             embed1_ori = torch.cat([z1_ori[neg_edge[0]], z1_ori[neg_edge[1]]], dim=0)
             embed2 = torch.cat([z2[pos_edge[0]], z2[pos_edge[1]]], dim=0)
             embed2_ori = torch.cat([z2_ori[neg_edge[0]], z2_ori[neg_edge[1]]], dim=0)
+            embed3 = torch.cat([z3[pos_edge[0]], z3[pos_edge[1]]], dim=0)
+            embed3_ori = torch.cat([z3_ori[neg_edge[0]], z3_ori[neg_edge[1]]], dim=0)
             loss_r1 = loss_fct(embed1, embed1_ori)
             loss_r2 = loss_fct(embed2, embed2_ori)
+            print(embed2.shape, embed2_ori.shape)
+            loss_r3 = loss_fct(embed3, embed3_ori)
             loss_l1 = loss_fct(z1[self.data.sdf_node_1hop_mask_non_df_mask], z1_ori[self.data.sdf_node_1hop_mask_non_df_mask])
             loss_l2 = loss_fct(z2[self.data.sdf_node_2hop_mask_non_df_mask], z2_ori[self.data.sdf_node_2hop_mask_non_df_mask])
+            loss_l3 = loss_fct(z3[self.data.sdf_node_3hop_mask_non_df_mask], z3_ori[self.data.sdf_node_3hop_mask_non_df_mask])
 
 
             if self.args.loss_type == 'both_all':
-                loss_l = loss_l1 + loss_l2
-                loss_r = loss_r1 + loss_r2
+                loss_l = loss_l1 + loss_l2 + loss_l3
+                loss_r = loss_r1 + loss_r2 + loss_r3
                 loss = self.args.alpha * loss_r + (1 - self.args.alpha) * loss_l
                 loss.backward()
                 self.optimizer.step()
 
             elif self.args.loss_type == 'both_layerwise':
-                loss_l = loss_l1 + loss_l2
-                loss_r = loss_r1 + loss_r2
+                loss_l = loss_l1 + loss_l2 + loss_l3
+                loss_r = loss_r1 + loss_r2 + loss_r3
 
-                loss1 = self.args.alpha * loss_r1 + (1 - self.args.alpha) * loss_l1
+                loss1 = self.args.alpha * loss_r1 +  (1 - self.args.alpha) * loss_l1
                 loss1.backward(retain_graph=True)
 
                 loss2 = self.args.alpha * loss_r2 + (1 - self.args.alpha) * loss_l2
                 loss2.backward(retain_graph=True)
+
+                loss3 = self.args.alpha * loss_r3 + (1 - self.args.alpha) * loss_l3
+                loss3.backward(retain_graph=True)
 
                 self.optimizer[0].step()
                 self.optimizer[0].zero_grad()
                 self.optimizer[1].step()
                 self.optimizer[1].zero_grad()
 
-                loss = loss1 + loss2
+                loss = loss1 + loss2 + loss3
 
 
             elif self.args.loss_type == 'only2_layerwise':
-                loss_l = loss_l1 + loss_l2
-                loss_r = loss_r1 + loss_r2
+                loss_l = loss_l1 + loss_l2 + loss_l3
+                loss_r = loss_r1 + loss_r2 + loss_r3
 
                 self.optimizer[0].zero_grad()
                 loss2 = self.args.alpha * loss_r2 + (1 - self.args.alpha) * loss_l2
@@ -191,11 +200,11 @@ class GNNDeleteNodeembTrainer(Trainer):
 
             else:
                 raise NotImplementedError
-            
+
             # end_time = time.time()
             # epoch_time = end_time - start_time
         end_time = time.time()
         train_acc, msc_rate, f1 = self.evaluate(is_dr=True)
         print(f'Train Acc: {train_acc}, Misclassification: {msc_rate},  F1 Score: {f1}')
-        
+
         return train_acc, msc_rate, end_time - start_time

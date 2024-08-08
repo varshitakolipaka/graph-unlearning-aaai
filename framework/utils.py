@@ -61,6 +61,12 @@ def seed_everything(seed):
 
 def get_sdf_masks(data, args):
     if args.attack_type!="edge":
+        _, three_hop_edge, _, three_hop_mask = k_hop_subgraph(
+            data.edge_index[:, data.df_mask].flatten().unique(),
+            3,
+            data.edge_index,
+            num_nodes=data.num_nodes,
+        )
         _, two_hop_edge, _, two_hop_mask = k_hop_subgraph(
             data.edge_index[:, data.df_mask].flatten().unique(),
             2,
@@ -74,6 +80,12 @@ def get_sdf_masks(data, args):
             num_nodes=data.num_nodes,
         )
     else:
+        _, three_hop_edge, _, three_hop_mask = k_hop_subgraph(
+            data.poisoned_nodes,
+            3,
+            data.edge_index,
+            num_nodes=data.num_nodes,
+        )
         _, two_hop_edge, _, two_hop_mask = k_hop_subgraph(
             data.poisoned_nodes,
             2,
@@ -89,15 +101,20 @@ def get_sdf_masks(data, args):
     data.sdf_mask = two_hop_mask
     sdf_node_1hop = torch.zeros(data.num_nodes, dtype=torch.bool)
     sdf_node_2hop = torch.zeros(data.num_nodes, dtype=torch.bool)
+    sdf_node_3hop = torch.zeros(data.num_nodes, dtype=torch.bool)
 
     sdf_node_1hop[one_hop_edge.flatten().unique()] = True
     sdf_node_2hop[two_hop_edge.flatten().unique()] = True
+    sdf_node_3hop[three_hop_edge.flatten().unique()] = True
+
     data.sdf_node_1hop_mask = sdf_node_1hop
     data.sdf_node_2hop_mask = sdf_node_2hop
-    two_hop_mask = two_hop_mask.bool()
+    data.sdf_node_3hop_mask = sdf_node_3hop
+
+    three_hop_mask = three_hop_mask.bool()
     data.directed_df_edge_index = data.edge_index[:, data.df_mask]
     data.train_pos_edge_index = data.edge_index
-    data.sdf_mask = two_hop_mask
+    data.sdf_mask = three_hop_mask
 
 
 def find_masks(data, poisoned_indices, args, attack_type="label"):
