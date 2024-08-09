@@ -5,7 +5,7 @@ from framework.training_args import parse_args
 from models.deletion import GCNDelete
 from models.models import GCN
 from trainers.base import Trainer
-from attacks.edge_attack import edge_attack_random_nodes, structure_based_silhouette_attack
+from attacks.edge_attack import edge_attack_random_nodes
 from attacks.label_flip import label_flip_attack
 from trainers.megu import ExpMEGU
 args = parse_args()
