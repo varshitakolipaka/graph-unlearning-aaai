@@ -343,4 +343,4 @@ class GNNDeleteEdgeTrainer(EdgeTrainer):
 
         # test(self, model, data, model_retrain=None, attack_model_all=None, attack_model_sub=None):
         test_results = self.test(model, data, attack_model_all=attack_model_all, attack_model_sub=attack_model_sub)
-        print('===AFTER UNLEARNING===', test_results[-1])
+        print('===AFTER UNLEARNING===\n', test_results[-1])

@@ -199,10 +199,17 @@ def main():
     print("==Membership Inference attack==") ## possibly wrong
     # Initialize MIAttackTrainer
     mia_trainer = MIAttackTrainer(args)
+
+    if "gnndelete" in args.unlearning_model:
+        shadow_model = GCNDelete(data.num_features, args.hidden_dim, data.num_classes)
+    else:
+        shadow_model = GCN(data.num_features, args.hidden_dim, data.num_classes)
+    shadow_optimizer = torch.optim.Adam(shadow_model.parameters(), lr=0.01, weight_decay=5e-4)
+
     # Train shadow model
-    all_neg = mia_trainer.train_shadow(model, data, optimizer, args)
+    all_neg = mia_trainer.train_shadow(shadow_model, data, shadow_optimizer, args)
     # Prepare attack training data
-    feature, label = mia_trainer.prepare_attack_training_data(model, data, leak='posterior', all_neg=all_neg)
+    feature, label = mia_trainer.prepare_attack_training_data(shadow_model, data, leak='posterior', all_neg=all_neg)
     # Create DataLoader for attack model
 
     print("==========")
