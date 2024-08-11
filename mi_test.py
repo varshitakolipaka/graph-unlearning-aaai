@@ -14,6 +14,7 @@ from attacks.mi_attack import MIAttackTrainer
 from torch.utils.data import DataLoader, TensorDataset
 from sklearn.model_selection import train_test_split
 from attacks.mi_attack import AttackModel
+from trainers.base import member_infer_attack
 
 device = torch.device('cuda') if torch.cuda.is_available() else torch.device('cpu')
 
@@ -151,7 +152,7 @@ def split_forget_retain(data, df_size, subset='in'):
     data.dr_mask = dr_mask
     return data
 
-def get_processed_data(d, val_ratio=0.05, test_ratio=0.05):
+def get_processed_data(d, val_ratio=0.15, test_ratio=0.15):
     data_dir = './data' 
     dataset = Planetoid(os.path.join(data_dir, d), d.split('_')[0], transform=T.NormalizeFeatures()) # just using Cora_p right now
     data = dataset[0]
@@ -169,9 +170,12 @@ def main():
     
     print("==CLEAN DATASET==")
     data = get_processed_data(args.dataset)
+    
     args.in_dim = data.x.shape[1]
+    
     train_pos_edge_index = to_undirected(data.train_pos_edge_index)
     data.train_pos_edge_index = train_pos_edge_index
+    
     data.dtrain_mask = torch.ones(data.train_pos_edge_index.shape[1], dtype=torch.bool)
     assert is_undirected(data.train_pos_edge_index)
     print('Undirected dataset:', data)
@@ -196,6 +200,14 @@ def main():
     args.unlearning_model = temp
     data = post_process_data(data, args) # to get df, dr, sdf masks
 
+    print("====================")
+    print('Train Size: ', data.train_pos_edge_index.shape)
+    print('Val Size: ', data.val_pos_edge_index.shape)
+    print('Test Size: ', data.test_pos_edge_index.shape)
+
+    print('Mask Sizes: ', data.df_mask.sum(), data.dr_mask.sum())
+    print("====================")
+
     print("==Membership Inference attack==") ## possibly wrong
     # Initialize MIAttackTrainer
     mia_trainer = MIAttackTrainer(args)
@@ -213,7 +225,8 @@ def main():
     # Create DataLoader for attack model
 
     print("==========")
-    print(label.shape) 
+    print(label.shape)
+    print(feature.shape)
     
     # do a 80-20 train test split of feature, label and use DataLoader to load it in train_loader and valid_loader
     feature_tensor = torch.tensor(feature, dtype=torch.float32)
@@ -236,6 +249,8 @@ def main():
     attack_optimizer = torch.optim.Adam(attack_model.parameters(), lr=0.01, weight_decay=5e-4)
     # Train attack model
     mia_trainer.train_attack(attack_model, train_loader, valid_loader, attack_optimizer, leak='posterior', args=args)
+
+    p, _ = member_infer_attack(model, attack_model, data, args)
 
     print("==UNLEARNING==")
     if "gnndelete" in args.unlearning_model:
