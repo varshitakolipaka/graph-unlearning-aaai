@@ -166,7 +166,8 @@ def get_optimizer(args, poisoned_model):
         if 'layerwise' in args.loss_type:
             optimizer1 = torch.optim.Adam(poisoned_model.deletion1.parameters(), lr=args.unlearn_lr)
             optimizer2 = torch.optim.Adam(poisoned_model.deletion2.parameters(), lr=args.unlearn_lr)
-            optimizer_unlearn = [optimizer1, optimizer2]
+            optimizer3 = torch.optim.Adam(poisoned_model.deletion3.parameters(), lr=args.unlearn_lr)
+            optimizer_unlearn = [optimizer1, optimizer2, optimizer3]
         else:
             optimizer_unlearn = torch.optim.Adam(parameters_to_optimize, lr=args.unlearn_lr)
     else:

@@ -1,8 +1,8 @@
 # python hp_tune.py --unlearning_model gnndelete --dataset Cora
-python hp_tune.py --unlearning_model utu --dataset Cora
-python hp_tune.py --unlearning_model gif --dataset Cora
-python hp_tune.py --unlearning_model gradient_ascent --dataset Cora
-python hp_tune.py --unlearning_model scrub --dataset Cora
+# python hp_tune.py --unlearning_model utu --dataset Cora
+# python hp_tune.py --unlearning_model gif --dataset Cora
+# python hp_tune.py --unlearning_model gradient_ascent --dataset Cora
+# python hp_tune.py --unlearning_model scrub --dataset Cora
 python hp_tune.py --unlearning_model contrastive --dataset Cora
 
 # python hp_tune.py --unlearning_model gnndelete --dataset Citeseer_p

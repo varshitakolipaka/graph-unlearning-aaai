@@ -24,16 +24,18 @@ def train():
     clean_data= utils.get_original_data(args.dataset)
     utils.train_test_split(clean_data, args.random_seed, args.train_ratio)
     utils.prints_stats(clean_data)
-    if "gnndelete" in args.unlearning_model:
-        clean_model = GCNDelete(clean_data.num_features, args.hidden_dim, clean_data.num_classes)
-    else:
-        clean_model = GCN(clean_data.num_features, args.hidden_dim, clean_data.num_classes)
+    clean_model = GCN(clean_data.num_features, args.hidden_dim, clean_data.num_classes)
 
     optimizer = torch.optim.Adam(clean_model.parameters(), lr=args.train_lr, weight_decay=args.weight_decay)
     clean_trainer = Trainer(clean_model, clean_data, optimizer, args.training_epochs)
     clean_trainer.train()
     a_p, a_c = clean_trainer.subset_acc(class1=57, class2=33)
     print(f'Poisoned Acc: {a_p}, Clean Acc: {a_c}')
+    
+    # save the clean model
+    os.makedirs('./data', exist_ok=True)
+    torch.save(clean_model, f'./data/{args.dataset}_{args.attack_type}_{args.df_size}_clean_model.pt')
+    
     return clean_data
 
 def poison(clean_data=None):
@@ -62,7 +64,8 @@ def poison(clean_data=None):
     poisoned_data= poisoned_data.to(device)
 
     if "gnndelete" in args.unlearning_model:
-        poisoned_model = GCNDelete(poisoned_data.num_features, args.hidden_dim, poisoned_data.num_classes)
+        # poisoned_model = GCNDelete(poisoned_data.num_features, args.hidden_dim, poisoned_data.num_classes)
+        poisoned_model = GCN(poisoned_data.num_features, args.hidden_dim, poisoned_data.num_classes)
     else:
         poisoned_model = GCN(poisoned_data.num_features, args.hidden_dim, poisoned_data.num_classes)
 
@@ -72,9 +75,11 @@ def poison(clean_data=None):
 
     # save the poisoned data and model and indices to np file
     os.makedirs('./data', exist_ok=True)
+    
+    torch.save(poisoned_model, f'./data/{args.dataset}_{args.attack_type}_{args.df_size}_poisoned_model.pt')
+    
     torch.save(poisoned_data, f'./data/{args.dataset}_{args.attack_type}_{args.df_size}_poisoned_data.pt')
     torch.save(poisoned_indices, f'./data/{args.dataset}_{args.attack_type}_{args.df_size}_poisoned_indices.pt')
-    torch.save(poisoned_model, f'./data/{args.dataset}_{args.attack_type}_{args.df_size}_poisoned_model.pt')
 
     a_p, a_c = poisoned_trainer.subset_acc()
     print(f'Poisoned Acc: {a_p}, Clean Acc: {a_c}')
@@ -85,7 +90,7 @@ def unlearn(poisoned_data, poisoned_indices, poisoned_model):
 
     utils.find_masks(poisoned_data, poisoned_indices, attack_type=args.attack_type)
     if "gnndelete" in args.unlearning_model:
-        unlearn_model = GCNDelete(poisoned_data.num_features, args.hidden_dim, poisoned_data.num_classes, mask_1hop=poisoned_data.sdf_node_1hop_mask, mask_2hop=poisoned_data.sdf_node_2hop_mask)
+        unlearn_model = GCNDelete(poisoned_data.num_features, args.hidden_dim, poisoned_data.num_classes, mask_1hop=poisoned_data.sdf_node_1hop_mask, mask_2hop=poisoned_data.sdf_node_2hop_mask, mask_3hop=poisoned_data.sdf_node_3hop_mask)
 
         # copy the weights from the poisoned model
         unlearn_model.load_state_dict(poisoned_model.state_dict())
@@ -109,9 +114,9 @@ hp_tuning_params_dict = {
     'gnndelete': {
         'unlearn_lr': (1e-5, 1e-1, "log"),
         'weight_decay': (1e-5, 1e-1, "log"),
-        'unlearning_epochs': (10, 100, "int"),
+        'unlearning_epochs': (10, 200, "int"),
         'alpha': (0, 1, "float"),
-        'loss_type': (["both_all", "both_layerwise", "only2_layerwise", "only2_all", "only1"], "categorical"),
+        'loss_type': (["both_all", "both_layerwise"], "categorical"),
     },
     'gnndelete_ni': {
         'unlearn_lr': (1e-5, 1e-1, "log"),
@@ -120,20 +125,22 @@ hp_tuning_params_dict = {
         'loss_type': (["both_all", "both_layerwise", "only2_layerwise", "only2_all", "only1"], "categorical"),
     },
     'gif': {
-        'iteration': (10, 100, "int"),
-        'scale': (1e3, 1e6, "log"),
+        'iteration': (10, 1000, "int"),
+        'scale': (1e1, 1e6, "log"),
         'damp': (0.0, 1.0, "float"),
     },
     'gradient_ascent': {
         'unlearning_epochs': (10, 2000, "int"),
+        'unlearn_lr': (1e-5, 1e-1, "log"),
+        'weight_decay': (1e-5, 1e-1, "log"),
     },
     'contrastive': {
-        'contrastive_epochs_1': (5, 60, "int"),
-        'contrastive_epochs_2': (5, 20, "int"),
+        'contrastive_epochs_1': (5, 100, "int"),
+        'contrastive_epochs_2': (5, 50, "int"),
         'unlearn_lr': (1e-5, 1e-1, "log"),
         'weight_decay': (1e-5, 1e-1, "log"),
         'contrastive_margin': (1, 1e3, "log"),
-        'contrastive_lambda': (0.0, 0.3, "float"),
+        'contrastive_lambda': (0.0, 0.5, "float"),
         'contrastive_frac': (0.01, 0.2, "float"),
         'k_hop': (1, 2, "int"),
     },
@@ -205,7 +212,12 @@ if __name__ == "__main__":
         model = GCNDelete(poisoned_data.num_features, args.hidden_dim, poisoned_data.num_classes, mask_1hop=poisoned_data.sdf_node_1hop_mask, mask_2hop=poisoned_data.sdf_node_2hop_mask)
 
         # copy the weights from the poisoned model
-        model.load_state_dict(poisoned_model.state_dict())
+        state_dict = poisoned_model.state_dict()
+        state_dict['deletion1.deletion_weight'] = model.deletion1.deletion_weight
+        state_dict['deletion2.deletion_weight'] = model.deletion2.deletion_weight
+        state_dict['deletion3.deletion_weight'] = model.deletion3.deletion_weight
+
+        model.load_state_dict(state_dict)
     else:
         model = poisoned_model
 
@@ -219,7 +231,7 @@ if __name__ == "__main__":
         directions=['maximize', 'maximize', 'maximize', 'minimize'],
         study_name=f"{args.dataset}_{args.attack_type}_{args.unlearning_model}",
         load_if_exists=True,
-        storage='sqlite:///graph_unlearning_hp_tuning_cora_full_new.db',
+        storage='sqlite:///graph_unlearning_hp_tuning_cora_full_new_3.db',
     )
 
     print("==OPTIMIZING==")
@@ -233,10 +245,3 @@ if __name__ == "__main__":
         study.optimize(objective_func, n_trials=100)
     else:
         study.optimize(objective_func, n_trials=200)
-
-    # Print the best trial
-    best_trial = study.best_trials
-    print(f'Best trial: Accuracy: {best_trial[0].values[0]}, Misclassification: {best_trial[0].values[1]}')
-
-    # Best hyperparameters
-    print(f'Best hyperparameters: {best_trial[0].params}')
