@@ -164,6 +164,8 @@ class GNNDeleteNodeembTrainer(Trainer):
                 self.optimizer[0].zero_grad()
                 self.optimizer[1].step()
                 self.optimizer[1].zero_grad()
+                self.optimizer[2].step()
+                self.optimizer[2].zero_grad()
 
                 loss = loss1 + loss2 + loss3
 
