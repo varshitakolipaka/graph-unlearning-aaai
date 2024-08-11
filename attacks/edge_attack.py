@@ -48,18 +48,13 @@ def edge_attack_random_nodes(data, epsilon, seed):
 def edge_attack_specific_nodes(data, epsilon, seed, class1=None, class2=None):
     np.random.seed(seed)
     random.seed(seed)
-    data.og_edges= data.edge_index.clone()
-
-    # Get train indices and class counts
+    data= data.cpu()
     train_indices = data.train_mask.nonzero(as_tuple=False).view(-1)
-    train_labels = data.y[train_indices]
-
-    if class1 is None or class2 is None:
-        counts = torch.bincount(train_labels)
-        class1, class2 = torch.topk(counts, 2).indices
-
-    class1_indices = torch.where(data.y == class1)[0]
-    class2_indices = torch.where(data.y == class2)[0]
+    train_labels, counts = torch.unique(data.y[train_indices], return_counts=True)
+    sorted_indices = torch.argsort(counts, descending=True)
+    class1, class2 = train_labels[sorted_indices[:2]]
+    class1_indices = train_indices[data.y[train_indices] == class1]
+    class2_indices = train_indices[data.y[train_indices] == class2]
 
     class1_indices=class1_indices.cpu().detach().numpy()
     class2_indices=class2_indices.cpu().detach().numpy()
@@ -100,7 +95,7 @@ def edge_attack_specific_nodes(data, epsilon, seed, class1=None, class2=None):
     edge_index_to_add = edge_index_to_add.clone().detach().to(device)
 
     data.poisoned_nodes= torch.tensor(list(poisoned_nodes), dtype=torch.long)
-    augmented_edge = torch.cat([data.edge_index, edge_index_to_add], dim=1)
+    augmented_edge = torch.cat([data.edge_index.to(device), edge_index_to_add], dim=1)
     data.edge_index = augmented_edge
     nums= list(range(len(data.edge_index[0])-2*len(poisoned_edges), len(data.edge_index[0])))
     return data, torch.tensor(nums, dtype=torch.long)

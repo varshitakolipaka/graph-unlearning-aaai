@@ -53,7 +53,6 @@ poisoned_trainer.train()
 utils.find_masks(poisoned_data, poisoned_indices, args, attack_type=args.attack_type)
 
 a, b = clean_trainer.subset_acc(poisoned_trainer.class1, poisoned_trainer.class2)
-print(a, b)
 print(f"==Clean Model==\nAccuracy of poisoned classes: {a}, Accuracy of clean classes: {b}")
 a, b = poisoned_trainer.subset_acc()
 print(f"==Poisoned Model==\nAccuracy of poisoned classes: {a}, Accuracy of clean classes: {b}")
@@ -61,10 +60,8 @@ print(f"==Poisoned Model==\nAccuracy of poisoned classes: {a}, Accuracy of clean
 print("==UNLEARNING==")
 if "gnndelete" in args.unlearning_model:
     unlearn_model = GCNDelete(poisoned_data.num_features, args.hidden_dim, poisoned_data.num_classes, mask_1hop=poisoned_data.sdf_node_1hop_mask, mask_2hop=poisoned_data.sdf_node_2hop_mask)
-
     # copy the weights from the poisoned model
     unlearn_model.load_state_dict(poisoned_model.state_dict())
-
     optimizer_unlearn= utils.get_optimizer(args, unlearn_model)
     unlearn_trainer= utils.get_trainer(args, unlearn_model, poisoned_data, optimizer_unlearn)
     unlearn_trainer.train()

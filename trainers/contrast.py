@@ -36,30 +36,15 @@ class ContrastiveUnlearnTrainer(Trainer):
         self.embeddings = None
         self.criterion = torch.nn.CrossEntropyLoss()
 
-    # def get_sample_points(self):
-        # get the k-hop subgraph of attacked nodes, and add all the nodes in the subgraph to the sample_mask
-        # sample_mask = torch.zeros(self.data.num_nodes, dtype=torch.bool)
-        # for idx in self.attacked_idx:
-        #     idx_int = int(idx)
-        #     subset, _, _, _ = k_hop_subgraph(
-        #         idx_int, self.args.k_hop, self.data.edge_index
-        #     )
-        #     sample_mask[subset] = True
-
-    #     #print(f"Number of nodes in the sampling: {sample_mask.sum().item()}")
-
-    #     eps = self.args.contrastive_eps
-    #     # add eps fraction of non-neighbor training nodes to the sample_mask
-    #     num_to_add = int(eps * self.data.train_mask.sum().item())
-    #     # TODO: check if the non-neighbors are being sampled correctly
-
-    #     self.data.sample_mask = sample_mask
-
     def reverse_features(self, features):
         reverse_features = features.clone()
+        if self.args.request== "edge":
+            for idx in self.data.poisoned_nodes:
+                reverse_features[idx] = 1-reverse_features[idx]
+            return reverse_features
+
         for idx in self.attacked_idx:
             reverse_features[idx] = 1-reverse_features[idx]
-
         return reverse_features
 
     def sparse_mx_to_torch_sparse_tensor(self, sparse_mx):
@@ -87,67 +72,68 @@ class ContrastiveUnlearnTrainer(Trainer):
 
     #MEGU HIN sampling
     def get_sample_points(self):
+        if self.args.request == "edge":
+            og_logits = F.softmax(self.model(self.data.x, self.data.edge_index), dim=1)
+            temp_features = self.data.x.clone()
+            reverse_feature = self.reverse_features(temp_features)
+            final_logits = F.softmax(self.model(reverse_feature, self.data.edge_index), dim=1)
+            diff = torch.abs(og_logits - final_logits)
+            diff = torch.mean(diff, dim=1)
+            diff = diff[self.data.poisoned_nodes]
+            frac = self.args.contrastive_frac
+            _, indices = torch.topk(diff, int(frac * len(self.data.poisoned_nodes)), largest=True)
+            influence_nodes_with_unlearning_nodes = self.data.poisoned_nodes[indices]
+            print(f"Nodes influenced: {len(influence_nodes_with_unlearning_nodes)}")
+            self.data.sample_mask = torch.zeros(self.data.num_nodes, dtype=torch.bool)
+            self.data.sample_mask[influence_nodes_with_unlearning_nodes] = True
+
+            poisoned_edges = self.data.edge_index[:, self.attacked_idx]
+            negative_sample_dict= {int: set()}
+
+            for i in range(len(poisoned_edges[0])):
+                toNode= poisoned_edges[0][i].item()
+                fromNode= poisoned_edges[1][i].item()
+
+                if toNode not in negative_sample_dict:
+                    negative_sample_dict[toNode] = set()
+                negative_sample_dict[toNode].add(fromNode)
+
+                if fromNode not in negative_sample_dict:
+                    negative_sample_dict[fromNode] = set()
+                negative_sample_dict[fromNode].add(toNode)
+            self.negative_sample_dict= negative_sample_dict
+            return
+
         subset, _, _, _ = k_hop_subgraph(
             torch.tensor(self.attacked_idx), self.args.k_hop, self.data.edge_index
         )
-        
+
         # remove attacked nodes from the subset
         subset = subset[~np.isin(subset.cpu(), self.attacked_idx)]
-        
-        og_logits = F.softmax(self.model(self.data.x, self.data.edge_index))
+
+        og_logits = F.softmax(self.model(self.data.x, self.data.edge_index), dim=1)
         temp_features = self.data.x.clone()
         reverse_feature = self.reverse_features(temp_features)
-        final_logits = F.softmax(self.model(reverse_feature, self.data.edge_index))
+        final_logits = F.softmax(self.model(reverse_feature, self.data.edge_index), dim=1)
 
         diff = torch.abs(og_logits - final_logits)
-        
+
         # average across all classes
         diff = torch.mean(diff, dim=1)
-        
+
         # take diffs of only the subset without the attacked nodes
         diff = diff[subset]
 
         #  get the top 10% of the indices
         frac = self.args.contrastive_frac
         _, indices = torch.topk(diff, int(frac * len(subset)), largest=True)
-        
+
         influence_nodes_with_unlearning_nodes = indices
-        
+
         print(f"Nodes influenced: {len(influence_nodes_with_unlearning_nodes)}")
 
         self.data.sample_mask = torch.zeros(self.data.num_nodes, dtype=torch.bool)
         self.data.sample_mask[influence_nodes_with_unlearning_nodes] = True
-        return
-        
-        # while True:
-        #     influence_nodes_with_unlearning_nodes = torch.nonzero(sim <= alpha).flatten().cpu()
-        #     if len(influence_nodes_with_unlearning_nodes.view(-1)) > 0:
-        #         temp_max = torch.max(sim[influence_nodes_with_unlearning_nodes])
-        #     else:
-        #         alpha = alpha + gamma
-        #         continue
-
-        #     if temp_max == max_val:
-        #         break
-
-        #     max_val = temp_max
-        #     alpha = alpha + gamma
-        print("HEYYYYY")
-        print(alpha, gamma)
-        neighborkhop, _, _, two_hop_mask = k_hop_subgraph(
-            torch.tensor(self.attacked_idx),
-            self.args.k_hop,
-            self.data.edge_index,
-            num_nodes=self.data.num_nodes)
-
-        neighborkhop = neighborkhop[~np.isin(neighborkhop.cpu(), self.attacked_idx)]
-        neighbor_nodes = []
-        for idx in influence_nodes_with_unlearning_nodes:
-            if idx in neighborkhop and idx not in self.attacked_idx:
-                neighbor_nodes.append(idx.item())
-
-        self.data.sample_mask = torch.from_numpy(np.isin(np.arange(self.data.num_nodes), neighbor_nodes))
-        print(f"Number of nodes in the sampling: {self.data.sample_mask.sum().item()}")
 
     @time_it
     def task_loss(self):
@@ -201,11 +187,11 @@ class ContrastiveUnlearnTrainer(Trainer):
             subset_dict[idx.item()] = subset_set
         self.subset_dict = subset_dict
 
-    def store_edge_index_for_poison(self, data, idx):
+    def store_edge_index_for_poison(self, data, idx, hop=1):
         edge_index_for_poison_dict = {}
         for idx in range(len(data.train_mask)):
             if data.retain_mask[idx]:
-                _, edge_index_for_poison, _, _ = k_hop_subgraph(idx, 1, data.edge_index)
+                _, edge_index_for_poison, _, _ = k_hop_subgraph(idx, hop, data.edge_index)
                 edge_index_for_poison_dict[idx] = edge_index_for_poison
         self.edge_index_for_poison_dict = edge_index_for_poison_dict
 
@@ -273,73 +259,52 @@ class ContrastiveUnlearnTrainer(Trainer):
 
         return pos_dist, neg_dist
 
-    def get_distances_edge(self, model, data, attacked_edge_list):
+    def get_distances_edge(self, attacked_edge_list, batch_size=64):
         # attacked edge index contains all the edges that were maliciously added
+        self.embeddings = self.model(self.data.x, self.data.edge_index)
+        num_masks = len(self.data.train_mask)
+        pos_dist = torch.zeros(num_masks).to(device)
+        neg_dist = torch.zeros(num_masks).to(device)
 
-        # get pos, neg distances for nodes beforehand
-        pos_dist = []
-        neg_dist = []
+        sample_indices = torch.where(self.data.sample_mask)[0]
+        num_samples = len(sample_indices)
 
-        embeddings = model.conv1(data.x, data.edge_index)
-        embeddings = F.relu(embeddings)
-        embeddings = F.dropout(embeddings, training=model.training)
-        embeddings = model.conv2(embeddings, data.edge_index)
+        #Batchwise positive and negative samples created
+        for i in range(0, num_samples, batch_size):
+            batch_indices = sample_indices[i : i + batch_size]
+            batch_size = len(batch_indices)
 
-        for idx in range(len(data.train_mask)):
-            if data.train_mask[idx]:
-                # Get K-hop subgraph
-                subset_set = self.subset_dict[idx]
-                edge_index_for_poison = self.edge_index_for_poison_dict[idx]
+            batch_positive_samples = [
+                list(self.subset_dict[idx.item()] - self.negative_sample_dict[idx.item()])
+                for idx in batch_indices
+            ]
+            batch_negative_samples = [list(self.negative_sample_dict[idx.item()]) for idx in batch_indices]
+            # Pad and create dense batches
+            max_pos = max(len(s) for s in batch_positive_samples)
+            max_neg = max(len(s) for s in batch_negative_samples)
 
-                # convert edge_index to a list of tuples
-                edge_index_list = [
-                    (
-                        edge_index_for_poison[0][i].item(),
-                        edge_index_for_poison[1][i].item(),
-                    )
-                    for i in range(edge_index_for_poison.shape[1])
+            batch_pos = torch.stack(
+                [
+                    torch.tensor(s + [0] * (max_pos - len(s)))
+                    for s in batch_positive_samples
                 ]
-                # check for intersection between the edge_index_list and attacked_edge_list
-                attacked_edge_set = set(attacked_edge_list)
+            )
+            batch_neg = torch.stack(
+                [
+                    torch.tensor(s + [0] * (max_neg - len(s)))
+                    for s in batch_negative_samples
+                ]
+            )
 
-                intersection = set(edge_index_list).intersection(attacked_edge_set)
+            # st_2 = time.time()
+            batch_pos_dist, batch_neg_dist = self.calc_distances(
+                batch_indices, batch_pos, batch_neg
+            )
+            # calc_time += time.time() - st_2
 
-                if intersection:
-                    attacked_set = set()
-                    for edge in intersection:
-                        # add the node which is not the idx
-                        u, v = edge
-                        if u == idx:
-                            attacked_set.add(v)
-                        else:
-                            attacked_set.add(u)
+            pos_dist[batch_indices] = batch_pos_dist.to(pos_dist.device)
+            neg_dist[batch_indices] = batch_neg_dist.to(neg_dist.device)
 
-                    positive_samples = subset_set - attacked_set
-                    negative_samples = attacked_set
-                else:
-                    pos_dist.append(0)
-                    neg_dist.append(0)
-                    continue
-
-                if not positive_samples or not negative_samples:
-                    pos_dist.append(0)
-                    neg_dist.append(0)
-                    continue
-
-                positive_samples = list(positive_samples)
-                negative_samples = list(negative_samples)
-
-                # Compute distances
-                pos, neg = self.calc_distance(
-                    embeddings, idx, positive_samples, negative_samples
-                )
-                pos_dist.append(pos.item())
-                neg_dist.append(neg.item())
-            else:
-                pos_dist.append(0)
-                neg_dist.append(0)
-
-        # convert to tensor
         pos_dist = torch.tensor(pos_dist)
         neg_dist = torch.tensor(neg_dist)
         return pos_dist, neg_dist
@@ -381,29 +346,25 @@ class ContrastiveUnlearnTrainer(Trainer):
         attacked_idx = self.attacked_idx
         optimizer = self.optimizer
 
-        for epoch in trange(args.contrastive_epochs_1, desc="Unlearning 1"):
-            pos_dist, neg_dist = self.get_distances_edge(model, data, attacked_idx)
+        for epoch in trange(
+            args.contrastive_epochs_1 + args.contrastive_epochs_2, desc="Unlearning"
+        ):
+            self.model.train()
+            self.embeddings = self.model(self.data.x, self.data.edge_index)
+            if epoch <= args.contrastive_epochs_1:
+                pos_dist, neg_dist = self.get_distances_edge(attacked_idx)
+                lmda = args.contrastive_lambda
+            else:
+                pos_dist = None
+                neg_dist = None
+                lmda = 1
             loss = self.unlearn_loss(
-                model,
-                data,
-                pos_dist,
-                neg_dist,
-                margin=args.contrastive_margin,
-                lmda=args.contrastive_lambda,
+                pos_dist, neg_dist, margin=args.contrastive_margin, lmda=lmda
             )
-
             optimizer.zero_grad()
             loss.backward()
             optimizer.step()
-
-        for epoch in trange(args.contrastive_epochs_2, desc="Unlearning 2"):
-            loss = self.unlearn_loss(
-                model, data, None, None, margin=args.contrastive_margin, lmda=1
-            )
-
-            optimizer.zero_grad()
-            loss.backward()
-            optimizer.step()
+        return
 
     def train(self):
 
@@ -411,11 +372,11 @@ class ContrastiveUnlearnTrainer(Trainer):
         self.data.retain_mask = self.data.train_mask.clone()
         self.get_sample_points()
         self.store_subset()
+
         start_time = time.time()
         if self.args.request == "node":
             self.train_node()
         elif self.args.request == "edge":
-            self.store_edge_index_for_poison(self.data, self.attacked_idx)
             self.train_edge()
         end_time = time.time()
         train_acc, msc_rate, f1 = self.evaluate(is_dr=True)
