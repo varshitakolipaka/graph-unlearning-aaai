@@ -74,3 +74,6 @@ else:
     optimizer_unlearn= utils.get_optimizer(args, poisoned_model)
     unlearn_trainer= utils.get_trainer(args, poisoned_model, poisoned_data, optimizer_unlearn)
     unlearn_trainer.train()
+
+a, b = unlearn_trainer.subset_acc()
+print(f"==Unlearnt Model==\nAccuracy of poisoned classes: {a}, Accuracy of clean classes: {b}")

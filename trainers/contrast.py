@@ -73,10 +73,10 @@ class ContrastiveUnlearnTrainer(Trainer):
     #MEGU HIN sampling
     def get_sample_points(self):
         if self.args.request == "edge":
-            og_logits = F.softmax(self.model(self.data.x, self.data.edge_index), dim=1)
+            og_logits = F.softmax(self.model(self.data.x, self.data.edge_index[:, self.data.dr_mask]), dim=1)
             temp_features = self.data.x.clone()
             reverse_feature = self.reverse_features(temp_features)
-            final_logits = F.softmax(self.model(reverse_feature, self.data.edge_index), dim=1)
+            final_logits = F.softmax(self.model(reverse_feature, self.data.edge_index[:, self.data.dr_mask]), dim=1)
             diff = torch.abs(og_logits - final_logits)
             diff = torch.mean(diff, dim=1)
             diff = diff[self.data.poisoned_nodes]
