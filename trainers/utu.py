@@ -39,15 +39,6 @@ class UtUEdgeTrainer(EdgeTrainer):
         best_metric = 0
         loss_fct = nn.MSELoss()
 
-        # MI Attack before unlearning
-        if attack_model_all is not None:
-            mi_logit_all_before, mi_sucrate_all_before = member_infer_attack(model, attack_model_all, data)
-            print('mi logit all before', mi_logit_all_before)
-            print("========================")
-
-        if attack_model_sub is not None:
-            mi_logit_sub_before, mi_sucrate_sub_before = member_infer_attack(model, attack_model_sub, data)
-            
         z = model(data.x, data.train_pos_edge_index[:, data.dr_mask])
         test_results = self.test(model, data, attack_model_all=attack_model_all, attack_model_sub=attack_model_sub)
         print('===AFTER UNLEARNING===', test_results[-1])

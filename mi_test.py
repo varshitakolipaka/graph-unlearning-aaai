@@ -152,7 +152,7 @@ def split_forget_retain(data, df_size, subset='in'):
     data.dr_mask = dr_mask
     return data
 
-def get_processed_data(d, val_ratio=0.15, test_ratio=0.15):
+def get_processed_data(d, val_ratio=0.20, test_ratio=0.20):
     data_dir = './data' 
     dataset = Planetoid(os.path.join(data_dir, d), d.split('_')[0], transform=T.NormalizeFeatures()) # just using Cora_p right now
     data = dataset[0]
@@ -223,10 +223,6 @@ def main():
     # Prepare attack training data
     feature, label = mia_trainer.prepare_attack_training_data(shadow_model, data, leak='posterior', all_neg=all_neg)
     # Create DataLoader for attack model
-
-    print("==========")
-    print(label.shape)
-    print(feature.shape)
     
     # do a 80-20 train test split of feature, label and use DataLoader to load it in train_loader and valid_loader
     feature_tensor = torch.tensor(feature, dtype=torch.float32)
@@ -251,6 +247,7 @@ def main():
     mia_trainer.train_attack(attack_model, train_loader, valid_loader, attack_optimizer, leak='posterior', args=args)
 
     p, _ = member_infer_attack(model, attack_model, data, args)
+    print("Membership Inference Attack before unlearning: ", p)
 
     print("==UNLEARNING==")
     if "gnndelete" in args.unlearning_model:

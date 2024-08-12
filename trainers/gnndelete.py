@@ -202,6 +202,7 @@ class GNNDeleteEdgeTrainer(EdgeTrainer):
         self.args= args
 
     def train(self, model, data, optimizer, args, logits_ori=None, attack_model_all=None, attack_model_sub=None):
+    
         model = model.to(device)
         data = data.to(device)
         # early_stopping = EarlyStopping(patience=30, verbose=True, delta=1e-4, path=args.checkpoint_dir, trace_func=tqdm.write)
@@ -209,17 +210,6 @@ class GNNDeleteEdgeTrainer(EdgeTrainer):
         best_metric = 0
         loss_fct = get_loss_fct(self.args.loss_fct)
 
-        # MI Attack before unlearning
-        if attack_model_all is not None:
-            mi_logit_all_before, mi_sucrate_all_before = member_infer_attack(model, attack_model_all, data)
-            
-            print('mi logit all before', mi_logit_all_before)
-            print("========================")
-            # print('mi succress rate all before', mi_sucrate_all_before)
-        if attack_model_sub is not None:
-            mi_logit_sub_before, mi_sucrate_sub_before = member_infer_attack(model, attack_model_sub, data)
-
-        # 
         non_df_node_mask = torch.ones(data.x.shape[0], dtype=torch.bool, device=data.x.device)
         non_df_node_mask[data.directed_df_edge_index.flatten().unique()] = False
 
