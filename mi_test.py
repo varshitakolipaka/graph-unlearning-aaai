@@ -150,9 +150,17 @@ def split_forget_retain(data, df_size, subset='in'):
     data.sdf_mask = two_hop_mask
     data.df_mask = df_mask
     data.dr_mask = dr_mask
+
+    # Identify poisoned indices (u, v pairs of removed edges)
+    poisoned_indices = data.train_pos_edge_index[:, df_global_idx].T.tolist()
+    data.attacked_idx = poisoned_indices
+
+    poisoned_nodes = torch.unique(data.train_pos_edge_index[:, df_global_idx].flatten()).tolist()
+    data.poisoned_nodes = poisoned_nodes
+
     return data
 
-def get_processed_data(d, val_ratio=0.20, test_ratio=0.20):
+def get_processed_data(d, val_ratio=0.05, test_ratio=0.35):
     data_dir = './data' 
     dataset = Planetoid(os.path.join(data_dir, d), d.split('_')[0], transform=T.NormalizeFeatures()) # just using Cora_p right now
     data = dataset[0]
@@ -246,8 +254,8 @@ def main():
     # Train attack model
     mia_trainer.train_attack(attack_model, train_loader, valid_loader, attack_optimizer, leak='posterior', args=args)
 
-    p, _ = member_infer_attack(model, attack_model, data, args)
-    print("Membership Inference Attack before unlearning: ", p)
+    logits_before, _ = member_infer_attack(model, attack_model, data, args, before=True)
+    print("Membership Inference Attack before unlearning: ", logits_before)
 
     print("==UNLEARNING==")
     if "gnndelete" in args.unlearning_model:
@@ -258,7 +266,7 @@ def main():
         args.unlearning_model = "gnndelete_edge"
         optimizer_unlearn= utils.get_optimizer(args, unlearn_model)
         unlearn_trainer= utils.get_trainer(args, unlearn_model, data, optimizer_unlearn)
-        unlearn_trainer.train(unlearn_model, data, optimizer_unlearn, args, attack_model_all=attack_model)
+        unlearn_trainer.train(unlearn_model, data, optimizer_unlearn, args, attack_model_all=attack_model, logits_before_unlearning=logits_before)
     elif "retrain" in args.unlearning_model:
         unlearn_model = GCN(data.num_features, args.hidden_dim, data.num_classes)
         optimizer_unlearn= utils.get_optimizer(args, unlearn_model)
@@ -268,12 +276,19 @@ def main():
         args.unlearning_model = "utu_edge"
         optimizer_unlearn= utils.get_optimizer(args, model)
         unlearn_trainer= utils.get_trainer(args, model, data, optimizer_unlearn)
-        unlearn_trainer.train(model, data, optimizer_unlearn, args, attack_model_all=attack_model)
+        unlearn_trainer.train(model, data, optimizer_unlearn, args, attack_model_all=attack_model, logits_before_unlearning=logits_before)
     elif "gif" in args.unlearning_model:
         args.unlearning_model = "gif_edge"
         optimizer_unlearn= utils.get_optimizer(args, model)
         unlearn_trainer= utils.get_trainer(args, model, data, optimizer_unlearn)
-        unlearn_trainer.train(model, data, optimizer_unlearn, args, attack_model=attack_model)
+        unlearn_trainer.train(model, data, optimizer_unlearn, args, attack_model=attack_model, logits_before_unlearning=logits_before)
+    elif "contrastive" in args.unlearning_model:
+        args.unlearning_model = "contrastive_edge"
+        args.request="edge"
+        print("Number of edges removed: ", len(data.attacked_idx))
+        optimizer_unlearn= utils.get_optimizer(args, model)
+        unlearn_trainer= utils.get_trainer(args, model, data, optimizer_unlearn)
+        unlearn_trainer.train(attack_model=attack_model, logits_before_unlearning=logits_before)
     else:
         optimizer_unlearn= utils.get_optimizer(args, model)
         unlearn_trainer= utils.get_trainer(args, model, data, optimizer_unlearn)

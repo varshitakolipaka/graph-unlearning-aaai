@@ -32,7 +32,7 @@ class UtUEdgeTrainer(EdgeTrainer):
         super().__init__(args)
         self.args= args
 
-    def train(self, model, data, optimizer, args, logits_ori=None, attack_model_all=None, attack_model_sub=None):
+    def train(self, model, data, optimizer, args, logits_ori=None, attack_model_all=None, attack_model_sub=None, logits_before_unlearning=None):
         model = model.to(device)
         data = data.to(device)
 
@@ -40,5 +40,5 @@ class UtUEdgeTrainer(EdgeTrainer):
         loss_fct = nn.MSELoss()
 
         z = model(data.x, data.train_pos_edge_index[:, data.dr_mask])
-        test_results = self.test(model, data, attack_model_all=attack_model_all, attack_model_sub=attack_model_sub)
+        test_results = self.test(model, data, attack_model_all=attack_model_all, attack_model_sub=attack_model_sub, logits_before_unlearning=logits_before_unlearning)
         print('===AFTER UNLEARNING===', test_results[-1])

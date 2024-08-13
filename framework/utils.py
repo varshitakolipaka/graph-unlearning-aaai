@@ -8,7 +8,7 @@ from ogb.linkproppred import PygLinkPropPredDataset
 import torch_geometric.transforms as T
 from framework.training_args import parse_args
 
-from trainers.contrast import ContrastiveUnlearnTrainer
+from trainers.contrast import ContrastiveUnlearnTrainer, ContrastiveUnlearnEdgeTrainer
 from trainers.gnndelete import GNNDeleteNodeembTrainer, GNNDeleteEdgeTrainer
 from trainers.gnndelete_ni import GNNDeleteNITrainer
 from trainers.gradient_ascent import GradientAscentTrainer
@@ -127,6 +127,7 @@ def get_trainer(args, poisoned_model, poisoned_data, optimizer_unlearn) -> Train
         "utu": UtUTrainer,
         "utu_edge": UtUEdgeTrainer,
         "contrastive": ContrastiveUnlearnTrainer,
+        "contrastive_edge": ContrastiveUnlearnEdgeTrainer,
         "retrain": RetrainTrainer,
         "scrub": ScrubTrainer
     }

@@ -22,11 +22,14 @@ def get_link_labels(pos_edge_index, neg_edge_index):
 
 #  THIS IS THE ORIGINAL uTu codebase giving error because of using attack_model.fc1
 @torch.no_grad()
-def member_infer_attack(target_model, attack_model, data, logits=None):
+def member_infer_attack(target_model, attack_model, data, logits=None, before=False):
     '''Membership inference attack'''
 
     edge = data.train_pos_edge_index[:, data.df_mask]  # Deleted edges in the training set
-    z = target_model(data.x, data.train_pos_edge_index[:, data.dr_mask])
+    if(before == False):
+        z = target_model(data.x, data.train_pos_edge_index[:, data.dr_mask])
+    else:
+        z = target_model(data.x, data.train_pos_edge_index)
     if attack_model.fc1.in_features == 2:
         feature1 = target_model.decode(z, edge).sigmoid()
         feature0 = 1 - feature1
@@ -274,7 +277,7 @@ class EdgeTrainer:
         return loss, dt_auc, dt_aup, df_auc, df_aup, df_logit, None, log
 
     @torch.no_grad()
-    def test(self, model, data, model_retrain=None, attack_model_all=None, attack_model_sub=None):
+    def test(self, model, data, model_retrain=None, attack_model_all=None, attack_model_sub=None, logits_before_unlearning=None):
         
         if 'ogbl' in self.args.dataset:
             pred_all = False
@@ -289,6 +292,17 @@ class EdgeTrainer:
             # print(f'MI Attack succress rate (All) after unlearning: {mi_sucrate_all_after:.4f}')
             print(f'MI Logit (All) after unlearning: {mi_logit_all_after}')
             print("===============")
+
+            sum = 0
+            for i in range(0, len(logits_before_unlearning)):
+                ratio = mi_logit_all_after[i][0] / logits_before_unlearning[i][0]
+                print(mi_logit_all_after[i][0], logits_before_unlearning[i][0], ratio)
+                sum += ratio
+            mi_score = sum / len(logits_before_unlearning)
+            print("============")
+            print("mi score: ", mi_score)
+            print("============")
+
 
         if attack_model_sub is not None:
             mi_logit_sub_after, mi_sucrate_sub_after = member_infer_attack(model, attack_model_sub, data)

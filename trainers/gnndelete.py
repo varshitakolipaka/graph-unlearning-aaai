@@ -201,7 +201,7 @@ class GNNDeleteEdgeTrainer(EdgeTrainer):
         super().__init__(args)
         self.args= args
 
-    def train(self, model, data, optimizer, args, logits_ori=None, attack_model_all=None, attack_model_sub=None):
+    def train(self, model, data, optimizer, args, logits_ori=None, attack_model_all=None, attack_model_sub=None, logits_before_unlearning=None):
     
         model = model.to(device)
         data = data.to(device)
@@ -332,5 +332,5 @@ class GNNDeleteEdgeTrainer(EdgeTrainer):
                 valid_loss, dt_auc, dt_aup, df_auc, df_aup, df_logit, logit_all_pair, valid_log = self.eval(model, data, 'val')
 
         # test(self, model, data, model_retrain=None, attack_model_all=None, attack_model_sub=None):
-        test_results = self.test(model, data, attack_model_all=attack_model_all, attack_model_sub=attack_model_sub)
+        test_results = self.test(model, data, attack_model_all=attack_model_all, attack_model_sub=attack_model_sub, logits_before_unlearning=logits_before_unlearning)
         print('===AFTER UNLEARNING===\n', test_results[-1])

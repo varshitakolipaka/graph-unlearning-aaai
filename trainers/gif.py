@@ -192,7 +192,7 @@ class GIFEdgeTrainer(EdgeTrainer):
         return return_grads   
 
     # @torch.no_grad()
-    def train(self, model, data, optimizer, args, logits_ori=None, attack_model=None, attack_model_sub=None):
+    def train(self, model, data, optimizer, args, logits_ori=None, attack_model=None, attack_model_sub=None, logits_before_unlearning=None):
         # model.train()
         model, data = model.to(device), data.to(device)
         args.eval_on_cpu = False
@@ -202,5 +202,5 @@ class GIFEdgeTrainer(EdgeTrainer):
         time, model = self.gif_approxi(args, model, grad_tuple)
         z = model(data.x, data.train_pos_edge_index[:, data.dr_mask])
 
-        test_results = self.test(model, data, attack_model_all=attack_model, attack_model_sub=attack_model_sub)
+        test_results = self.test(model, data, attack_model_all=attack_model, attack_model_sub=attack_model_sub, logits_before_unlearning=logits_before_unlearning)
         print('===AFTER UNLEARNING===', test_results[-1])
