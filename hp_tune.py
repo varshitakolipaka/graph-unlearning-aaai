@@ -6,7 +6,7 @@ from framework.training_args import parse_args
 from models.deletion import GCNDelete
 from models.models import GCN
 from trainers.base import Trainer
-from attacks.edge_attack import edge_attack_random_nodes
+from attacks.edge_attack import edge_attack_specific_nodes
 from attacks.label_flip import label_flip_attack
 import optuna
 from optuna.samplers import TPESampler
@@ -31,11 +31,11 @@ def train():
     clean_trainer.train()
     a_p, a_c = clean_trainer.subset_acc(class1=57, class2=33)
     print(f'Poisoned Acc: {a_p}, Clean Acc: {a_c}')
-    
+
     # save the clean model
     os.makedirs('./data', exist_ok=True)
     torch.save(clean_model, f'./data/{args.dataset}_{args.attack_type}_{args.df_size}_clean_model.pt')
-    
+
     return clean_data
 
 def poison(clean_data=None):
@@ -57,7 +57,7 @@ def poison(clean_data=None):
     if args.attack_type=="label":
         poisoned_data, poisoned_indices = label_flip_attack(clean_data, args.df_size, args.random_seed)
     elif args.attack_type=="edge":
-        poisoned_data, poisoned_indices = edge_attack_random_nodes(clean_data, args.df_size, args.random_seed)
+        poisoned_data, poisoned_indices = edge_attack_specific_nodes(clean_data, args.df_size, args.random_seed)
     elif args.attack_type=="random":
         poisoned_data = copy.deepcopy(clean_data)
         poisoned_indices = torch.randperm(clean_data.num_nodes)[:int(clean_data.num_nodes*args.df_size)]
@@ -75,9 +75,9 @@ def poison(clean_data=None):
 
     # save the poisoned data and model and indices to np file
     os.makedirs('./data', exist_ok=True)
-    
+
     torch.save(poisoned_model, f'./data/{args.dataset}_{args.attack_type}_{args.df_size}_poisoned_model.pt')
-    
+
     torch.save(poisoned_data, f'./data/{args.dataset}_{args.attack_type}_{args.df_size}_poisoned_data.pt')
     torch.save(poisoned_indices, f'./data/{args.dataset}_{args.attack_type}_{args.df_size}_poisoned_indices.pt')
 
@@ -203,6 +203,7 @@ def objective_clean(trial, model, data):
 if __name__ == "__main__":
     # clean_data = train()
     poisoned_data, poisoned_indices, poisoned_model = poison()
+
     # unlearn(poisoned_data, poisoned_indices, poisoned_model)
 
     utils.find_masks(poisoned_data, poisoned_indices, args, attack_type=args.attack_type)
@@ -231,7 +232,7 @@ if __name__ == "__main__":
         directions=['maximize', 'maximize', 'maximize', 'minimize'],
         study_name=f"{args.dataset}_{args.attack_type}_{args.unlearning_model}",
         load_if_exists=True,
-        storage='sqlite:///graph_unlearning_hp_tuning_cora_full_new_3.db',
+        storage='sqlite:///graph_unlearning_hp_tuning_cora_full_new_edge.db',
     )
 
     print("==OPTIMIZING==")
