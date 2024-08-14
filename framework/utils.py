@@ -118,7 +118,7 @@ def get_sdf_masks(data, args):
 
 
 def find_masks(data, poisoned_indices, args, attack_type="label"):
-    if attack_type == "label" or attack_type == "random":
+    if attack_type == "label" or attack_type == "random"  or attack_type == "trigger":
         data.df_mask = torch.zeros(data.edge_index.shape[1], dtype=torch.bool)
         data.dr_mask = torch.zeros(data.edge_index.shape[1], dtype=torch.bool)
         for node in poisoned_indices:

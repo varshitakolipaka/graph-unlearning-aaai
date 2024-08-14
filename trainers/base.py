@@ -165,3 +165,9 @@ class Trainer:
         self.pred = pred
 
         return dt_acc, msc_rate, dt_f1
+
+    def calculate_PSR(self):
+        z = self.model(self.data.x, self.data.train_pos_edge_index)
+        pred = torch.argmax(z[self.data.poison_test_mask], dim=1).cpu()
+        psr= sum(pred==self.data.target_class)/len(pred)
+        return psr

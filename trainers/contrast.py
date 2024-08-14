@@ -105,11 +105,11 @@ class ContrastiveUnlearnTrainer(Trainer):
             return
 
         subset, _, _, _ = k_hop_subgraph(
-            torch.tensor(self.attacked_idx), self.args.k_hop, self.data.edge_index
+            self.attacked_idx.clone().detach(), self.args.k_hop, self.data.edge_index
         )
 
         # remove attacked nodes from the subset
-        subset = subset[~np.isin(subset.cpu(), self.attacked_idx)]
+        subset = subset[~np.isin(subset.cpu(), self.attacked_idx.cpu())]
 
         og_logits = F.softmax(self.model(self.data.x, self.data.edge_index), dim=1)
         temp_features = self.data.x.clone()

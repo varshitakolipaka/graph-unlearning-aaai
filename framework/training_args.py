@@ -12,7 +12,7 @@ def parse_args():
     parser = argparse.ArgumentParser()
 
     parser.add_argument('--train_ratio', type=float, default=0.8, help='train ratio')
-    parser.add_argument('--attack_type', type=str, default='label', help='attack type', choices=["label", "edge", "random"])
+    parser.add_argument('--attack_type', type=str, default='label', help='attack type', choices=["label", "edge", "random", "trigger"])
     parser.add_argument('--unlearning_model', type=str, default='gnndelete', help='unlearning method', choices=["original", "gradient_ascent", "gnndelete", "gnndelete_ni", "gif", "utu", "contrastive", "retrain", "scrub"])
     parser.add_argument('--gnn', type=str, default='gcn', help='GNN architecture', choices=['gcn', 'gat', 'gin'])
     # parser.add_argument('--in_dim', type=int, default=128, help='input dimension')
@@ -27,6 +27,7 @@ def parse_args():
     # parser.add_argument('--df', type=str, default='in', help='Df set to use')
     # parser.add_argument('--df_idx', type=str, default=None, help='indices of data to be deleted')
     parser.add_argument('--df_size', type=float, default=0.2, help='Forgetting Fraction')
+    parser.add_argument('--test_poison_fraction', type=float, default=0.2, help='Test Poisoning Fraction')
     parser.add_argument('--dataset', type=str, default='Cora_p', help='dataset')
     parser.add_argument('--random_seed', type=int, default=0, help='random seed')
     # parser.add_argument('--batch_size', type=int, default=2048, help='batch size for GraphSAINTRandomWalk sampler')

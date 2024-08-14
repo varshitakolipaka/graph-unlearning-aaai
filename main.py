@@ -7,6 +7,7 @@ from models.models import GCN
 from trainers.base import Trainer
 from attacks.edge_attack import edge_attack_specific_nodes, edge_attack_random_nodes
 from attacks.label_flip import label_flip_attack
+from attacks.feature_attack import trigger_attack
 
 args = parse_args()
 utils.seed_everything(args.random_seed)
@@ -26,20 +27,22 @@ optimizer = torch.optim.Adam(clean_model.parameters(), lr=args.train_lr, weight_
 clean_trainer = Trainer(clean_model, clean_data, optimizer, args.training_epochs)
 clean_trainer.train()
 
-print("==POISONING==")
-print(args.attack_type)
+print("\n==POISONING==")
+print(f"Attack type: {args.attack_type}")
 if args.attack_type=="label":
     poisoned_data, poisoned_indices = label_flip_attack(clean_data, args.df_size, args.random_seed)
-
 elif args.attack_type=="edge":
     if args.edge_attack_type=="specific":
         poisoned_data, poisoned_indices = edge_attack_specific_nodes(clean_data, args.df_size, args.random_seed, class1=2, class2=4)
     elif args.edge_attack_type=="random":
         poisoned_data, poisoned_indices = edge_attack_random_nodes(clean_data, args.df_size, args.random_seed)
-
 elif args.attack_type=="random":
     poisoned_data = copy.deepcopy(clean_data)
     poisoned_indices = torch.randperm(clean_data.num_nodes)[:int(clean_data.num_nodes*args.df_size)]
+elif args.attack_type=="trigger":
+    poisoned_data, poisoned_indices = trigger_attack(clean_data, args.df_size, args.random_seed, args.test_poison_fraction)
+    print(f"Number of poisoned nodes in train: {len(poisoned_indices)}")
+    print(f"Number of poisoned nodes in test: {sum(poisoned_data.poison_test_mask)}")
 poisoned_data= poisoned_data.to(device)
 
 if "gnndelete" in args.unlearning_model:
@@ -52,12 +55,16 @@ poisoned_trainer = Trainer(poisoned_model, poisoned_data, optimizer, args.traini
 poisoned_trainer.train()
 utils.find_masks(poisoned_data, poisoned_indices, args, attack_type=args.attack_type)
 
-a, b = clean_trainer.subset_acc(poisoned_trainer.class1, poisoned_trainer.class2)
-print(f"==Clean Model==\nAccuracy of poisoned classes: {a}, Accuracy of clean classes: {b}")
-a, b = poisoned_trainer.subset_acc()
-print(f"==Poisoned Model==\nAccuracy of poisoned classes: {a}, Accuracy of clean classes: {b}")
+# a, b = clean_trainer.subset_acc(poisoned_trainer.class1, poisoned_trainer.class2)
+# print(f"==Clean Model==\nAccuracy of poisoned classes: {a}, Accuracy of clean classes: {b}")
+# a, b = poisoned_trainer.subset_acc()
+# print(f"==Poisoned Model==\nAccuracy of poisoned classes: {a}, Accuracy of clean classes: {b}")
+if args.attack_type=="trigger":
+    psr= poisoned_trainer.calculate_PSR()
+    print(f"Poison Succes Rate: {psr}")
 
-print("==UNLEARNING==")
+print("\n==UNLEARNING==")
+print(f"Unlearning model: {args.unlearning_model}")
 if "gnndelete" in args.unlearning_model:
     unlearn_model = GCNDelete(poisoned_data.num_features, args.hidden_dim, poisoned_data.num_classes, mask_1hop=poisoned_data.sdf_node_1hop_mask, mask_2hop=poisoned_data.sdf_node_2hop_mask)
     # copy the weights from the poisoned model
@@ -75,5 +82,8 @@ else:
     unlearn_trainer= utils.get_trainer(args, poisoned_model, poisoned_data, optimizer_unlearn)
     unlearn_trainer.train()
 
-a, b = unlearn_trainer.subset_acc()
-print(f"==Unlearnt Model==\nAccuracy of poisoned classes: {a}, Accuracy of clean classes: {b}")
+# a, b = unlearn_trainer.subset_acc()
+# print(f"==Unlearnt Model==\nAccuracy of poisoned classes: {a}, Accuracy of clean classes: {b}")
+if args.attack_type=="trigger":
+    psr= unlearn_trainer.calculate_PSR()
+    print(f"Poison Succes Rate: {psr}")
