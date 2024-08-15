@@ -12,10 +12,10 @@ class GCN(nn.Module):
 
     def forward(self, x, edge_index, return_all_emb=False):
         x1 = self.conv1(x, edge_index)
-        x = F.relu(x1)
-        x2 = self.conv2(x, edge_index)
-        x = F.relu(x2)
-        x3 = self.conv3(x, edge_index)
+        x1 = F.relu(x1)
+        x2 = self.conv2(x1, edge_index)
+        x2 = F.relu(x2)
+        x3 = self.conv3(x2, edge_index)
         if return_all_emb:
             return x1, x2, x3
         return x3

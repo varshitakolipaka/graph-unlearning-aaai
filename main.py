@@ -40,7 +40,7 @@ elif args.attack_type=="random":
     poisoned_data = copy.deepcopy(clean_data)
     poisoned_indices = torch.randperm(clean_data.num_nodes)[:int(clean_data.num_nodes*args.df_size)]
 elif args.attack_type=="trigger":
-    poisoned_data, poisoned_indices = trigger_attack(clean_data, args.df_size, args.random_seed, args.test_poison_fraction)
+    poisoned_data, poisoned_indices = trigger_attack(clean_data, args.df_size, args.random_seed, args.test_poison_fraction, target_class=57)
     print(f"Number of poisoned nodes in train: {len(poisoned_indices)}")
     print(f"Number of poisoned nodes in test: {sum(poisoned_data.poison_test_mask)}")
 poisoned_data= poisoned_data.to(device)

@@ -134,7 +134,6 @@ class GNNDeleteNodeembTrainer(Trainer):
             loss_r2 = loss_fct(embed2, embed2_ori)
             loss_r3 = loss_fct(embed3, embed3_ori)
 
-            loss_r3 = loss_fct(embed3, embed3_ori)
             loss_l1 = loss_fct(z1[self.data.sdf_node_1hop_mask_non_df_mask], z1_ori[self.data.sdf_node_1hop_mask_non_df_mask])
             loss_l2 = loss_fct(z2[self.data.sdf_node_2hop_mask_non_df_mask], z2_ori[self.data.sdf_node_2hop_mask_non_df_mask])
             loss_l3 = loss_fct(z3[self.data.sdf_node_3hop_mask_non_df_mask], z3_ori[self.data.sdf_node_3hop_mask_non_df_mask])

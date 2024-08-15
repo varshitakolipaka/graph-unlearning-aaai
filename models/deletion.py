@@ -51,13 +51,13 @@ class GCNDelete(GCN):
     def forward(self, x, edge_index, mask_1hop=None, mask_2hop=None, mask_3hop=None, return_all_emb=False):
         x1 = self.conv1(x, edge_index)
         x1 = self.deletion1(x1, mask_1hop)
-        x = F.relu(x1)
+        x1 = F.relu(x1)
 
-        x2 = self.conv2(x, edge_index)
+        x2 = self.conv2(x1, edge_index)
         x2 = self.deletion2(x2, mask_2hop)
-        x = F.relu(x1)
+        x2 = F.relu(x2)
 
-        x3 = self.conv3(x, edge_index)
+        x3 = self.conv3(x2, edge_index)
         x3 = self.deletion3(x3, mask_3hop)
 
         if return_all_emb:
