@@ -4,7 +4,6 @@ import torch
 from torch_geometric.utils import k_hop_subgraph
 import os
 from torch_geometric.datasets import CitationFull, Coauthor, Amazon, Planetoid, Reddit, Flickr, Twitch
-from ogb.linkproppred import PygLinkPropPredDataset
 import torch_geometric.transforms as T
 from framework.training_args import parse_args
 
@@ -37,8 +36,6 @@ def get_original_data(d):
         dataset = Flickr(os.path.join(data_dir, d), transform=T.NormalizeFeatures())
     elif d in ['Twitch']:
         dataset= Twitch(os.path.join(data_dir, d), name="RU", transform=T.NormalizeFeatures())
-    elif 'ogbl' in d:
-        dataset = PygLinkPropPredDataset(root=os.path.join(data_dir, d), name=d)
     else:
         raise NotImplementedError(f"{d} not supported.")
     data = dataset[0]

@@ -358,7 +358,12 @@ def objective(trial):
     return mi_score
 
 def main():
-    study = optuna.create_study(direction="maximize")
+    study = optuna.create_study(
+        directions=['maximize'],
+        study_name=f"{args.dataset}_{args.attack_type}_{args.unlearning_model}",
+        load_if_exists=True,
+        storage='sqlite:///graph_unlearning_hp_tuning_cora_p_mi.db',
+    )
     study.optimize(objective, n_trials=50)
 
 if __name__ == "__main__":
