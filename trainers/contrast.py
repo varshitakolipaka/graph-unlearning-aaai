@@ -502,12 +502,23 @@ class ContrastiveUnlearnEdgeTrainer(EdgeTrainer):
 
     @time_it
     def task_loss(self):
+
+        neg_edge_index = negative_sampling(
+            edge_index=self.data.train_pos_edge_index[:, self.data.dr_mask],
+            num_nodes=self.data.num_nodes,
+            num_neg_samples=self.data.dtrain_mask.sum())
+        z = self.model(self.data.x, self.data.train_pos_edge_index[:, self.data.dr_mask])
+        # edge = torch.cat([train_pos_edge_index, neg_edge_index], dim=-1)
+        # logits = model.decode(z, edge[0], edge[1])
+        logits = self.model.decode(z, self.data.train_pos_edge_index[:, self.data.dr_mask], neg_edge_index)
+        label = self.get_link_labels(self.data.train_pos_edge_index[:, self.data.dr_mask], neg_edge_index)
+        loss = F.binary_cross_entropy_with_logits(logits, label)
         # use the retain mask to calculate the loss
-        try:
-            mask = self.data.dr_mask # changed this from retain mask to dr_mask
-        except:
-            mask = self.data.dtrain_mask
-        loss = self.criterion(self.embeddings[mask], self.data.y[mask])
+        # try:
+        #     mask = self.data.retain_mask # changed this from retain mask to dr_mask
+        # except:
+        #     mask = self.data.dtrain_mask
+        # loss = self.criterion(self.embeddings[mask], self.data.y[mask])
         return loss
 
     @time_it
@@ -546,7 +557,7 @@ class ContrastiveUnlearnEdgeTrainer(EdgeTrainer):
         for idx in sample_idx:
             idx_ = idx.reshape(-1)
             subset, _, _, _ = k_hop_subgraph(
-                idx_, self.args.k_hop, self.data.edge_index
+                idx_, 2, self.data.edge_index # changed to 2 from self.args.k_hop
             )
             subset_set = set(subset.tolist())
             subset_dict[idx.item()] = subset_set
@@ -626,8 +637,8 @@ class ContrastiveUnlearnEdgeTrainer(EdgeTrainer):
 
     def get_distances_edge(self, attacked_edge_list, batch_size=64):
         # attacked edge index contains all the edges that were maliciously added
-        # self.embeddings = self.model(self.data.x, self.data.train_pos_edge_index)
-        self.embeddings = self.get_embedding(self.model, self.data)
+        self.embeddings = self.model(self.data.x, self.data.train_pos_edge_index)
+        # self.embeddings = self.model(self.data.x, self.data.edge_index)
         num_masks = len(self.data.train_mask)
         pos_dist = torch.zeros(num_masks).to(device)
         neg_dist = torch.zeros(num_masks).to(device)

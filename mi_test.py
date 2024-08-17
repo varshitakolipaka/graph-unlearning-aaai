@@ -151,9 +151,10 @@ def split_forget_retain(data, df_size, subset='in'):
     data.df_mask = df_mask
     data.dr_mask = dr_mask
 
-    # Identify poisoned indices (u, v pairs of removed edges)
-    poisoned_indices = data.train_pos_edge_index[:, df_global_idx].T.tolist()
+    # Identify poisoned indices (edges that are removed)
+    poisoned_indices = df_global_idx
     data.attacked_idx = poisoned_indices
+
 
     poisoned_nodes = torch.unique(data.train_pos_edge_index[:, df_global_idx].flatten()).tolist()
     data.poisoned_nodes = poisoned_nodes
@@ -255,7 +256,7 @@ def main():
     mia_trainer.train_attack(attack_model, train_loader, valid_loader, attack_optimizer, leak='posterior', args=args)
 
     logits_before, _ = member_infer_attack(model, attack_model, data, args, before=True)
-    print("Membership Inference Attack before unlearning: ", logits_before)
+    # print("Membership Inference Attack before unlearning: ", logits_before)
 
     print("==UNLEARNING==")
     if "gnndelete" in args.unlearning_model:

@@ -290,13 +290,13 @@ class EdgeTrainer:
         if attack_model_all is not None:
             mi_logit_all_after, mi_sucrate_all_after = member_infer_attack(model, attack_model_all, data)
             # print(f'MI Attack succress rate (All) after unlearning: {mi_sucrate_all_after:.4f}')
-            print(f'MI Logit (All) after unlearning: {mi_logit_all_after}')
-            print("===============")
+            # print(f'MI Logit (All) after unlearning: {mi_logit_all_after}')
+            # print("===============")
 
             sum = 0
             for i in range(0, len(logits_before_unlearning)):
                 ratio = mi_logit_all_after[i][0] / logits_before_unlearning[i][0]
-                print(mi_logit_all_after[i][0], logits_before_unlearning[i][0], ratio)
+                # print(mi_logit_all_after[i][0], logits_before_unlearning[i][0], ratio)
                 sum += ratio
             mi_score = sum / len(logits_before_unlearning)
             print("============")
