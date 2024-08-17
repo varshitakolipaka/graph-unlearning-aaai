@@ -119,15 +119,11 @@ def get_trainer(args, poisoned_model, poisoned_data, optimizer_unlearn) -> Train
     trainer_map = {
         "original": Trainer,
         "gradient_ascent": GradientAscentTrainer,
-        "gnndelete": GNNDeleteNodeembTrainer,
+        "gnndelete": GNNDeleteEdgeTrainer,
         "gnndelete_ni": GNNDeleteNITrainer,
-        "gnndelete_edge": GNNDeleteEdgeTrainer,
-        "gif": GIFTrainer,
-        "gif_edge": GIFEdgeTrainer,
-        "utu": UtUTrainer,
-        "utu_edge": UtUEdgeTrainer,
-        "contrastive": ContrastiveUnlearnTrainer,
-        "contrastive_edge": ContrastiveUnlearnEdgeTrainer,
+        "gif": GIFEdgeTrainer,
+        "utu": UtUEdgeTrainer,
+        "contrastive": ContrastiveUnlearnEdgeTrainer,
         "retrain": RetrainTrainer,
         "scrub": ScrubTrainer
     }

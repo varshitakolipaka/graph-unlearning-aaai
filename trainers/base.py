@@ -302,7 +302,7 @@ class EdgeTrainer:
             print("============")
             print("mi score: ", mi_score)
             print("============")
-
+            return loss, dt_auc, dt_aup, df_auc, df_aup, df_logit, logit_all_pair, test_log, mi_score
 
         if attack_model_sub is not None:
             mi_logit_sub_after, mi_sucrate_sub_after = member_infer_attack(model, attack_model_sub, data)

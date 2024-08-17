@@ -204,3 +204,4 @@ class GIFEdgeTrainer(EdgeTrainer):
 
         test_results = self.test(model, data, attack_model_all=attack_model, attack_model_sub=attack_model_sub, logits_before_unlearning=logits_before_unlearning)
         print('===AFTER UNLEARNING===', test_results[-1])
+        return test_results[8]

@@ -444,7 +444,7 @@ class ContrastiveUnlearnEdgeTrainer(EdgeTrainer):
             poisoned_nodes_tensor = torch.tensor(self.data.poisoned_nodes, device=diff.device)
 
             diff = diff[poisoned_nodes_tensor]
-            frac = 0.05
+            frac = self.args.contrastive_frac
             _, indices = torch.topk(diff, int(frac * len(self.data.poisoned_nodes)), largest=True)
             influence_nodes_with_unlearning_nodes = poisoned_nodes_tensor[indices]
             print(f"Nodes influenced: {len(influence_nodes_with_unlearning_nodes)}")
@@ -557,7 +557,7 @@ class ContrastiveUnlearnEdgeTrainer(EdgeTrainer):
         for idx in sample_idx:
             idx_ = idx.reshape(-1)
             subset, _, _, _ = k_hop_subgraph(
-                idx_, 2, self.data.edge_index # changed to 2 from self.args.k_hop
+                idx_, self.args.k_hop, self.data.edge_index # changed to 2 from self.args.k_hop
             )
             subset_set = set(subset.tolist())
             subset_dict[idx.item()] = subset_set
@@ -760,3 +760,4 @@ class ContrastiveUnlearnEdgeTrainer(EdgeTrainer):
         print('===AFTER UNLEARNING===', test_results[-1])
 
         print(f"Training time: {end_time - start_time}")
+        return test_results[8]
