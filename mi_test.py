@@ -219,7 +219,7 @@ hp_tuning_params_dict = {
         # 'weight_decay': (1e-5, 1e-1, "log"),
     },
     'retrain': {
-        'epochs': (2810, 2810, "int"),
+        'epochs': (30, 3000, "int"),
     },
 }
 
@@ -367,7 +367,7 @@ def main():
         load_if_exists=True,
         storage='sqlite:///graph_unlearning_hp_tuning_cora_p_mi.db',
     )
-    study.optimize(objective, n_trials=1)
+    study.optimize(objective, n_trials=50)
 
 if __name__ == "__main__":
     main()
