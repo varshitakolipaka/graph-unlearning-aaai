@@ -75,9 +75,4 @@ class RetrainEdgeTrainer(EdgeTrainer):
                 if dt_auc + df_auc > best_metric:
                     best_metric = dt_auc + df_auc
                     best_epoch = epoch
-
-            test_results = self.test(model, data, attack_model_all=attack_model_all, logits_before_unlearning=logits_before_unlearning)
-            print('===AFTER UNLEARNING===\n', test_results[-1])
-            return test_results[8]
-        
         

@@ -756,8 +756,5 @@ class ContrastiveUnlearnEdgeTrainer(EdgeTrainer):
         elif self.args.request == "edge":
             self.train_edge()
         end_time = time.time()
-        test_results = self.test(self.model, self.data, attack_model_all=attack_model, logits_before_unlearning=logits_before_unlearning)
-        print('===AFTER UNLEARNING===', test_results[-1])
 
         print(f"Training time: {end_time - start_time}")
-        return test_results[8]

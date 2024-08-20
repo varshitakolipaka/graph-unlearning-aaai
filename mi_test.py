@@ -4,6 +4,7 @@ import math
 import optuna
 import torch.nn as nn
 import torch_geometric.transforms as T
+import copy
 from framework.training_args import parse_args
 from framework import utils
 from models.deletion import GCNDelete
@@ -319,7 +320,6 @@ def objective(trial):
     logits_before, _ = member_infer_attack(model, attack_model, data, args, before=True)
 
     # print("Membership Inference Attack before unlearning: ", logits_before)
-
     print("==UNLEARNING==")
     if "gnndelete" in args.unlearning_model:
         unlearn_model = GCNDelete(data.num_features, args.hidden_dim, data.num_classes, mask_1hop=data.sdf_node_1hop_mask, mask_2hop=data.sdf_node_2hop_mask)
@@ -328,46 +328,54 @@ def objective(trial):
         unlearn_model.load_state_dict(model.state_dict())
         optimizer_unlearn = utils.get_optimizer(args, unlearn_model)
         unlearn_trainer= utils.get_trainer(args, unlearn_model, data, optimizer_unlearn)
-        mi_score = unlearn_trainer.train(unlearn_model, data, optimizer_unlearn, args, attack_model_all=attack_model, logits_before_unlearning=logits_before)
+        unlearn_trainer.train(unlearn_model, data, optimizer_unlearn, args, attack_model_all=attack_model, logits_before_unlearning=logits_before)
+        test_results = unlearn_trainer.test(unlearn_model, data, attack_model_all=attack_model, logits_before_unlearning=logits_before)
     elif "retrain" in args.unlearning_model:
         unlearn_model = GCN(data.num_features, args.hidden_dim, data.num_classes)
         optimizer_unlearn= utils.get_optimizer(args, unlearn_model)
         unlearn_trainer= utils.get_trainer(args, unlearn_model, data, optimizer_unlearn)
-        mi_score = unlearn_trainer.train(unlearn_model, data, optimizer_unlearn, args, attack_model_all=attack_model, logits_before_unlearning=logits_before)
+        unlearn_trainer.train(unlearn_model, data, optimizer_unlearn, args, attack_model_all=attack_model, logits_before_unlearning=logits_before)
+        test_results = unlearn_trainer.test(unlearn_model, data, attack_model_all=attack_model, logits_before_unlearning=logits_before)
     elif "utu" in args.unlearning_model:
         optimizer_unlearn= utils.get_optimizer(args, model)
         unlearn_trainer= utils.get_trainer(args, model, data, optimizer_unlearn)
-        mi_score = unlearn_trainer.train(model, data, optimizer_unlearn, args, attack_model_all=attack_model, logits_before_unlearning=logits_before)
+        unlearn_trainer.train(model, data, optimizer_unlearn, args, attack_model_all=attack_model, logits_before_unlearning=logits_before)
+        test_results = unlearn_trainer.test(model, data, attack_model_all=attack_model, logits_before_unlearning=logits_before)
     elif "gif" in args.unlearning_model:
         optimizer_unlearn= utils.get_optimizer(args, model)
         unlearn_trainer= utils.get_trainer(args, model, data, optimizer_unlearn)
-        mi_score = unlearn_trainer.train(model, data, optimizer_unlearn, args, attack_model=attack_model, logits_before_unlearning=logits_before)
+        unlearn_trainer.train(model, data, optimizer_unlearn, args, attack_model=attack_model, logits_before_unlearning=logits_before)
+        test_results = unlearn_trainer.test(model, data, attack_model_all=attack_model, logits_before_unlearning=logits_before)
     elif "contrastive" in args.unlearning_model:
         args.request="edge"
         print("Number of edges removed: ", len(data.attacked_idx))
         optimizer_unlearn= utils.get_optimizer(args, model)
         unlearn_trainer= utils.get_trainer(args, model, data, optimizer_unlearn)
-        mi_score = unlearn_trainer.train(attack_model=attack_model, logits_before_unlearning=logits_before)
+        unlearn_trainer.train(attack_model=attack_model, logits_before_unlearning=logits_before)
+        test_results = unlearn_trainer.test(model, data, attack_model_all=attack_model, logits_before_unlearning=logits_before)
     elif "gradient_ascent" in args.unlearning_model:
         optimizer_unlearn= utils.get_optimizer(args, model)
         unlearn_trainer= utils.get_trainer(args, model, data, optimizer_unlearn)
-        mi_score = unlearn_trainer.train(model, data, optimizer_unlearn, args, attack_model_all=attack_model, logits_before_unlearning=logits_before)
-    else:
-        optimizer_unlearn= utils.get_optimizer(args, model)
-        unlearn_trainer= utils.get_trainer(args, model, data, optimizer_unlearn)
-        mi_score = unlearn_trainer.train()
+        unlearn_trainer.train(model, data, optimizer_unlearn, args, attack_model_all=attack_model, logits_before_unlearning=logits_before)
+        test_results = unlearn_trainer.test(model, data, attack_model_all=attack_model, logits_before_unlearning=logits_before)
+        
+    print("==CLEAN TESTING AFTER UNLEARNING==")
+    
+    print(test_results[-1])
 
-    print("MI SCORE: ", mi_score)
-    return mi_score
+    print("MI score: ", test_results[-2])
+    print("DT_AUC: ", test_results[1])
+
+    return test_results[-2], test_results[1]
 
 def main():
     study = optuna.create_study(
-        directions=['maximize'],
-        study_name=f"{args.dataset}_{args.attack_type}_{args.unlearning_model}",
+        directions=['maximize', 'maximize'],
+        study_name=f"{args.dataset}_{args.df_size}_{args.unlearning_model}",
         load_if_exists=True,
-        storage='sqlite:///graph_unlearning_hp_tuning_cora_p_mi.db',
+        storage='sqlite:///hp_tuning_cora_p_mi.db',
     )
-    study.optimize(objective, n_trials=50)
+    study.optimize(objective, n_trials=75)
 
 if __name__ == "__main__":
     main()

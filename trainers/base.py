@@ -299,10 +299,11 @@ class EdgeTrainer:
                 # print(mi_logit_all_after[i][0], logits_before_unlearning[i][0])
                 sum += ratio
             mi_score = sum / len(logits_before_unlearning)
-            print("============")
-            print("mi score: ", mi_score)
-            print("============")
-            return loss, dt_auc, dt_aup, df_auc, df_aup, df_logit, logit_all_pair, test_log, mi_score
+            # print("============")
+            # print("mi score: ", mi_score)
+            # print("============")
+            # print("dt_auc: ", dt_auc)
+            return loss, dt_auc, dt_aup, df_auc, df_aup, df_logit, logit_all_pair, mi_score, test_log 
 
         if attack_model_sub is not None:
             mi_logit_sub_after, mi_sucrate_sub_after = member_infer_attack(model, attack_model_sub, data)
