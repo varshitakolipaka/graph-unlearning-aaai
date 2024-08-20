@@ -218,10 +218,8 @@ hp_tuning_params_dict = {
         'msteps': (10, 100, "int"),
         # 'weight_decay': (1e-5, 1e-1, "log"),
     },
-    'clean': {
-        'train_lr': (1e-5, 1e-1, "log"),
-        'weight_decay': (1e-5, 1e-1, "log"),
-        'training_epochs': (500, 3000, "int"),
+    'retrain': {
+        'epochs': (2810, 2810, "int"),
     },
 }
 
@@ -319,6 +317,7 @@ def objective(trial):
     mia_trainer.train_attack(attack_model, train_loader, valid_loader, attack_optimizer, leak='posterior', args=args)
 
     logits_before, _ = member_infer_attack(model, attack_model, data, args, before=True)
+
     # print("Membership Inference Attack before unlearning: ", logits_before)
 
     print("==UNLEARNING==")
@@ -327,14 +326,14 @@ def objective(trial):
         
         # copy the weights from the poisoned model
         unlearn_model.load_state_dict(model.state_dict())
-        optimizer_unlearn= utils.get_optimizer(args, unlearn_model)
+        optimizer_unlearn = utils.get_optimizer(args, unlearn_model)
         unlearn_trainer= utils.get_trainer(args, unlearn_model, data, optimizer_unlearn)
         mi_score = unlearn_trainer.train(unlearn_model, data, optimizer_unlearn, args, attack_model_all=attack_model, logits_before_unlearning=logits_before)
     elif "retrain" in args.unlearning_model:
         unlearn_model = GCN(data.num_features, args.hidden_dim, data.num_classes)
         optimizer_unlearn= utils.get_optimizer(args, unlearn_model)
         unlearn_trainer= utils.get_trainer(args, unlearn_model, data, optimizer_unlearn)
-        mi_score = unlearn_trainer.train()
+        mi_score = unlearn_trainer.train(unlearn_model, data, optimizer_unlearn, args, attack_model_all=attack_model, logits_before_unlearning=logits_before)
     elif "utu" in args.unlearning_model:
         optimizer_unlearn= utils.get_optimizer(args, model)
         unlearn_trainer= utils.get_trainer(args, model, data, optimizer_unlearn)
@@ -349,6 +348,10 @@ def objective(trial):
         optimizer_unlearn= utils.get_optimizer(args, model)
         unlearn_trainer= utils.get_trainer(args, model, data, optimizer_unlearn)
         mi_score = unlearn_trainer.train(attack_model=attack_model, logits_before_unlearning=logits_before)
+    elif "gradient_ascent" in args.unlearning_model:
+        optimizer_unlearn= utils.get_optimizer(args, model)
+        unlearn_trainer= utils.get_trainer(args, model, data, optimizer_unlearn)
+        mi_score = unlearn_trainer.train(model, data, optimizer_unlearn, args, attack_model_all=attack_model, logits_before_unlearning=logits_before)
     else:
         optimizer_unlearn= utils.get_optimizer(args, model)
         unlearn_trainer= utils.get_trainer(args, model, data, optimizer_unlearn)
@@ -364,7 +367,7 @@ def main():
         load_if_exists=True,
         storage='sqlite:///graph_unlearning_hp_tuning_cora_p_mi.db',
     )
-    study.optimize(objective, n_trials=50)
+    study.optimize(objective, n_trials=1)
 
 if __name__ == "__main__":
     main()

@@ -89,5 +89,8 @@ def parse_args():
     parser.add_argument('--contrastive_margin', type=int, default=500, help="margin for the contrastive loss")
     parser.add_argument('--contrastive_lambda', type=float, default=0.8, help="weight for the task loss [1 - lambda] is used for the contrastive loss")
 
+    # Retrain
+    parser.add_argument('--epochs', type=int, default=3000, help='number of epochs to train')
+
     args = parser.parse_args()
     return args

@@ -7,14 +7,14 @@ from torch_geometric.datasets import CitationFull, Coauthor, Amazon, Planetoid, 
 import torch_geometric.transforms as T
 from framework.training_args import parse_args
 
-from trainers.contrast import ContrastiveUnlearnTrainer, ContrastiveUnlearnEdgeTrainer
-from trainers.gnndelete import GNNDeleteNodeembTrainer, GNNDeleteEdgeTrainer
+from trainers.contrast import ContrastiveUnlearnEdgeTrainer
+from trainers.gnndelete import GNNDeleteEdgeTrainer
 from trainers.gnndelete_ni import GNNDeleteNITrainer
-from trainers.gradient_ascent import GradientAscentTrainer
-from trainers.gif import GIFTrainer, GIFEdgeTrainer
-from trainers.base import Trainer
-from trainers.utu import UtUTrainer, UtUEdgeTrainer
-from trainers.retrain import RetrainTrainer
+from trainers.gradient_ascent import GradientAscentEdgeTrainer
+from trainers.gif import GIFEdgeTrainer
+from trainers.base import EdgeTrainer
+from trainers.utu import UtUEdgeTrainer
+from trainers.retrain import RetrainEdgeTrainer
 from trainers.scrub import ScrubTrainer
 
 
@@ -111,17 +111,17 @@ def find_masks(data, poisoned_indices, attack_type="label"):
     get_sdf_masks(data)
 
 
-def get_trainer(args, poisoned_model, poisoned_data, optimizer_unlearn) -> Trainer:
+def get_trainer(args, poisoned_model, poisoned_data, optimizer_unlearn) -> EdgeTrainer:
 
     trainer_map = {
-        "original": Trainer,
-        "gradient_ascent": GradientAscentTrainer,
+        "original": EdgeTrainer,
+        "gradient_ascent": GradientAscentEdgeTrainer,
         "gnndelete": GNNDeleteEdgeTrainer,
         "gnndelete_ni": GNNDeleteNITrainer,
         "gif": GIFEdgeTrainer,
         "utu": UtUEdgeTrainer,
         "contrastive": ContrastiveUnlearnEdgeTrainer,
-        "retrain": RetrainTrainer,
+        "retrain": RetrainEdgeTrainer,
         "scrub": ScrubTrainer
     }
 

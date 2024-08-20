@@ -296,7 +296,7 @@ class EdgeTrainer:
             sum = 0
             for i in range(0, len(logits_before_unlearning)):
                 ratio = mi_logit_all_after[i][0] / logits_before_unlearning[i][0]
-                # print(mi_logit_all_after[i][0], logits_before_unlearning[i][0], ratio)
+                # print(mi_logit_all_after[i][0], logits_before_unlearning[i][0])
                 sum += ratio
             mi_score = sum / len(logits_before_unlearning)
             print("============")
