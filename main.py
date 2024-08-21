@@ -55,10 +55,11 @@ poisoned_trainer = Trainer(poisoned_model, poisoned_data, optimizer, args.traini
 poisoned_trainer.train()
 utils.find_masks(poisoned_data, poisoned_indices, args, attack_type=args.attack_type)
 
-# a, b = clean_trainer.subset_acc(poisoned_trainer.class1, poisoned_trainer.class2)
-# print(f"==Clean Model==\nAccuracy of poisoned classes: {a}, Accuracy of clean classes: {b}")
-# a, b = poisoned_trainer.subset_acc()
-# print(f"==Poisoned Model==\nAccuracy of poisoned classes: {a}, Accuracy of clean classes: {b}")
+a, b = clean_trainer.subset_acc(poisoned_trainer.class1, poisoned_trainer.class2)
+print(f"==Clean Model==\nAccuracy of poisoned classes: {a}, Accuracy of clean classes: {b}")
+a, b = poisoned_trainer.subset_acc()
+print(f"==Poisoned Model==\nAccuracy of poisoned classes: {a}, Accuracy of clean classes: {b}")
+
 if args.attack_type=="trigger":
     psr= poisoned_trainer.calculate_PSR()
     print(f"Poison Succes Rate: {psr}")
@@ -82,8 +83,9 @@ else:
     unlearn_trainer= utils.get_trainer(args, poisoned_model, poisoned_data, optimizer_unlearn)
     unlearn_trainer.train()
 
-# a, b = unlearn_trainer.subset_acc()
-# print(f"==Unlearnt Model==\nAccuracy of poisoned classes: {a}, Accuracy of clean classes: {b}")
+a, b = unlearn_trainer.subset_acc()
+print(f"==Unlearnt Model==\nAccuracy of poisoned classes: {a}, Accuracy of clean classes: {b}")
+
 if args.attack_type=="trigger":
     psr= unlearn_trainer.calculate_PSR()
     print(f"Poison Succes Rate: {psr}")

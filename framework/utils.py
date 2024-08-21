@@ -144,7 +144,7 @@ def find_masks(data, poisoned_indices, args, attack_type="label"):
         data.dr_mask = torch.zeros(data.edge_index.shape[1], dtype=torch.bool)
         data.df_mask[poisoned_indices] = 1
         data.dr_mask = ~data.df_mask
-    data.attacked_idx = poisoned_indices
+    data.attacked_idx = torch.tensor(poisoned_indices, dtype=torch.long)
     get_sdf_masks(data, args)
 
 

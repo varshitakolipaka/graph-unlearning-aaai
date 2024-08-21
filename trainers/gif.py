@@ -1,3 +1,4 @@
+import copy
 import os
 import time
 import numpy as np
@@ -61,7 +62,7 @@ class GIFTrainer(Trainer):
         grad2 = grad(loss2, model_params, retain_graph=True, create_graph=True)
 
         return (grad_all, grad1, grad2)
-    
+
     def gif_approxi(self, args, model, res_tuple):
         '''
         res_tuple == (grad_all, grad1, grad2)
@@ -85,12 +86,15 @@ class GIFTrainer(Trainer):
         params_change = [h_est / scale for h_est in h_estimate]
         params_esti   = [p1 + p2 for p1, p2 in zip(params_change, model_params)]
 
-        with torch.no_grad():
-            for param, update in zip(model.parameters(), params_change):
-                param.add_(update)  # In-place update of the model parameters
+        temp= copy.deepcopy(self.model)
+        idx = 0
+        for p in temp.parameters():
+            p.data = params_esti[idx]
+            idx = idx + 1
+        self.model= temp
 
         return time.time() - start_time, model
-    
+
     def hvps(self, grad_all, model_params, h_estimate):
         element_product = 0
         for grad_elem, v_elem in zip(grad_all, h_estimate):
@@ -98,7 +102,7 @@ class GIFTrainer(Trainer):
 
         return_grads = grad(element_product, model_params, create_graph=True)
         return return_grads
-    
+
     def train(self, logits_ori=None, attack_model=None, attack_model_sub=None):
         # model.train()
         self.model, self.data = self.model.to(device), self.data.to(device)
@@ -111,5 +115,5 @@ class GIFTrainer(Trainer):
 
         train_acc, msc_rate, f1 = self.evaluate(is_dr = True)
         print(f'Train Acc: {train_acc}, Misclassification: {msc_rate},  F1 Score: {f1}')
-        
+
         return train_acc, msc_rate, time

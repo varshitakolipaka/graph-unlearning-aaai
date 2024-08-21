@@ -173,13 +173,24 @@ class GNNDeleteNodeembTrainer(Trainer):
                 loss_l = loss_l1 + loss_l2 + loss_l3
                 loss_r = loss_r1 + loss_r2 + loss_r3
 
-                self.optimizer[0].zero_grad()
+                self.optimizer[1].zero_grad()
                 loss2 = self.args.alpha * loss_r2 + (1 - self.args.alpha) * loss_l2
                 loss2.backward()
                 self.optimizer[1].step()
                 self.optimizer[1].zero_grad()
 
                 loss = loss2
+
+            elif self.args.loss_type == 'only3_layerwise':
+                loss_l = loss_l1 + loss_l2 + loss_l3
+                loss_r = loss_r1 + loss_r2 + loss_r3
+
+                self.optimizer[2].zero_grad()
+                loss3 = self.args.alpha * loss_r3 + (1 - self.args.alpha) * loss_l3
+                loss3.backward()
+                self.optimizer[2].step()
+                self.optimizer[2].zero_grad()
+                loss = loss3
 
             elif self.args.loss_type == 'only2_all':
                 loss_l = loss_l2
@@ -191,9 +202,30 @@ class GNNDeleteNodeembTrainer(Trainer):
                 self.optimizer.step()
                 self.optimizer.zero_grad()
 
+            elif self.args.loss_type == 'only3_all':
+                loss_l = loss_l3
+                loss_r = loss_r3
+
+                loss = loss_l + self.args.alpha * loss_r
+
+                loss.backward()
+                self.optimizer.step()
+                self.optimizer.zero_grad()
+
+
             elif self.args.loss_type == 'only1':
                 loss_l = loss_l1
                 loss_r = loss_r1
+
+                loss = loss_l + self.args.alpha * loss_r
+
+                loss.backward()
+                self.optimizer.step()
+                self.optimizer.zero_grad()
+
+            elif self.args.loss_type == 'only3':
+                loss_l = loss_l3
+                loss_r = loss_r3
 
                 loss = loss_l + self.args.alpha * loss_r
 
