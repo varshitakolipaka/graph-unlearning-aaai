@@ -1,0 +1,115 @@
+{
+    "results": {
+        "0": {
+            "Original": {
+                "Forget Ability": 0.7943683200876952,
+                "Utility": 0.5779521251535558
+            },
+            "Poisoned": {
+                "Forget Ability": 0.48791449712249935,
+                "Utility": 0.5873514749637474
+            }
+        },
+        "1": {
+            "Original": {
+                "Forget Ability": 0.7937934674615003,
+                "Utility": 0.5957218949243024
+            },
+            "Poisoned": {
+                "Forget Ability": 0.34640461997019373,
+                "Utility": 0.5723714091711476
+            }
+        },
+        "2": {
+            "Original": {
+                "Forget Ability": 0.7544117647058823,
+                "Utility": 0.5761172064798739
+            },
+            "Poisoned": {
+                "Forget Ability": 0.4565638450502152,
+                "Utility": 0.566970743963374
+            }
+        },
+        "3": {
+            "Original": {
+                "Forget Ability": 0.8008469449485783,
+                "Utility": 0.5717309303911509
+            },
+            "Poisoned": {
+                "Forget Ability": 0.38287961282516636,
+                "Utility": 0.5776537317431424
+            }
+        },
+        "4": {
+            "Original": {
+                "Forget Ability": 0.7781094368535308,
+                "Utility": 0.5897272692651332
+            },
+            "Poisoned": {
+                "Forget Ability": 0.4277071893755587,
+                "Utility": 0.5926479279886486
+            }
+        }
+    },
+    "arguments": {
+        "train_ratio": 0.8,
+        "attack_type": "label",
+        "unlearning_model": "contrastive",
+        "gnn": "gcn",
+        "hidden_dim": 64,
+        "unlearning_epochs": 50,
+        "request": "node",
+        "edge_attack_type": "random",
+        "df_size": 0.5,
+        "test_poison_fraction": 0.2,
+        "dataset": "Cora",
+        "random_seed": 4,
+        "train_lr": 0.005191475570177285,
+        "unlearn_lr": 0.05,
+        "weight_decay": 0.00016211813194850176,
+        "optimizer": "Adam",
+        "training_epochs": 1208,
+        "valid_freq": 30,
+        "checkpoint_dir": "./checkpoint",
+        "alpha": 0.5,
+        "neg_sample_random": "non_connected",
+        "loss_fct": "mse_mean",
+        "loss_type": "both_layerwise",
+        "num_clusters": 10,
+        "kmeans_max_iters": 1,
+        "shard_size_delta": 0.005,
+        "terminate_delta": 0,
+        "eval_steps": 1,
+        "runs": 1,
+        "num_remove_links": 11,
+        "parallel_unlearning": 4,
+        "lam": 0,
+        "regen_feats": false,
+        "regen_neighbors": false,
+        "regen_links": false,
+        "regen_subgraphs": false,
+        "hop_neighbors": 20,
+        "topk": 500,
+        "eval_on_cpu": false,
+        "num_edge_type": null,
+        "iteration": 100,
+        "scale": 100000,
+        "damp": 0.1,
+        "unlearn_iters": 50,
+        "kd_T": 4,
+        "scrubAlpha": 1,
+        "msteps": 15,
+        "wd": 0.0005,
+        "contrastive_epochs_1": 30,
+        "contrastive_epochs_2": 10,
+        "contrastive_margin": 500,
+        "contrastive_lambda": 0.8,
+        "k_hop": 2,
+        "contrastive_eps": 0.001,
+        "contrastive_frac": 0.1,
+        "num_runs": 2,
+        "kappa": 0.01,
+        "alpha1": 0.8,
+        "alpha2": 0.5
+    }
+}

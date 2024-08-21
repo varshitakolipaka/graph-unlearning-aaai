@@ -171,3 +171,15 @@ class Trainer:
         pred = torch.argmax(z[self.data.poison_test_mask], dim=1).cpu()
         psr= sum(pred==self.data.target_class)/len(pred)
         return psr
+    
+    def get_score(self, attack_type, class1=None, class2=None):
+        forget_ability = None
+        utility = None
+        if attack_type=="label" or attack_type=="edge":
+            forget_ability, utility = self.subset_acc(class1, class2)
+        elif attack_type=="trigger":
+            utility, _, _ = self.evaluate()
+            forget_ability = self.calculate_PSR()
+        
+        return forget_ability, utility
+        
