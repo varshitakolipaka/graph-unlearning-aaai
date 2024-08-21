@@ -144,27 +144,49 @@ class Trainer:
         misclassification_rate = (class1_to_class2 + class2_to_class1) / (total_class1 + total_class2)
         return misclassification_rate
 
-    def evaluate(self, is_dr=False):
+    # def evaluate(self, is_dr=False):
+    #     self.model.eval()
+
+    #     with torch.no_grad():
+    #         if(is_dr):
+    #             z = F.log_softmax(self.model(self.data.x, self.data.edge_index[:, self.data.dr_mask]), dim=1)
+    #         else:
+    #             z = F.log_softmax(self.model(self.data.x, self.data.edge_index), dim=1)
+    #         loss = F.nll_loss(z[self.data.test_mask], self.data.y[self.data.test_mask]).cpu().item()
+    #         pred = torch.argmax(z[self.data.test_mask], dim=1).cpu()
+    #         dt_acc = accuracy_score(self.data.y[self.data.test_mask].cpu(), pred)
+    #         dt_f1 = f1_score(self.data.y[self.data.test_mask].cpu(), pred, average='micro')
+    #         msc_rate = self.misclassification_rate(self.data.y[self.data.test_mask].cpu(), pred)
+    #         # auc = roc_auc_score(self.data.y[self.data.test_mask].cpu(), F.softmax(z[self.data.test_mask], dim=1).cpu(), multi_class='ovo')
+
+    #     # print("AUC: ",auc)
+
+    #     self.true = self.data.y[self.data.test_mask].cpu()
+    #     self.pred = pred
+
+    #     return dt_acc, msc_rate, dt_f1
+
+    def evaluate(self, val_mask=None, is_dr=False):
         self.model.eval()
 
         with torch.no_grad():
-            if(is_dr):
+            if is_dr:
                 z = F.log_softmax(self.model(self.data.x, self.data.edge_index[:, self.data.dr_mask]), dim=1)
+                mask = self.data.test_mask
             else:
                 z = F.log_softmax(self.model(self.data.x, self.data.edge_index), dim=1)
-            loss = F.nll_loss(z[self.data.test_mask], self.data.y[self.data.test_mask]).cpu().item()
-            pred = torch.argmax(z[self.data.test_mask], dim=1).cpu()
-            dt_acc = accuracy_score(self.data.y[self.data.test_mask].cpu(), pred)
-            dt_f1 = f1_score(self.data.y[self.data.test_mask].cpu(), pred, average='micro')
-            msc_rate = self.misclassification_rate(self.data.y[self.data.test_mask].cpu(), pred)
-            # auc = roc_auc_score(self.data.y[self.data.test_mask].cpu(), F.softmax(z[self.data.test_mask], dim=1).cpu(), multi_class='ovo')
+                mask = val_mask if val_mask is not None else self.data.test_mask
 
-        # print("AUC: ",auc)
+            loss = F.nll_loss(z[mask], self.data.y[mask]).cpu().item()
+            pred = torch.argmax(z[mask], dim=1).cpu()
+            acc = accuracy_score(self.data.y[mask].cpu(), pred)
+            f1 = f1_score(self.data.y[mask].cpu(), pred, average='micro')
+            msc_rate = self.misclassification_rate(self.data.y[mask].cpu(), pred)
 
-        self.true = self.data.y[self.data.test_mask].cpu()
+        self.true = self.data.y[mask].cpu()
         self.pred = pred
 
-        return dt_acc, msc_rate, dt_f1
+        return acc, msc_rate, f1
 
     def calculate_PSR(self):
         z = self.model(self.data.x, self.data.edge_index)
