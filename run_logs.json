@@ -2,12 +2,12 @@
     "results": {
         "0": {
             "Original": {
-                "Forget Ability": 0.8003562619895862,
-                "Utility": 0.5724609725803118
+                "Forget Ability": 0.8080432995341189,
+                "Utility": 0.5798975911273241
             },
             "Poisoned": {
-                "Forget Ability": 0.48081666209920526,
-                "Utility": 0.5905349204579717
+                "Forget Ability": 0.7548232392436284,
+                "Utility": 0.5845230440982642
             }
         },
         "1": {
@@ -49,21 +49,35 @@
                 "Forget Ability": 0.4277071893755587,
                 "Utility": 0.5926479279886486
             }
+        },
+        "0": {
+            "Original": {
+                "Forget Ability": 0.7968073444779391,
+                "Utility": 0.5702826132005843
+            },
+            "Poisoned": {
+                "Forget Ability": 0.7527541792271855,
+                "Utility": 0.5811428247290378
+            },
+            "megu": {
+                "Forget Ability": 0.0,
+                "Utility": 0.01485748938750758
+            }
         }
     },
     "arguments": {
         "train_ratio": 0.8,
         "attack_type": "label",
-        "unlearning_model": "retrain",
+        "unlearning_model": "megu",
         "gnn": "gcn",
         "hidden_dim": 64,
         "unlearning_epochs": 50,
         "request": "node",
         "edge_attack_type": "random",
-        "df_size": 0.5,
+        "df_size": 0.1,
         "test_poison_fraction": 0.2,
         "dataset": "Cora",
-        "random_seed": 3,
+        "random_seed": 0,
         "train_lr": 0.005191475570177285,
         "unlearn_lr": 0.05,
         "weight_decay": 0.00016211813194850176,
@@ -110,6 +124,7 @@
         "num_runs": 2,
         "kappa": 0.01,
         "alpha1": 0.8,
-        "alpha2": 0.5
+        "alpha2": 0.5,
+        "poison_tensor_size": 100
     }
 }

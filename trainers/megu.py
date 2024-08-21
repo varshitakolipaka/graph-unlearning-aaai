@@ -57,7 +57,7 @@ def propagate(features, k, adj_norm):
     feature_list = []
     feature_list.append(features)
     for i in range(k):
-        feature_list.append(torch.spmm(adj_norm, feature_list[-1]))
+        feature_list.append(torch.spmm(adj_norm.to(device), feature_list[-1].to(device)))
     return feature_list[-1]
 
 
@@ -105,8 +105,8 @@ class MeguTrainer(Trainer):
     def train_test_split(self):
         if hasattr(self.data, 'train_mask') and hasattr(self.data, 'test_mask'):
             # Extract indices from existing masks
-            self.train_indices = np.where(self.data.train_mask.numpy())[0]
-            self.test_indices = np.where(self.data.test_mask.numpy())[0]
+            self.train_indices = np.where(self.data.train_mask.cpu().numpy())[0]
+            self.test_indices = np.where(self.data.test_mask.cpu().numpy())[0]
         else:
             raise ValueError("Train/test masks do not exist in the dataset.")
 
@@ -118,11 +118,11 @@ class MeguTrainer(Trainer):
         if hasattr(self.data, 'df_mask'):
             if self.data.df_mask.dim() == 1 and self.data.df_mask.size(0) == self.data.num_nodes:
                 # Node-level mask
-                unique_nodes = torch.where(self.data.df_mask)[0].numpy()
+                unique_nodes = torch.where(self.data.df_mask)[0].cpu().numpy()
             elif self.data.df_mask.dim() == 1 and self.data.df_mask.size(0) == self.data.edge_index.shape[1]:
                 # Edge-level mask
-                remove_indices = torch.where(self.data.df_mask)[0].numpy()
-                edge_index = self.data.edge_index.numpy()
+                remove_indices = torch.where(self.data.df_mask)[0].cpu().numpy()
+                edge_index = self.data.edge_index.cpu().numpy()
                 remove_edges = edge_index[:, remove_indices]
                 unique_nodes = np.unique(remove_edges)
             else:
@@ -140,7 +140,7 @@ class MeguTrainer(Trainer):
             raise ValueError("df_mask not found in data object")
 
     def update_edge_index_unlearn(self, delete_nodes, delete_edge_index=None):
-        edge_index = self.data.edge_index.numpy()
+        edge_index = self.data.edge_index.cpu().numpy()
 
         unique_indices = np.where(edge_index[0] < edge_index[1])[0]
         unique_indices_not = np.where(edge_index[0] > edge_index[1])[0]
@@ -280,6 +280,8 @@ class MeguTrainer(Trainer):
             self.model.train()
             operator.train()
             optimizer.zero_grad()
+            self.data.x_unlearn = self.data.x_unlearn.to(self.device)
+            self.data.edge_index_unlearn = self.data.edge_index_unlearn.to(self.device)
             out_ori = self.model(self.data.x_unlearn, self.data.edge_index_unlearn)
             out = operator(out_ori) # this is basically a linear layer on top of the original model
 
@@ -296,23 +298,9 @@ class MeguTrainer(Trainer):
             optimizer.step()
 
         unlearn_time = time.time() - start_time
-        self.model.eval()
-        test_out = self.model(self.data.x_unlearn, self.data.edge_index_unlearn)
-        if self.args.dataset == 'ppi':
-            out = torch.sigmoid(test_out)
-        else:
-            out = self.correct_and_smooth(F.softmax(test_out, dim=-1), preds)
 
-        y_hat = out.cpu().detach().numpy()
-        y = self.data.y.cpu()
-        if self.args.dataset == 'ppi':
-            test_f1 = calc_f1(y, y_hat, self.data.test_mask, multilabel=True)
-        else:
-            test_f1 = calc_f1(y, y_hat, self.data.test_mask)
-            print(test_f1)
-
-        train_acc, msc_rate, f1 = self.evaluate()
+        train_acc, msc_rate, f1 = self.evaluate(is_dr=True)
         print(f'Train Acc: {train_acc}, Misclassification: {msc_rate},  F1 Score: {f1}')
 
 
-        return unlearn_time, test_f1
+        return train_acc, msc_rate, f1, unlearn_time

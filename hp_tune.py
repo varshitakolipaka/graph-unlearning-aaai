@@ -38,10 +38,11 @@ def train():
     clean_trainer = Trainer(clean_model, clean_data, optimizer, args.training_epochs)
     clean_trainer.train()
 
-    forg, util = clean_trainer.get_score(args.attack_type, class1=57, class2=33)
+    if args.attack_type != "trigger":
+        forg, util = clean_trainer.get_score(args.attack_type, class1=57, class2=33)
 
-    print(f"==OG Model==\nForget Ability: {forg}, Utility: {util}")
-    logger.log_result(args.random_seed, "original", {"forget": forg, "utility": util})
+        print(f"==OG Model==\nForget Ability: {forg}, Utility: {util}")
+        logger.log_result(args.random_seed, "original", {"forget": forg, "utility": util})
 
     # save the clean model
     os.makedirs("./data", exist_ok=True)
@@ -126,19 +127,19 @@ def poison(clean_data=None):
     # save the poisoned data and model and indices to np file
     os.makedirs("./data", exist_ok=True)
 
-    # torch.save(
-    #     poisoned_model,
-    #     f"./data/{args.dataset}_{args.attack_type}_{args.df_size}_{args.random_seed}_poisoned_model.pt",
-    # )
+    torch.save(
+        poisoned_model,
+        f"./data/{args.dataset}_{args.attack_type}_{args.df_size}_{args.random_seed}_poisoned_model.pt",
+    )
 
-    # torch.save(
-    #     poisoned_data,
-    #     f"./data/{args.dataset}_{args.attack_type}_{args.df_size}_{args.random_seed}_poisoned_data.pt",
-    # )
-    # torch.save(
-    #     poisoned_indices,
-    #     f"./data/{args.dataset}_{args.attack_type}_{args.df_size}_{args.random_seed}_poisoned_indices.pt",
-    # )
+    torch.save(
+        poisoned_data,
+        f"./data/{args.dataset}_{args.attack_type}_{args.df_size}_{args.random_seed}_poisoned_data.pt",
+    )
+    torch.save(
+        poisoned_indices,
+        f"./data/{args.dataset}_{args.attack_type}_{args.df_size}_{args.random_seed}_poisoned_indices.pt",
+    )
 
     forg, util = poisoned_trainer.get_score(args.attack_type, class1=57, class2=33)
     print(f"==Poisoned Model==\nForget Ability: {forg}, Utility: {util}")

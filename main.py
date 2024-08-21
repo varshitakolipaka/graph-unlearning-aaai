@@ -109,7 +109,7 @@ logger.log_result(
     "Poisoned",
     {"Forget Ability": poisoned_forget_ability, "Utility": poisoned_utility},
 )
-exit()
+
 print("\n==UNLEARNING==")
 print(f"Unlearning model: {args.unlearning_model}")
 if "gnndelete" in args.unlearning_model:

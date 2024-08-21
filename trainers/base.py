@@ -170,7 +170,7 @@ class Trainer:
         z = self.model(self.data.x, self.data.edge_index)
         pred = torch.argmax(z[self.data.poison_test_mask], dim=1).cpu()
         psr= sum(pred==self.data.target_class)/len(pred)
-        return psr
+        return psr.item()
     
     def get_score(self, attack_type, class1=None, class2=None):
         forget_ability = None
