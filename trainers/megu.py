@@ -86,8 +86,9 @@ def normalize_adj(adj, r=0.5):
     return adj_normalized
 
 
-class MeguTrainer():
+class MeguTrainer(Trainer):
     def __init__(self, model, poisoned_dataset, optimizer, args):
+        super().__init__(model, poisoned_dataset, optimizer)
         self.args = args
         self.logger = logging.getLogger('ExpMEGU')
         self.data = poisoned_dataset
@@ -95,33 +96,13 @@ class MeguTrainer():
         self.num_feats = self.data.num_features
         self.train_test_split()
         self.unlearning_request()
-
         self.model = model
 
         self.num_layers = 2
         self.adj = sparse_mx_to_torch_sparse_tensor(normalize_adj(to_scipy_sparse_matrix(self.data.edge_index)))
         self.neighbor_khop = self.neighbor_select(self.data.x)
 
-        run_f1 = np.empty(0)
-        run_f1_unlearning = np.empty(0)
-        unlearning_times = np.empty(0)
-        training_times = np.empty(0)
-        for run in range(self.args.num_runs):
-            unlearning_time, f1_score_unlearning = self.train()
-            unlearning_times = np.append(unlearning_times, unlearning_time)
-            run_f1_unlearning = np.append(run_f1_unlearning, f1_score_unlearning)
-
-        f1_score_unlearning_avg = str(np.average(run_f1_unlearning)).split('.')[1]
-        f1_score_unlearning_std = str(np.std(run_f1_unlearning)).split('.')[1]
-        unlearning_time_avg = np.average(unlearning_times)
-
-        f1_score_unlearning_avg = '.'.join((f1_score_unlearning_avg[0:2], f1_score_unlearning_avg[2:4]))
-        f1_score_unlearning_std = '.'.join((f1_score_unlearning_std[1:2], f1_score_unlearning_std[2:4]))
-        self.logger.info(
-            f"|Unlearn| f1_score: avg±std={f1_score_unlearning_avg}±{f1_score_unlearning_std} time: avg={np.average(unlearning_times):.4f}s")
-
     def train_test_split(self):
-    # Check if train and test masks already exist
         if hasattr(self.data, 'train_mask') and hasattr(self.data, 'test_mask'):
             # Extract indices from existing masks
             self.train_indices = np.where(self.data.train_mask.numpy())[0]
@@ -147,7 +128,6 @@ class MeguTrainer():
             else:
                 raise ValueError("Unexpected shape for df_mask")
 
-            # Ensure unique_nodes are within bounds
             unique_nodes = unique_nodes[unique_nodes < self.data.num_nodes]
             
             self.data.edge_index_unlearn = self.update_edge_index_unlearn(unique_nodes)
@@ -158,7 +138,6 @@ class MeguTrainer():
             self.temp_node = unique_nodes
         else:
             raise ValueError("df_mask not found in data object")
-
 
     def update_edge_index_unlearn(self, delete_nodes, delete_edge_index=None):
         edge_index = self.data.edge_index.numpy()
@@ -187,25 +166,25 @@ class MeguTrainer():
 
         return torch.from_numpy(edge_index[:, remain_indices])
 
-    def evaluate(self, run):
-        # self.logger.info('model evaluation')
+    # def evaluate(self, run):
+    #     # self.logger.info('model evaluation')
 
-        start_time = time.time()
-        self.model.eval()
-        out = self.model(self.data.x, self.data.edge_index)
-        y = self.data.y.cpu()
-        if self.args.dataset == 'ppi':
-            y_hat = torch.sigmoid(out).cpu().detach().numpy()
-            test_f1 = calc_f1(y, y_hat, self.data.test_mask, multilabel=True)
-        else:
-            y_hat = F.log_softmax(out, dim=1).cpu().detach().numpy()
-            test_f1 = calc_f1(y, y_hat, self.data.test_mask)
+    #     start_time = time.time()
+    #     self.model.eval()
+    #     out = self.model(self.data.x, self.data.edge_index)
+    #     y = self.data.y.cpu()
+    #     if self.args.dataset == 'ppi':
+    #         y_hat = torch.sigmoid(out).cpu().detach().numpy()
+    #         test_f1 = calc_f1(y, y_hat, self.data.test_mask, multilabel=True)
+    #     else:
+    #         y_hat = F.log_softmax(out, dim=1).cpu().detach().numpy()
+    #         test_f1 = calc_f1(y, y_hat, self.data.test_mask)
 
-        evaluate_time = time.time() - start_time
-        # self.logger.info(f"Evaluation cost {evaluate_time:.4f} seconds.")
+    #     evaluate_time = time.time() - start_time
+    #     # self.logger.info(f"Evaluation cost {evaluate_time:.4f} seconds.")
 
-        # self.logger.info(f"Final Test F1: {test_f1:.4f}")
-        return test_f1
+    #     # self.logger.info(f"Final Test F1: {test_f1:.4f}")
+    #     return test_f1
 
     def neighbor_select(self, features):
         temp_features = features.clone()
@@ -295,10 +274,9 @@ class MeguTrainer():
                 preds = preds.type_as(self.data.y)
             else:
                 preds = torch.argmax(preds, axis=1).type_as(self.data.y)
-        
 
         start_time = time.time()
-        for epoch in range(30):
+        for epoch in range(self.args.unlearning_epochs):
             self.model.train()
             operator.train()
             optimizer.zero_grad()
@@ -332,6 +310,9 @@ class MeguTrainer():
         else:
             test_f1 = calc_f1(y, y_hat, self.data.test_mask)
             print(test_f1)
+
+        train_acc, msc_rate, f1 = self.evaluate()
+        print(f'Train Acc: {train_acc}, Misclassification: {msc_rate},  F1 Score: {f1}')
 
 
         return unlearn_time, test_f1
