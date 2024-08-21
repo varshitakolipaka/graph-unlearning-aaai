@@ -1,0 +1,135 @@
+{
+    "results": {
+        "0": {
+            "original": {
+                "forget": 0.7968073444779391,
+                "utility": 0.5765930813771062
+            },
+            "poisoned": {
+                "forget": 0.6115785146615511,
+                "utility": 0.5823732501531053
+            },
+            "retrain": {
+                "forget": 0.6358180323376268,
+                "utility": 0.5957464038650427
+            }
+        },
+        "1": {
+            "original": {
+                "forget": 0.7993666169895678,
+                "utility": 0.5935007415435251
+            },
+            "poisoned": {
+                "forget": 0.6393753104818678,
+                "utility": 0.5789522378325
+            },
+            "retrain": {
+                "forget": 0.696100347739692,
+                "utility": 0.6055584035755756
+            }
+        },
+        "2": {
+            "original": {
+                "forget": 0.7723816355810618,
+                "utility": 0.566000686333183
+            },
+            "poisoned": {
+                "forget": 0.5359397417503586,
+                "utility": 0.5624015626767751
+            },
+            "retrain": {
+                "forget": 0.6588952654232425,
+                "utility": 0.5692455552736736
+            }
+        },
+        "3": {
+            "original": {
+                "forget": 0.7903206291591046,
+                "utility": 0.5810864064613636
+            },
+            "poisoned": {
+                "forget": 0.6067150635208711,
+                "utility": 0.5803632689009273
+            },
+            "retrain": {
+                "forget": 0.6675438596491228,
+                "utility": 0.5860732511851341
+            }
+        },
+        "4": {
+            "original": {
+                "forget": 0.7907674626484484,
+                "utility": 0.5883442864032458
+            },
+            "poisoned": {
+                "forget": 0.5780870897714212,
+                "utility": 0.5743352983104247
+            },
+            "retrain": {
+                "forget": 0.6368758779210828,
+                "utility": 0.5837586396120609
+            }
+        }
+    },
+    "arguments": {
+        "train_ratio": 0.8,
+        "attack_type": "label",
+        "unlearning_model": "retrain",
+        "gnn": "gcn",
+        "hidden_dim": 64,
+        "unlearning_epochs": 50,
+        "request": "node",
+        "edge_attack_type": "random",
+        "df_size": 0.4,
+        "test_poison_fraction": 0.2,
+        "dataset": "Cora",
+        "random_seed": 4,
+        "train_lr": 0.005191475570177285,
+        "unlearn_lr": 0.05,
+        "weight_decay": 0.00016211813194850176,
+        "optimizer": "Adam",
+        "training_epochs": 1208,
+        "valid_freq": 30,
+        "checkpoint_dir": "./checkpoint",
+        "alpha": 0.5,
+        "neg_sample_random": "non_connected",
+        "loss_fct": "mse_mean",
+        "loss_type": "both_layerwise",
+        "num_clusters": 10,
+        "kmeans_max_iters": 1,
+        "shard_size_delta": 0.005,
+        "terminate_delta": 0,
+        "eval_steps": 1,
+        "runs": 1,
+        "num_remove_links": 11,
+        "parallel_unlearning": 4,
+        "lam": 0,
+        "regen_feats": false,
+        "regen_neighbors": false,
+        "regen_links": false,
+        "regen_subgraphs": false,
+        "hop_neighbors": 20,
+        "topk": 500,
+        "eval_on_cpu": false,
+        "num_edge_type": null,
+        "iteration": 100,
+        "scale": 100000,
+        "damp": 0.1,
+        "unlearn_iters": 50,
+        "kd_T": 4,
+        "scrubAlpha": 1,
+        "msteps": 15,
+        "wd": 0.0005,
+        "contrastive_epochs_1": 30,
+        "contrastive_epochs_2": 10,
+        "contrastive_margin": 500,
+        "contrastive_lambda": 0.8,
+        "k_hop": 2,
+        "contrastive_eps": 0.001,
+        "contrastive_frac": 0.1,
+        "num_runs": 2,
+        "kappa": 0.01,
+        "alpha1": 0.8,
+        "alpha2": 0.5
+    }
+}

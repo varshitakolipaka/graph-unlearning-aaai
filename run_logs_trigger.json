@@ -1,69 +1,18 @@
 {
-    "results": {
-        "0": {
-            "Original": {
-                "Forget Ability": 0.8003562619895862,
-                "Utility": 0.5724609725803118
-            },
-            "Poisoned": {
-                "Forget Ability": 0.48081666209920526,
-                "Utility": 0.5905349204579717
-            }
-        },
-        "1": {
-            "Original": {
-                "Forget Ability": 0.8019901887729757,
-                "Utility": 0.5918477905285353
-            },
-            "Poisoned": {
-                "Forget Ability": 0.37995218579234974,
-                "Utility": 0.5715164737909109
-            }
-        },
-        "2": {
-            "Original": {
-                "Forget Ability": 0.7756456241032998,
-                "Utility": 0.5673617310123856
-            },
-            "Poisoned": {
-                "Forget Ability": 0.4602582496413199,
-                "Utility": 0.5700711671473735
-            }
-        },
-        "3": {
-            "Original": {
-                "Forget Ability": 0.8008469449485783,
-                "Utility": 0.5717309303911509
-            },
-            "Poisoned": {
-                "Forget Ability": 0.38287961282516636,
-                "Utility": 0.5776537317431424
-            }
-        },
-        "4": {
-            "Original": {
-                "Forget Ability": 0.7781094368535308,
-                "Utility": 0.5897272692651332
-            },
-            "Poisoned": {
-                "Forget Ability": 0.4277071893755587,
-                "Utility": 0.5926479279886486
-            }
-        }
-    },
+    "results": {},
     "arguments": {
         "train_ratio": 0.8,
-        "attack_type": "label",
+        "attack_type": "trigger",
         "unlearning_model": "retrain",
         "gnn": "gcn",
         "hidden_dim": 64,
         "unlearning_epochs": 50,
         "request": "node",
         "edge_attack_type": "random",
-        "df_size": 0.5,
+        "df_size": 0.05,
         "test_poison_fraction": 0.2,
         "dataset": "Cora",
-        "random_seed": 3,
+        "random_seed": 1,
         "train_lr": 0.005191475570177285,
         "unlearn_lr": 0.05,
         "weight_decay": 0.00016211813194850176,
@@ -110,6 +59,7 @@
         "num_runs": 2,
         "kappa": 0.01,
         "alpha1": 0.8,
-        "alpha2": 0.5
+        "alpha2": 0.5,
+        "poison_tensor_size": 100
     }
 }

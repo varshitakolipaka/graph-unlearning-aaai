@@ -139,7 +139,6 @@ def find_masks(data, poisoned_indices, args, attack_type="label"):
             data.df_mask[mask] = True
         data.dr_mask = ~data.df_mask
     elif attack_type == "edge":
-        print("HIYAA")
         data.df_mask = torch.zeros(data.edge_index.shape[1], dtype=torch.bool)
         data.dr_mask = torch.zeros(data.edge_index.shape[1], dtype=torch.bool)
         data.df_mask[poisoned_indices] = 1
@@ -181,6 +180,8 @@ def get_optimizer(args, poisoned_model):
             optimizer_unlearn = [optimizer1, optimizer2, optimizer3]
         else:
             optimizer_unlearn = torch.optim.Adam(parameters_to_optimize, lr=args.unlearn_lr)
+    elif 'retrain' in args.unlearning_model:
+        optimizer_unlearn = torch.optim.Adam(poisoned_model.parameters(), lr=args.train_lr, weight_decay=args.weight_decay)
     else:
         parameters_to_optimize = [
             {'params': [p for n, p in poisoned_model.named_parameters()], 'weight_decay': args.weight_decay}

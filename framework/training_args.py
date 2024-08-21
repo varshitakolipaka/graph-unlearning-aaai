@@ -28,6 +28,7 @@ def parse_args():
     # parser.add_argument('--df_idx', type=str, default=None, help='indices of data to be deleted')
     parser.add_argument('--df_size', type=float, default=0.1, help='Forgetting Fraction')
     parser.add_argument('--test_poison_fraction', type=float, default=0.2, help='Test Poisoning Fraction')
+    parser.add_argument('--poison_tensor_size', type=int, default=100, help='Poison Tensor Size')
     parser.add_argument('--dataset', type=str, default='Cora', help='dataset')
     parser.add_argument('--random_seed', type=int, default=0, help='random seed')
     # parser.add_argument('--batch_size', type=int, default=2048, help='batch size for GraphSAINTRandomWalk sampler')

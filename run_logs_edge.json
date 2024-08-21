@@ -1,0 +1,261 @@
+{
+    "results": {
+        "0": {
+            "original": {
+                "forget": 0.804864346396273,
+                "utility": 0.5779714570855062
+            },
+            "poisoned": {
+                "forget": 0.5551795012332146,
+                "utility": 0.6035502891361142
+            },
+            "retrain": {
+                "forget": 0.7894902713072074,
+                "utility": 0.5750485646337219
+            }
+        },
+        "1": {
+            "original": {
+                "forget": 0.8023161947342274,
+                "utility": 0.5926412414546899
+            },
+            "poisoned": {
+                "forget": 0.3088207898658718,
+                "utility": 0.5550227832516178
+            },
+            "retrain": {
+                "forget": 0.7909525583705912,
+                "utility": 0.6007977665550855
+            }
+        },
+        "2": {
+            "original": {
+                "forget": 0.7636657101865136,
+                "utility": 0.5616716652624704
+            },
+            "poisoned": {
+                "forget": 0.31093974175035866,
+                "utility": 0.5655014050681908
+            },
+            "retrain": {
+                "forget": 0.7517934002869441,
+                "utility": 0.5616724306002624
+            }
+        },
+        "3": {
+            "original": {
+                "forget": 0.7982153660012099,
+                "utility": 0.5665231975792041
+            },
+            "poisoned": {
+                "forget": 0.2721415607985481,
+                "utility": 0.5962435105460272
+            },
+            "retrain": {
+                "forget": 0.7927102238354506,
+                "utility": 0.5912185653099715
+            }
+        },
+        "4": {
+            "original": {
+                "forget": 0.7781094368535308,
+                "utility": 0.588160020585588
+            },
+            "poisoned": {
+                "forget": 0.33084855063210317,
+                "utility": 0.5944968811850441
+            },
+            "retrain": {
+                "forget": 0.7759545396501085,
+                "utility": 0.5884463125245001
+            }
+        },
+        "5": {
+            "original": {
+                "forget": 0.7854406130268199,
+                "utility": 0.5920798584231126
+            },
+            "poisoned": {
+                "forget": 0.314463601532567,
+                "utility": 0.5899502881845445
+            },
+            "retrain": {
+                "forget": 0.7903256704980843,
+                "utility": 0.58582910749988
+            }
+        },
+        "6": {
+            "original": {
+                "forget": 0.7708181344450235,
+                "utility": 0.5997634563228593
+            },
+            "poisoned": {
+                "forget": 0.32931214174048984,
+                "utility": 0.596613867205934
+            },
+            "retrain": {
+                "forget": 0.768186555497655,
+                "utility": 0.5811294755215382
+            }
+        },
+        "7": {
+            "original": {
+                "forget": 0.7761051829268293,
+                "utility": 0.5678898065314046
+            },
+            "poisoned": {
+                "forget": 0.3113567073170732,
+                "utility": 0.5842198644722245
+            },
+            "retrain": {
+                "forget": 0.7761051829268293,
+                "utility": 0.5771334622825465
+            }
+        },
+        "8": {
+            "original": {
+                "forget": 0.7396586273527518,
+                "utility": 0.5578241811535583
+            },
+            "poisoned": {
+                "forget": 0.26934087168109927,
+                "utility": 0.5659696938808638
+            },
+            "retrain": {
+                "forget": 0.7480855936448866,
+                "utility": 0.5601968106308384
+            }
+        },
+        "9": {
+            "original": {
+                "forget": 0.7939535014162717,
+                "utility": 0.577660574912168
+            },
+            "poisoned": {
+                "forget": 0.32676613287713496,
+                "utility": 0.5928224374381006
+            },
+            "retrain": {
+                "forget": 0.7971646521019715,
+                "utility": 0.5788039532458356
+            }
+        },
+        "10": {
+            "original": {
+                "forget": 0.7672466422466422,
+                "utility": 0.596102835485064
+            },
+            "poisoned": {
+                "forget": 0.5615079365079365,
+                "utility": 0.5894354559051682
+            },
+            "retrain": {
+                "forget": 0.773097273097273,
+                "utility": 0.5845872177277559
+            }
+        },
+        "69": {
+            "original": {
+                "forget": 0.8211759504862953,
+                "utility": 0.5789381193600227
+            },
+            "poisoned": {
+                "forget": 0.5757736516357206,
+                "utility": 0.5864235310583324
+            },
+            "retrain": {
+                "forget": 0.8297966401414677,
+                "utility": 0.5697719897437672
+            }
+        },
+        "1010": {
+            "original": {
+                "forget": 0.749708230958231,
+                "utility": 0.5872158425508635
+            },
+            "poisoned": {
+                "forget": 0.5321867321867322,
+                "utility": 0.5807661678121272
+            },
+            "retrain": {
+                "forget": 0.7593366093366094,
+                "utility": 0.5808840011753414
+            }
+        },
+        "42": {
+            "original": {
+                "forget": 0.7784992784992786,
+                "utility": 0.5655582885523963
+            },
+            "poisoned": {
+                "forget": 0.5114237614237614,
+                "utility": 0.5720211182907916
+            },
+            "retrain": {
+                "forget": 0.7967772967772968,
+                "utility": 0.5599047613204601
+            }
+        }
+    },
+    "arguments": {
+        "train_ratio": 0.8,
+        "attack_type": "edge",
+        "unlearning_model": "retrain",
+        "gnn": "gcn",
+        "hidden_dim": 64,
+        "unlearning_epochs": 50,
+        "request": "node",
+        "edge_attack_type": "random",
+        "df_size": 3000.0,
+        "test_poison_fraction": 0.2,
+        "dataset": "Cora",
+        "random_seed": 42,
+        "train_lr": 0.005191475570177285,
+        "unlearn_lr": 0.05,
+        "weight_decay": 0.00016211813194850176,
+        "optimizer": "Adam",
+        "training_epochs": 1208,
+        "valid_freq": 30,
+        "checkpoint_dir": "./checkpoint",
+        "alpha": 0.5,
+        "neg_sample_random": "non_connected",
+        "loss_fct": "mse_mean",
+        "loss_type": "both_layerwise",
+        "num_clusters": 10,
+        "kmeans_max_iters": 1,
+        "shard_size_delta": 0.005,
+        "terminate_delta": 0,
+        "eval_steps": 1,
+        "runs": 1,
+        "num_remove_links": 11,
+        "parallel_unlearning": 4,
+        "lam": 0,
+        "regen_feats": false,
+        "regen_neighbors": false,
+        "regen_links": false,
+        "regen_subgraphs": false,
+        "hop_neighbors": 20,
+        "topk": 500,
+        "eval_on_cpu": false,
+        "num_edge_type": null,
+        "iteration": 100,
+        "scale": 100000,
+        "damp": 0.1,
+        "unlearn_iters": 50,
+        "kd_T": 4,
+        "scrubAlpha": 1,
+        "msteps": 15,
+        "wd": 0.0005,
+        "contrastive_epochs_1": 30,
+        "contrastive_epochs_2": 10,
+        "contrastive_margin": 500,
+        "contrastive_lambda": 0.8,
+        "k_hop": 2,
+        "contrastive_eps": 0.001,
+        "contrastive_frac": 0.1,
+        "num_runs": 2,
+        "kappa": 0.01,
+        "alpha1": 0.8,
+        "alpha2": 0.5
+    }
+}
