@@ -127,24 +127,26 @@ def find_masks(data, poisoned_indices, args, attack_type="label"):
             data.dr_mask = data.train_mask
             data.df_mask[poisoned_indices] = True
             data.dr_mask[poisoned_indices] = False
+        else:
 
-        data.df_mask = torch.zeros(data.edge_index.shape[1], dtype=torch.bool)
-        data.dr_mask = torch.zeros(data.edge_index.shape[1], dtype=torch.bool)
-        for node in poisoned_indices:
-            data.train_mask[node] = False
-            node_tensor = torch.tensor([node], dtype=torch.long)
-            _, local_edges, _, mask = k_hop_subgraph(
-                node_tensor, 1, data.edge_index, num_nodes=data.num_nodes
-            )
-            data.df_mask[mask] = True
-        data.dr_mask = ~data.df_mask
+            data.df_mask = torch.zeros(data.edge_index.shape[1], dtype=torch.bool)
+            data.dr_mask = torch.zeros(data.edge_index.shape[1], dtype=torch.bool)
+            for node in poisoned_indices:
+                data.train_mask[node] = False
+                node_tensor = torch.tensor([node], dtype=torch.long)
+                _, local_edges, _, mask = k_hop_subgraph(
+                    node_tensor, 1, data.edge_index, num_nodes=data.num_nodes
+                )
+                data.df_mask[mask] = True
+            data.dr_mask = ~data.df_mask
     elif attack_type == "edge":
         data.df_mask = torch.zeros(data.edge_index.shape[1], dtype=torch.bool)
         data.dr_mask = torch.zeros(data.edge_index.shape[1], dtype=torch.bool)
         data.df_mask[poisoned_indices] = 1
         data.dr_mask = ~data.df_mask
     data.attacked_idx = torch.tensor(poisoned_indices, dtype=torch.long)
-    get_sdf_masks(data, args)
+    if not ("scrub" in args.unlearning_model) and not ("megu" in args.unlearning_model):
+        get_sdf_masks(data, args)
 
 
 def get_trainer(args, poisoned_model, poisoned_data, optimizer_unlearn) -> Trainer:
