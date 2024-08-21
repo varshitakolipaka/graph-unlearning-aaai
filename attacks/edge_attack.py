@@ -64,7 +64,7 @@ def edge_attack_specific_nodes(data, epsilon, seed, class1=None, class2=None):
 
     # Determine number of edges to add
     if(epsilon<1):
-        total_possible_edges = class1_indices.size(0) * class2_indices.size(0)
+        total_possible_edges = len(class1_indices) * len(class2_indices)
         epsilon = min(int(epsilon * total_possible_edges), total_possible_edges)
 
     # Set of existing edges

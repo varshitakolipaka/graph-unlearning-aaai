@@ -15,6 +15,7 @@ from trainers.base import Trainer
 from trainers.scrub import ScrubTrainer
 from trainers.utu import UtUTrainer
 from trainers.retrain import RetrainTrainer
+from trainers.megu import MeguTrainer
 
 def get_original_data(d):
     data_dir = './datasets'
@@ -118,7 +119,15 @@ def get_sdf_masks(data, args):
 
 
 def find_masks(data, poisoned_indices, args, attack_type="label"):
+
     if attack_type == "label" or attack_type == "random"  or attack_type == "trigger":
+
+        if "scrub" in args.unlearning_model or ("megu" in args.unlearning_model and "node" in args.request):
+            data.df_mask = torch.zeros(data.num_nodes, dtype=torch.bool)  # of size num nodes
+            data.dr_mask = data.train_mask
+            data.df_mask[poisoned_indices] = True
+            data.dr_mask[poisoned_indices] = False
+
         data.df_mask = torch.zeros(data.edge_index.shape[1], dtype=torch.bool)
         data.dr_mask = torch.zeros(data.edge_index.shape[1], dtype=torch.bool)
         for node in poisoned_indices:
@@ -130,11 +139,12 @@ def find_masks(data, poisoned_indices, args, attack_type="label"):
             data.df_mask[mask] = True
         data.dr_mask = ~data.df_mask
     elif attack_type == "edge":
+        print("HIYAA")
         data.df_mask = torch.zeros(data.edge_index.shape[1], dtype=torch.bool)
         data.dr_mask = torch.zeros(data.edge_index.shape[1], dtype=torch.bool)
         data.df_mask[poisoned_indices] = 1
         data.dr_mask = ~data.df_mask
-    data.attacked_idx = poisoned_indices
+    data.attacked_idx = torch.tensor(poisoned_indices, dtype=torch.long)
     get_sdf_masks(data, args)
 
 
@@ -149,7 +159,8 @@ def get_trainer(args, poisoned_model, poisoned_data, optimizer_unlearn) -> Train
         "utu": UtUTrainer,
         "contrastive": ContrastiveUnlearnTrainer,
         "retrain": RetrainTrainer,
-        "scrub": ScrubTrainer
+        "scrub": ScrubTrainer,
+        "megu": MeguTrainer
     }
 
     if args.unlearning_model in trainer_map:

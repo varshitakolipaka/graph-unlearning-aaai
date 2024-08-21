@@ -89,10 +89,6 @@ class GIFTrainer(Trainer):
             idx = idx + 1
         self.model= temp
 
-        print("HIIHIIH")
-        train_acc, msc_rate, f1 = self.evaluate()
-        print(f'Train Acc: {train_acc}, Misclassification: {msc_rate},  F1 Score: {f1}')
-
         return time.time() - start_time, model
 
     def hvps(self, grad_all, model_params, h_estimate):

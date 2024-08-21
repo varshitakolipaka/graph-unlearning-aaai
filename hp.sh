@@ -5,10 +5,17 @@
 # python hp_tune.py --unlearning_model scrub --dataset Cora
 # python hp_tune.py --unlearning_model contrastive --dataset Cora
 
-python hp_tune.py --unlearning_model utu --request edge --dataset Cora --edge_attack_type specific --attack_type edge --df_size 2000
-python hp_tune.py --unlearning_model gif --request edge --dataset Cora --edge_attack_type specific  --attack_type edge --df_size 2000
-python hp_tune.py --unlearning_model gradient_ascent --request edge --dataset Cora --edge_attack_type specific  --attack_type edge --df_size 2000
-python hp_tune.py --unlearning_model contrastive --request edge --dataset Cora --edge_attack_type specific  --attack_type edge --df_size 2000
+# python hp_tune.py --unlearning_model utu --request edge --dataset Cora --edge_attack_type specific --attack_type edge --df_size 2000
+# python hp_tune.py --unlearning_model gif --request edge --dataset Cora --edge_attack_type specific  --attack_type edge --df_size 2000
+# python hp_tune.py --unlearning_model gradient_ascent --request edge --dataset Cora --edge_attack_type specific  --attack_type edge --df_size 2000
+# python hp_tune.py --unlearning_model contrastive --request edge --dataset Cora --edge_attack_type specific  --attack_type edge --df_size 2000
+
+python hp_tune.py --unlearning_model utu --dataset Cora --attack_type edge --request edge --df_size 0.04 --random_seed 0
+python hp_tune.py --unlearning_model scrub --dataset Cora --attack_type edge --request edge --df_size 0.04 --random_seed 0
+python hp_tune.py --unlearning_model gif --dataset Cora --attack_type edge --request edge --df_size 0.04 --random_seed 0
+python hp_tune.py --unlearning_model gnndelete --dataset Cora --attack_type edge --request edge --df_size 0.04 --random_seed 0
+python hp_tune.py --unlearning_model contrastive --dataset Cora --attack_type edge --request edge --df_size 0.04 --random_seed 0
+python hp_tune.py --unlearning_model gradient_ascent --dataset Cora --attack_type edge --request edge --df_size 0.04 --random_seed 0
 
 # python hp_tune.py --unlearning_model gnndelete --dataset Citeseer_p
 # python hp_tune.py --unlearning_model utu --dataset Citeseer_p
