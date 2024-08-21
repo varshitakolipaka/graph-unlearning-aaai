@@ -60,9 +60,12 @@ class ScrubTrainer(Trainer):
         self.opt = opt
         self.opt.unlearn_iters = opt.unlearn_iters
         self.best_model = None
+        self.best_val_acc = 0
         self.curr_step = 0
         self.set_model(model)
         self.poisoned_dataset = poisoned_dataset
+
+
         self.scheduler = LinearLR(self.optimizer, T=self.opt.unlearn_iters*1.25, warmup_epochs=self.opt.unlearn_iters//100) # Spend 1% time in warmup, and stop 66% of the way through training 
         self.og_model = copy.deepcopy(model)
         self.og_model.eval()
@@ -78,6 +81,12 @@ class ScrubTrainer(Trainer):
         if self.curr_step <= self.opt.unlearn_iters:
             self.optimizer.zero_grad()
             loss = self.forward_pass(data, mask)
+            val_acc, _, _ = self.evaluate(val_mask=self.data.val_mask)
+            print(val_acc, self.best_val_acc)
+            if val_acc > self.best_val_acc:
+                print("updating best model...")
+                self.best_val_acc = val_acc
+                self.best_model = copy.deepcopy(self.model)
             loss.backward()
             self.optimizer.step()
             self.scheduler.step()
@@ -133,6 +142,11 @@ class ScrubTrainer(Trainer):
         return
     def train(self):
         self.unlearn_nc_lf()
+        self.model = self.best_model
+        train_acc, msc_rate, f1 = self.evaluate()
+        print("UNLEARNING DONE.")
+        print(f'Test Acc: {train_acc}, Misclassification: {msc_rate},  F1 Score: {f1}')
+        
     def get_save_prefix(self):
         self.unlearn_file_prefix = self.opt.pretrain_file_prefix+'/'+str(self.opt.deletion_size)+'_'+self.opt.unlearn_method+'_'+self.opt.exp_name
         self.unlearn_file_prefix += '_'+str(self.opt.unlearn_iters)+'_'+str(self.opt.k)
