@@ -43,9 +43,7 @@ if args.attack_type == "label":
         clean_data, args.df_size, args.random_seed
     )
 elif args.attack_type == "edge":
-    print("A")
     if args.edge_attack_type == "specific":
-        print("B")
         poisoned_data, poisoned_indices = edge_attack_specific_nodes(
             clean_data, args.df_size, args.random_seed, class1=57, class2=33
         )

@@ -260,6 +260,13 @@ hp_tuning_params_dict = {
         "msteps": (10, 500, "int"),
         # 'weight_decay': (1e-5, 1e-1, "log"),
     },
+    'megu': {
+        'unlearn_lr': (1e-5, 1e-1, "log"),
+        'unlearning_epochs': (10, 500, "int"),
+        'kappa': (0, 1, "float"),
+        'alpha1': (0, 1, "float"),
+        'alpha2': (0, 1, "float"),
+    },
     "clean": {
         "train_lr": (1e-5, 1e-1, "log"),
         "weight_decay": (1e-5, 1e-1, "log"),
@@ -320,10 +327,10 @@ def objective_clean(trial, model, data):
 
 
 if __name__ == "__main__":
-    clean_data = train()
-    poisoned_data, poisoned_indices, poisoned_model = poison(clean_data)
-    unlearn(poisoned_data, poisoned_indices, poisoned_model)
-    exit(0)
+    # clean_data = train()
+    poisoned_data, poisoned_indices, poisoned_model = poison()
+    # unlearn(poisoned_data, poisoned_indices, poisoned_model)
+    
     utils.find_masks(
         poisoned_data, poisoned_indices, args, attack_type=args.attack_type
     )
@@ -361,7 +368,7 @@ if __name__ == "__main__":
         directions=directions,
         study_name=f"{args.dataset}_{args.attack_type}_{args.unlearning_model}_{args.random_seed}",
         load_if_exists=True,
-        storage="sqlite:///final_hptune_cora_full_seed_0_edge.db",
+        storage="sqlite:///hptune_newest.db",
     )
 
     print("==OPTIMIZING==")

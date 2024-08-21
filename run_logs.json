@@ -2,12 +2,16 @@
     "results": {
         "0": {
             "Original": {
-                "Forget Ability": 0.8080432995341189,
-                "Utility": 0.5798975911273241
+                "Forget Ability": NaN,
+                "Utility": 0.5807715715698467
             },
             "Poisoned": {
-                "Forget Ability": 0.7548232392436284,
-                "Utility": 0.5845230440982642
+                "Forget Ability": NaN,
+                "Utility": 0.44707373965252756
+            },
+            "megu": {
+                "Forget Ability": NaN,
+                "Utility": 0.014285714285714285
             }
         },
         "1": {
@@ -52,28 +56,28 @@
         },
         "0": {
             "Original": {
-                "Forget Ability": 0.7968073444779391,
-                "Utility": 0.5702826132005843
+                "Forget Ability": 0.8076733351603179,
+                "Utility": 0.5735090127600455
             },
             "Poisoned": {
-                "Forget Ability": 0.7527541792271855,
-                "Utility": 0.5811428247290378
+                "Forget Ability": 0.007687037544532749,
+                "Utility": 0.6009975208553044
             },
             "megu": {
                 "Forget Ability": 0.0,
-                "Utility": 0.01485748938750758
+                "Utility": 0.015550800716615945
             }
         }
     },
     "arguments": {
         "train_ratio": 0.8,
-        "attack_type": "label",
+        "attack_type": "edge",
         "unlearning_model": "megu",
         "gnn": "gcn",
         "hidden_dim": 64,
         "unlearning_epochs": 50,
-        "request": "node",
-        "edge_attack_type": "random",
+        "request": "edge",
+        "edge_attack_type": "specific",
         "df_size": 0.1,
         "test_poison_fraction": 0.2,
         "dataset": "Cora",
@@ -125,6 +129,9 @@
         "kappa": 0.01,
         "alpha1": 0.8,
         "alpha2": 0.5,
-        "poison_tensor_size": 100
+        "poison_tensor_size": 100,
+        "megu_kappa": 0.01,
+        "megu_alpha1": 0.8,
+        "megu_alpha2": 0.5
     }
 }

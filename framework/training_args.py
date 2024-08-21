@@ -20,7 +20,7 @@ def parse_args():
     parser.add_argument('--unlearning_epochs', type=int, default=50, help='number of epochs to unlearn for')
     # parser.add_argument('--out_dim', type=int, default=64, help='output dimension')
     parser.add_argument('--request', type=str, default='node', help='unlearning request', choices=['node', 'edge'])
-    parser.add_argument('--edge_attack_type', type=str, default='random', help='edge attack type', choices=['random', 'specific'])
+    parser.add_argument('--edge_attack_type', type=str, default='specific', help='edge attack type', choices=['random', 'specific'])
 
     # Data
     # parser.add_argument('--data_dir', type=str, default='./data', help='data dir')
@@ -98,7 +98,7 @@ def parse_args():
     parser.add_argument('--contrastive_eps', type=float, default=1e-3, help="fraction of non-neighbors to sample for contrastive loss")
     parser.add_argument('--contrastive_frac', type=float, default=0.1, help="fraction of nodes to sample for contrastive loss")
 
-    parser.add_argument('--num_runs', type=int, default=2)
+    # MEGU
     parser.add_argument('--kappa', type=float, default=0.01)
     parser.add_argument('--alpha1', type=float, default=0.8)
     parser.add_argument('--alpha2', type=float, default=0.5)

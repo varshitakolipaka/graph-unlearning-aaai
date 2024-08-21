@@ -4,6 +4,8 @@ python hp_tune.py --unlearning_model gif --dataset Cora --df_size 0.5 --random_s
 python hp_tune.py --unlearning_model gradient_ascent --dataset Cora --df_size 0.5 --random_seed 0
 python hp_tune.py --unlearning_model scrub --dataset Cora --df_size 0.5 --random_seed 0
 python hp_tune.py --unlearning_model contrastive --dataset Cora --df_size 0.5 --random_seed 0
+python hp_tune.py --unlearning_model megu --dataset Cora --df_size 0.5 --random_seed 0
+python hp_tune.py --unlearning_model retrain --dataset Cora --df_size 0.5 --random_seed 0
 
 # python hp_tune.py --unlearning_model utu --request edge --dataset Cora --edge_attack_type specific --attack_type edge --df_size 2000
 # python hp_tune.py --unlearning_model gif --request edge --dataset Cora --edge_attack_type specific  --attack_type edge --df_size 2000
