@@ -1,5 +1,6 @@
 import os, math
 import copy
+from pprint import pprint
 import time
 import scipy.sparse as sp
 # import wandb
@@ -47,36 +48,12 @@ class ContrastiveUnlearnTrainer(Trainer):
             reverse_features[idx] = 1-reverse_features[idx]
         return reverse_features
 
-    def sparse_mx_to_torch_sparse_tensor(self, sparse_mx):
-        """Convert a scipy sparse matrix to a torch sparse tensor."""
-        sparse_mx = sparse_mx.tocoo().astype(np.float32)
-        indices = torch.from_numpy(
-            np.vstack((sparse_mx.row, sparse_mx.col)).astype(np.int64))
-        values = torch.from_numpy(sparse_mx.data)
-        shape = torch.Size(sparse_mx.shape)
-        return torch.sparse_coo_tensor(indices, values, shape, dtype=torch.float)
-
-    def normalize_adj(self, adj, r=0.5):
-        adj = adj + sp.eye(adj.shape[0])
-        degrees = np.array(adj.sum(1))
-        r_inv_sqrt_left = np.power(degrees, r - 1).flatten()
-        r_inv_sqrt_left[np.isinf(r_inv_sqrt_left)] = 0.
-        r_mat_inv_sqrt_left = sp.diags(r_inv_sqrt_left)
-
-        r_inv_sqrt_right = np.power(degrees, -r).flatten()
-        r_inv_sqrt_right[np.isinf(r_inv_sqrt_right)] = 0.
-        r_mat_inv_sqrt_right = sp.diags(r_inv_sqrt_right)
-
-        adj_normalized = adj.dot(r_mat_inv_sqrt_left).transpose().dot(r_mat_inv_sqrt_right)
-        return adj_normalized
-
-    #MEGU HIN sampling
     def get_sample_points(self):
         if self.args.request == "edge":
-            og_logits = F.softmax(self.model(self.data.x, self.data.edge_index[:, self.data.dr_mask]), dim=1)
+            og_logits = F.softmax(self.model(self.data.x, self.data.edge_index), dim=1)
             temp_features = self.data.x.clone()
             reverse_feature = self.reverse_features(temp_features)
-            final_logits = F.softmax(self.model(reverse_feature, self.data.edge_index[:, self.data.dr_mask]), dim=1)
+            final_logits = F.softmax(self.model(reverse_feature, self.data.edge_index), dim=1)
             diff = torch.abs(og_logits - final_logits)
             diff = torch.mean(diff, dim=1)
             diff = diff[self.data.poisoned_nodes]
@@ -138,6 +115,8 @@ class ContrastiveUnlearnTrainer(Trainer):
     @time_it
     def task_loss(self):
         # use the retain mask to calculate the loss
+        if self.args.request == "edge":
+            self.embeddings = self.model(self.data.x, self.data.edge_index[:, self.data.dr_mask])
         try:
             mask = self.data.retain_mask
         except:
@@ -259,7 +238,7 @@ class ContrastiveUnlearnTrainer(Trainer):
 
         return pos_dist, neg_dist
 
-    def get_distances_edge(self, attacked_edge_list, batch_size=64):
+    def get_distances_edge(self, batch_size=64):
         # attacked edge index contains all the edges that were maliciously added
         self.embeddings = self.model(self.data.x, self.data.edge_index)
         num_masks = len(self.data.train_mask)
@@ -273,7 +252,7 @@ class ContrastiveUnlearnTrainer(Trainer):
         for i in range(0, num_samples, batch_size):
             batch_indices = sample_indices[i : i + batch_size]
             batch_size = len(batch_indices)
-
+            
             batch_positive_samples = [
                 list(self.subset_dict[idx.item()] - self.negative_sample_dict[idx.item()])
                 for idx in batch_indices
@@ -340,19 +319,16 @@ class ContrastiveUnlearnTrainer(Trainer):
 
     def train_edge(self):
         # attack idx must be a list of tuples (u,v)
-        model = self.model
-        data = self.data
         args = self.args
-        attacked_idx = self.attacked_idx
         optimizer = self.optimizer
-
+        
         for epoch in trange(
             args.contrastive_epochs_1 + args.contrastive_epochs_2, desc="Unlearning"
         ):
             self.model.train()
             self.embeddings = self.model(self.data.x, self.data.edge_index)
             if epoch <= args.contrastive_epochs_1:
-                pos_dist, neg_dist = self.get_distances_edge(attacked_idx)
+                pos_dist, neg_dist = self.get_distances_edge()
                 lmda = args.contrastive_lambda
             else:
                 pos_dist = None

@@ -37,6 +37,7 @@ def poison_train_mask(data, epsilon, poison_tensor_size, seed, target_class=None
     
     apply_poison(data, samples)
     data.y[samples]=data.target_class
+    data.poisoned_indices = idx
     return data, samples
 
 def poison_test_mask(data, epsilon, seed):

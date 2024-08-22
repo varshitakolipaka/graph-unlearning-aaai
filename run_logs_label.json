@@ -2,8 +2,8 @@
     "results": {
         "0": {
             "poisoned": {
-                "forget": 0.4935324746505892,
-                "utility": 0.5870261645992406
+                "forget": 0.4731296245546725,
+                "utility": 0.5856679151209705
             }
         },
         "1": {
@@ -64,15 +64,15 @@
         },
         "0": {
             "poisoned": {
-                "forget": 0.4935324746505892,
-                "utility": 0.5870261645992406
+                "forget": 0.4731296245546725,
+                "utility": 0.5856679151209705
             }
         }
     },
     "arguments": {
         "train_ratio": 0.8,
         "attack_type": "label",
-        "unlearning_model": "megu",
+        "unlearning_model": "scrub",
         "gnn": "gcn",
         "hidden_dim": 64,
         "unlearning_epochs": 50,
@@ -83,7 +83,7 @@
         "dataset": "Cora",
         "random_seed": 0,
         "train_lr": 0.005191475570177285,
-        "unlearn_lr": 0.05,
+        "unlearn_lr": 0.015,
         "weight_decay": 0.00016211813194850176,
         "optimizer": "Adam",
         "training_epochs": 1208,

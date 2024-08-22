@@ -11,6 +11,8 @@ data/
 # SQL
 *.db
 
+plots/
+
 # Distribution / packaging
 .Python
 build/

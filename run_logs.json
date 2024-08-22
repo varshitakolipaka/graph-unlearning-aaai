@@ -2,111 +2,48 @@
     "results": {
         "0": {
             "Original": {
-                "Forget Ability": NaN,
-                "Utility": 0.5807715715698467
+                "Forget Ability": null,
+                "Utility": null
             },
             "Poisoned": {
-                "Forget Ability": 0.4603658536585366,
-                "Utility": 0.6000786660989691
-            },
-            "scrub": {
-                "Forget Ability": 0.4481707317073171,
-                "Utility": 0.510887482190842
-                "Forget Ability": NaN,
-                "Utility": 0.44707373965252756
-            },
-            "megu": {
-                "Forget Ability": NaN,
-                "Utility": 0.014285714285714285
-            }
-        },
-        "1": {
-            "Original": {
-                "Forget Ability": 0.8019901887729757,
-                "Utility": 0.5918477905285353
-            },
-            "Poisoned": {
-                "Forget Ability": 0.37995218579234974,
-                "Utility": 0.5715164737909109
-            }
-        },
-        "2": {
-            "Original": {
-                "Forget Ability": 0.7756456241032998,
-                "Utility": 0.5673617310123856
-            },
-            "Poisoned": {
-                "Forget Ability": 0.4602582496413199,
-                "Utility": 0.5700711671473735
-            }
-        },
-        "3": {
-            "Original": {
-                "Forget Ability": 0.8008469449485783,
-                "Utility": 0.5717309303911509
-            },
-            "Poisoned": {
-                "Forget Ability": 0.38287961282516636,
-                "Utility": 0.5776537317431424
-            }
-        },
-        "4": {
-            "Original": {
-                "Forget Ability": 0.7781094368535308,
-                "Utility": 0.5897272692651332
-            },
-            "Poisoned": {
-                "Forget Ability": 0.4277071893755587,
-                "Utility": 0.5926479279886486
+                "Forget Ability": null,
+                "Utility": null
             }
         },
         "0": {
             "Original": {
-                "Forget Ability": 0.9288314524936294,
-                "Utility": 0.7600009524438982
+                "Forget Ability": null,
+                "Utility": null
             },
             "Poisoned": {
-                "Forget Ability": 0.4603658536585366,
-                "Utility": 0.6000786660989691
-            },
-            "scrub": {
-                "Forget Ability": 0.4634146341463415,
-                "Utility": 0.6413558178639928
-            }
-        },
-        "0": {
-            "Original": {
-                "Forget Ability": 0.8076733351603179,
-                "Utility": 0.5735090127600455
-            },
-            "Poisoned": {
-                "Forget Ability": 0.007687037544532749,
-                "Utility": 0.6009975208553044
+                "Forget Ability": null,
+                "Utility": null
             },
             "megu": {
-                "Forget Ability": 0.0,
-                "Utility": 0.015550800716615945
+                "Forget Ability": null,
+                "Utility": null
             }
         }
     },
     "arguments": {
         "train_ratio": 0.8,
-        "attack_type": "label",
-        "unlearning_model": "scrub",
+        "attack_type": "random",
+        "unlearning_model": "megu",
         "gnn": "gcn",
         "hidden_dim": 64,
         "unlearning_epochs": 50,
-        "request": "edge",
+        "request": "node",
         "edge_attack_type": "specific",
-        "df_size": 0.1,
+        "df_size": 0.5,
         "test_poison_fraction": 0.2,
-        "dataset": "Cora_p",
+        "poison_tensor_size": 100,
+        "dataset": "Cora",
         "random_seed": 0,
         "train_lr": 0.005191475570177285,
         "unlearn_lr": 0.015,
         "weight_decay": 0.00016211813194850176,
         "optimizer": "Adam",
-        "training_epochs": 50,
+        "training_epochs": 1208,
         "valid_freq": 30,
         "checkpoint_dir": "./checkpoint",
         "alpha": 0.5,
@@ -145,10 +82,8 @@
         "k_hop": 2,
         "contrastive_eps": 0.001,
         "contrastive_frac": 0.1,
-        "num_runs": 2,
         "kappa": 0.01,
         "alpha1": 0.8,
-        "alpha2": 0.5,
-        "poison_tensor_size": 100
+        "alpha2": 0.5
     }
 }
