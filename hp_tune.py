@@ -263,7 +263,7 @@ hp_tuning_params_dict = {
     'megu': {
         'unlearn_lr': (1e-5, 1e-1, "log"),
         'unlearning_epochs': (10, 500, "int"),
-        'kappa': (0, 1, "float"),
+        'kappa': (0, 0.1, "float"),
         'alpha1': (0, 1, "float"),
         'alpha2': (0, 1, "float"),
     },
@@ -295,15 +295,21 @@ def objective(trial, model, data):
     optimizer = utils.get_optimizer(args, model)
     trainer = utils.get_trainer(args, model, data, optimizer)
 
-    train_acc, msc_rate, time_taken = trainer.train()
+    _, _, time_taken = trainer.train()
+    
+    forg, util = trainer.get_score(args.attack_type, class1=57, class2=33)
     if args.attack_type == "trigger":
-        psr = trainer.calculate_PSR()
-        print(psr)
-        return [train_acc, psr, time_taken]
+        forg = 1 - forg
+    
+    trial.set_user_attr("time_taken", time_taken)
+    trial.set_user_attr("forget_ability", forg)
+    trial.set_user_attr("utility", util)
+    
+    # combine forget and utility to get a single objective
+    obj = 0.5 * forg + 0.5 * util    
 
-    poison_acc, clean_acc = trainer.subset_acc(class1=57, class2=33)
     # We want to minimize misclassification rate and maximize accuracy
-    return [train_acc, poison_acc, clean_acc, time_taken]
+    return obj
 
 
 def objective_clean(trial, model, data):
@@ -358,14 +364,10 @@ if __name__ == "__main__":
     objective_func = partial(objective, model=model, data=poisoned_data)
 
     print("==HYPERPARAMETER TUNING==")
-    if args.attack_type == "trigger":
-        directions = ["maximize", "minimize", "minimize"]
-    else:
-        directions = ["maximize", "maximize", "maximize", "minimize"]
     # Create a study with TPE sampler
     study = optuna.create_study(
         sampler=TPESampler(),
-        directions=directions,
+        direction="maximize",
         study_name=f"{args.dataset}_{args.attack_type}_{args.unlearning_model}_{args.random_seed}",
         load_if_exists=True,
         storage="sqlite:///hptune_newest.db",
@@ -376,9 +378,9 @@ if __name__ == "__main__":
     # Optimize the objective function
 
     # reduce trials for utu and contrastive
-    if args.unlearning_model == "utu":
+    if args.unlearning_model == "utu" or args.unlearning_model == "retrain":
         study.optimize(objective_func, n_trials=1)
     elif args.unlearning_model == "contrastive":
-        study.optimize(objective_func, n_trials=100)
+        study.optimize(objective_func, n_trials=300)
     else:
-        study.optimize(objective_func, n_trials=200)
+        study.optimize(objective_func, n_trials=500)

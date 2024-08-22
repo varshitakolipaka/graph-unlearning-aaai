@@ -1,17 +1,9 @@
 {
     "results": {
         "0": {
-            "original": {
-                "forget": 0.7968073444779391,
-                "utility": 0.5765930813771062
-            },
             "poisoned": {
-                "forget": 0.6115785146615511,
-                "utility": 0.5823732501531053
-            },
-            "retrain": {
-                "forget": 0.6358180323376268,
-                "utility": 0.5957464038650427
+                "forget": 0.4935324746505892,
+                "utility": 0.5870261645992406
             }
         },
         "1": {
@@ -71,29 +63,21 @@
             }
         },
         "0": {
-            "original": {
-                "forget": 0.8104823239243628,
-                "utility": 0.5767661895076955
-            },
             "poisoned": {
                 "forget": 0.4935324746505892,
                 "utility": 0.5870261645992406
-            },
-            "utu": {
-                "forget": 0.3979583447519868,
-                "utility": 0.5882016188757597
             }
         }
     },
     "arguments": {
         "train_ratio": 0.8,
         "attack_type": "label",
-        "unlearning_model": "utu",
+        "unlearning_model": "megu",
         "gnn": "gcn",
         "hidden_dim": 64,
         "unlearning_epochs": 50,
         "request": "node",
-        "edge_attack_type": "random",
+        "edge_attack_type": "specific",
         "df_size": 0.5,
         "test_poison_fraction": 0.2,
         "dataset": "Cora",

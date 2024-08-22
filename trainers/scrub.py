@@ -128,6 +128,7 @@ class ScrubTrainer(Trainer):
     def unlearn_nc_lf(self):
         forget_mask = self.poisoned_dataset.df_mask
         self.maximize=False
+        start_time = time.time()
         while self.curr_step < self.opt.unlearn_iters:
             if self.curr_step < self.opt.msteps:
                 self.maximize=True
@@ -139,14 +140,15 @@ class ScrubTrainer(Trainer):
             self.train_one_epoch(data=self.poisoned_dataset, mask=self.poisoned_dataset.dr_mask)
             train_acc, msc_rate, f1 = self.evaluate()
             print(f'Test Acc: {train_acc}, Misclassification: {msc_rate},  F1 Score: {f1}')
-        return
-    def train(self):
-        self.unlearn_nc_lf()
+        end_time = time.time()
         self.model = self.best_model
         train_acc, msc_rate, f1 = self.evaluate()
-        print("UNLEARNING DONE.")
-        print(f'Test Acc: {train_acc}, Misclassification: {msc_rate},  F1 Score: {f1}')
+        return train_acc, msc_rate, end_time - start_time
+    
+    def train(self):
+        return self.unlearn_nc_lf()
         
+    
     def get_save_prefix(self):
         self.unlearn_file_prefix = self.opt.pretrain_file_prefix+'/'+str(self.opt.deletion_size)+'_'+self.opt.unlearn_method+'_'+self.opt.exp_name
         self.unlearn_file_prefix += '_'+str(self.opt.unlearn_iters)+'_'+str(self.opt.k)
