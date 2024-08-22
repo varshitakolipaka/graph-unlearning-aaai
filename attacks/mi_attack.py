@@ -15,12 +15,16 @@ device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 class AttackModel(nn.Module):
     def __init__(self, num_features):
         super(AttackModel, self).__init__()
-        self.fc1 = nn.Linear(num_features, 64)
-        self.fc2 = nn.Linear(64, 2)
+        self.fc1 = nn.Linear(num_features, 32)
+        self.relu = nn.ReLU()
+        self.fc2 = nn.Linear(32, 1)
+        self.sigmoid = nn.Sigmoid()
 
     def forward(self, x):
-        x = F.relu(self.fc1(x))
+        x = self.fc1(x)
+        x = self.relu(x)
         x = self.fc2(x)
+        x = self.sigmoid(x)
         return x
 
 class MIAttackTrainer(EdgeTrainer):

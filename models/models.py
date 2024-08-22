@@ -17,6 +17,15 @@ class GCN(nn.Module):
             return x1, x2
         return x2
 
+    def dup_decode(self, z, pos_edge_index, neg_edge_index=None):
+        if neg_edge_index is not None:
+            edge_index = torch.cat([pos_edge_index, neg_edge_index], dim=-1)
+            logits = (z[edge_index[0]] * z[edge_index[1]])
+        else:
+            edge_index = pos_edge_index
+            logits = (z[edge_index[0]] * z[edge_index[1]]).sum(dim=-1)
+        return logits
+
     def decode(self, z, pos_edge_index, neg_edge_index=None):
         if neg_edge_index is not None:
             edge_index = torch.cat([pos_edge_index, neg_edge_index], dim=-1)
