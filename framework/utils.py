@@ -51,7 +51,7 @@ def train_test_split(data, seed, train_ratio=0.1):
     data.train_mask[train_idx] = True
     data.test_mask = torch.zeros(n, dtype=torch.bool)
     data.test_mask[test_idx] = True
-    return data
+    return data, train_idx, test_idx
 
 def seed_everything(seed):
     random.seed(seed)
