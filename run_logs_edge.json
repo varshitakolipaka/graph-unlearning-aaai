@@ -192,13 +192,17 @@
             "poisoned": {
                 "forget": 0.2948479035352151,
                 "utility": 0.5928044840416539
+            },
+            "contrastive": {
+                "forget": 0.6650863250205535,
+                "utility": 0.5624525309703926
             }
         }
     },
     "arguments": {
         "train_ratio": 0.8,
         "attack_type": "edge",
-        "unlearning_model": "gif",
+        "unlearning_model": "contrastive",
         "gnn": "gcn",
         "hidden_dim": 64,
         "unlearning_epochs": 50,
@@ -209,7 +213,7 @@
         "dataset": "Cora",
         "random_seed": 0,
         "train_lr": 0.005191475570177285,
-        "unlearn_lr": 0.05,
+        "unlearn_lr": 0.015,
         "weight_decay": 0.00016211813194850176,
         "optimizer": "Adam",
         "training_epochs": 1208,

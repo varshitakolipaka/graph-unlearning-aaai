@@ -1,5 +1,6 @@
 import copy
 import os
+import time
 import torch
 from framework import utils
 from framework.training_args import parse_args
@@ -13,15 +14,81 @@ import optuna
 from optuna.samplers import TPESampler
 from functools import partial
 from logger import Logger
+import torch
+import matplotlib.pyplot as plt
+import seaborn as sns
+from sklearn.manifold import TSNE
+
 
 args = parse_args()
 print(args)
 
-logger = Logger(f"run_logs_{args.attack_type}.json")
-logger.log_arguments(args)
-
 utils.seed_everything(args.random_seed)
 device = torch.device("cuda") if torch.cuda.is_available() else torch.device("cpu")
+
+def plot_embeddings(model, data, class1, class2, is_dr=False, mask="test", name=""):
+    # Set the model to evaluation mode
+    model.eval()
+
+    # Forward pass: get embeddings
+    with torch.no_grad():
+        if is_dr:
+            embeddings = model(data.x, data.edge_index[:, data.dr_mask])
+        else:
+            embeddings = model(data.x, data.edge_index)
+
+    # If embeddings have more than 2 dimensions, apply t-SNE
+    print("Embeddings shape:", embeddings.shape)
+    if embeddings.shape[1] > 2:
+        embeddings = TSNE(n_components=2).fit_transform(embeddings.cpu())
+        embeddings = torch.tensor(embeddings).to(device)
+    print("Embeddings shape after t-SNE:", embeddings.shape)
+    # Get the mask (either test, train, or val)
+    if mask == "test":
+        mask = data.test_mask
+    elif mask == "train":
+        mask = data.train_mask
+    else:
+        mask = data.val_mask
+
+    # Filter embeddings and labels based on the mask
+    embeddings = embeddings[mask]
+    labels = data.y[mask]
+
+    # Create masks for class1, class2, and other classes
+    class1_mask = (labels == class1)
+    class2_mask = (labels == class2)
+    other_mask = ~(class1_mask | class2_mask)
+
+    # convert masks to numpy
+    class1_mask = class1_mask.cpu().numpy()
+    class2_mask = class2_mask.cpu().numpy()
+    other_mask = other_mask.cpu().numpy()
+
+    # Prepare the plot
+    plt.figure(figsize=(10, 8))
+    sns.set(style="whitegrid")
+
+    # convert to numpy
+    embeddings = embeddings.cpu().numpy()
+    labels = labels.cpu().numpy()
+
+    # Plot class1
+    plt.scatter(embeddings[class1_mask, 0], embeddings[class1_mask, 1], label=f'Class {class1}', color='blue', alpha=0.6)
+    # Plot class2
+    plt.scatter(embeddings[class2_mask, 0], embeddings[class2_mask, 1], label=f'Class {class2}', color='red', alpha=0.6)
+    # Plot other classes
+    plt.scatter(embeddings[other_mask, 0], embeddings[other_mask, 1], label='Other Classes', color='gray', alpha=0.4)
+
+    # Add legend and labels
+    plt.legend()
+    plt.title("Embeddings Visualization")
+    plt.xlabel("Embedding Dimension 1")
+    plt.ylabel("Embedding Dimension 2")
+
+    # Save the plot
+    os.makedirs("./plots", exist_ok=True)
+    plt.savefig(f"./plots/{args.dataset}_{args.attack_type}_{args.df_size}_{args.random_seed}_{name}_embeddings.png")
 
 
 def train():
@@ -42,14 +109,8 @@ def train():
         forg, util = clean_trainer.get_score(args.attack_type, class1=57, class2=33)
 
         print(f"==OG Model==\nForget Ability: {forg}, Utility: {util}")
-        logger.log_result(args.random_seed, "original", {"forget": forg, "utility": util})
-
-    # save the clean model
-    os.makedirs("./data", exist_ok=True)
-    torch.save(
-        clean_model,
-        f"./data/{args.dataset}_{args.attack_type}_{args.df_size}_{args.random_seed}_clean_model.pt",
-    )
+        # logger.log_result(args.random_seed, "original", {"forget": forg, "utility": util})
+        plot_embeddings(clean_model, clean_data, 57, 33, is_dr=False, mask="test", name="original")
 
     return clean_data
 
@@ -79,11 +140,12 @@ def poison(clean_data=None):
 
         forg, util = poisoned_trainer.get_score(args.attack_type, class1=57, class2=33)
         print(f"==Poisoned Model==\nForget Ability: {forg}, Utility: {util}")
-        logger.log_result(
-            args.random_seed, "poisoned", {"forget": forg, "utility": util}
-        )
+        plot_embeddings(poisoned_model, poisoned_data, 57, 33, is_dr=False, mask="test", name="poisoned")
+        # logger.log_result(
+        #     args.random_seed, "poisoned", {"forget": forg, "utility": util}
+        # )
 
-        # print(poisoned_trainer.calculate_PSR())
+        # prirnt(poisoned_trainer.calculate_PSR())
         return poisoned_data, poisoned_indices, poisoned_model
 
     print("==POISONING==")
@@ -127,23 +189,25 @@ def poison(clean_data=None):
     # save the poisoned data and model and indices to np file
     os.makedirs("./data", exist_ok=True)
 
-    torch.save(
-        poisoned_model,
-        f"./data/{args.dataset}_{args.attack_type}_{args.df_size}_{args.random_seed}_poisoned_model.pt",
-    )
+    # torch.save(
+    #     poisoned_model,
+    #     f"./data/{args.dataset}_{args.attack_type}_{args.df_size}_{args.random_seed}_poisoned_model.pt",
+    # )
 
-    torch.save(
-        poisoned_data,
-        f"./data/{args.dataset}_{args.attack_type}_{args.df_size}_{args.random_seed}_poisoned_data.pt",
-    )
-    torch.save(
-        poisoned_indices,
-        f"./data/{args.dataset}_{args.attack_type}_{args.df_size}_{args.random_seed}_poisoned_indices.pt",
-    )
+    # torch.save(
+    #     poisoned_data,
+    #     f"./data/{args.dataset}_{args.attack_type}_{args.df_\
+        # size}_{args.random_seed}_poisoned_data.pt",
+    # )
+    # torch.save(
+    #     poisoned_indices,
+    #     f"./data/{args.dataset}_{args.attack_type}_{args.df_size}_{args.random_seed}_poisoned_indices.pt",
+    # )
 
     forg, util = poisoned_trainer.get_score(args.attack_type, class1=57, class2=33)
     print(f"==Poisoned Model==\nForget Ability: {forg}, Utility: {util}")
-    logger.log_result(args.random_seed, "poisoned", {"forget": forg, "utility": util})
+    # plot_embeddings(poisoned_model, poisoned_data, 57, 33, is_dr=False, mask="test", name="poisoned")
+    # logger.log_result(args.random_seed, "poisoned", {"forget": forg, "utility": util})
     # print(f"PSR: {poisoned_trainer.calculate_PSR()}")
     return poisoned_data, poisoned_indices, poisoned_model
 
@@ -189,60 +253,35 @@ def unlearn(poisoned_data, poisoned_indices, poisoned_model):
         )
         unlearn_trainer.train()
     else:
-        optimizer_unlearn = utils.get_optimizer(args, poisoned_model)
+        unlearn_model = copy.deepcopy(poisoned_model)
+        optimizer_unlearn = utils.get_optimizer(args, unlearn_model)
+        st = time.time()
         unlearn_trainer = utils.get_trainer(
-            args, poisoned_model, poisoned_data, optimizer_unlearn
+            args, unlearn_model, poisoned_data, optimizer_unlearn
         )
+        print("Time to get trainer: ", time.time() - st)
         unlearn_trainer.train()
     forg, util = unlearn_trainer.get_score(args.attack_type, class1=57, class2=33)
     print(f"==Unlearned Model==\nForget Ability: {forg}, Utility: {util}")
-    logger.log_result(
-        args.random_seed, args.unlearning_model, {"forget": forg, "utility": util}
-    )
+    # plot_embeddings(unlearn_model, poisoned_data, 57, 33, is_dr=True, mask="test", name=args.unlearning_model)
+    # logger.log_result(
+    #     args.random_seed, args.unlearning_model, {"forget": forg, "utility": util}
+    # )
     print("==UNLEARNING DONE==")
 
-
-hp_tuning_params_dict = {
+best_params_dict = {
     "retrain": {},
     "gnndelete": {
-        "unlearn_lr": (1e-5, 1e-1, "log"),
-        "weight_decay": (1e-5, 1e-1, "log"),
-        "unlearning_epochs": (10, 200, "int"),
-        "alpha": (0, 1, "float"),
-        "loss_type": (
-            [
-                "both_all",
-                "both_layerwise",
-                "only2_layerwise",
-                "only2_all",
-                "only1",
-                "only3",
-                "only3_all",
-                "only3_layerwise",
-            ],
-            "categorical",
-        ),
-    },
-    "gnndelete_ni": {
-        "unlearn_lr": (1e-5, 1e-1, "log"),
-        "weight_decay": (1e-5, 1e-1, "log"),
-        "unlearning_epochs": (10, 100, "int"),
-        "loss_type": (
-            [
-                "only2_layerwise",
-                "only2_all",
-                "only1",
-                "only3",
-                "only3_all",
-                "only3_layerwise",
-            ],
-            "categorical",
-        ),
+        "unlearn_lr": 0.000022557174578512438,
+        "weight_decay": 0.0005798215498447256,
+        "unlearning_epochs": 110,
+        "alpha": 0.0021765324727087056,
+        "loss_type": "both_layerwise",
     },
     "gif": {
-        "iteration": (10, 1000, "int"),
-        "scale": (1e7, 1e11, "log"),
-        "damp": (0.0, 1.0, "float"),
+        "iteration": 986,
+        "scale": 7706555780.747042,
+        "damp": 0.2640338318115278,
     },
     "gradient_ascent": {
         "unlearning_epochs": (10, 2000, "int"),
@@ -250,14 +289,14 @@ hp_tuning_params_dict = {
         "weight_decay": (1e-5, 1e-1, "log"),
     },
     "contrastive": {
-        "contrastive_epochs_1": (5, 50, "int"),
-        "contrastive_epochs_2": (5, 50, "int"),
-        "unlearn_lr": (1e-5, 1e-1, "log"),
-        "weight_decay": (1e-5, 1e-1, "log"),
-        "contrastive_margin": (1, 1e3, "log"),
-        "contrastive_lambda": (0.0, 1.0, "float"),
-        "contrastive_frac": (0.01, 0.5, "float"),
-        "k_hop": (1, 2, "int"),
+        "contrastive_epochs_1": 5,
+        "contrastive_epochs_2": 35,
+        "unlearn_lr": 0.01,
+        "weight_decay": 5e-4,
+        "contrastive_margin": 50,
+        "contrastive_lambda": 0.5,
+        "contrastive_frac": 0.3,
+        "k_hop": 2,
     },
     "utu": {},
     "scrub": {
@@ -269,11 +308,11 @@ hp_tuning_params_dict = {
         # 'weight_decay': (1e-5, 1e-1, "log"),
     },
     'megu': {
-        'unlearn_lr': (1e-5, 1e-2, "log"),
-        'unlearning_epochs': (10, 500, "int"),
-        'kappa': (0, 1, "float"),
-        'alpha1': (0, 1, "float"),
-        'alpha2': (0, 1, "float"),
+        'unlearn_lr': 1e-2,
+        'unlearning_epochs': 100,
+        'kappa': 0.01,
+        'alpha1': 0.5,
+        'alpha2': 0.8,
     },
     "clean": {
         "train_lr": (1e-5, 1e-1, "log"),
@@ -282,113 +321,12 @@ hp_tuning_params_dict = {
     },
 }
 
+if __name__ == '__main__':
+    clean_data = train()
+    poisoned_data, poisoned_idx, poisoned_model = poison(clean_data)
 
-def set_hp_tuning_params(trial):
-    hp_tuning_params = hp_tuning_params_dict[args.unlearning_model]
-    for hp, values in hp_tuning_params.items():
-        if values[1] == "categorical":
-            setattr(args, hp, trial.suggest_categorical(hp, values[0]))
-        elif values[2] == "int":
-            setattr(args, hp, trial.suggest_int(hp, values[0], values[1]))
-        elif values[2] == "float":
-            setattr(args, hp, trial.suggest_float(hp, values[0], values[1]))
-        elif values[2] == "log":
-            setattr(args, hp, trial.suggest_float(hp, values[0], values[1], log=True))
+    best_params = best_params_dict[args.unlearning_model]
 
+    print(args)
 
-def objective(trial, model, data):
-    # Define the hyperparameters to tune
-    set_hp_tuning_params(trial)
-
-    optimizer = utils.get_optimizer(args, model)
-    trainer = utils.get_trainer(args, model, data, optimizer)
-
-    _, _, time_taken = trainer.train()
-
-    forg, util = trainer.get_score(args.attack_type, class1=57, class2=33)
-    if args.attack_type == "trigger":
-        forg = 1 - forg
-
-    trial.set_user_attr("time_taken", time_taken)
-    trial.set_user_attr("forget_ability", forg)
-    trial.set_user_attr("utility", util)
-
-    # combine forget and utility to get a single objective
-    obj = 0.5 * forg + 0.5 * util
-
-    # We want to minimize misclassification rate and maximize accuracy
-    return obj
-
-
-def objective_clean(trial, model, data):
-    # Define the hyperparameters to tune
-    set_hp_tuning_params(trial)
-
-    optimizer = torch.optim.Adam(
-        model.parameters(), lr=args.train_lr, weight_decay=args.weight_decay
-    )
-    trainer = Trainer(model, data, optimizer, args.training_epochs)
-
-    train_acc, msc_rate, time_taken = trainer.train()
-    if args.attack_type == "trigger":
-        psr = trainer.calculate_PSR()
-        return [train_acc, psr, time_taken]
-
-    poison_acc, clean_acc = trainer.subset_acc(class1=57, class2=33)
-
-    # We want to minimize misclassification rate and maximize accuracy
-    return [train_acc, poison_acc, clean_acc, time_taken]
-
-
-if __name__ == "__main__":
-    # clean_data = train()
-    poisoned_data, poisoned_indices, poisoned_model = poison()
-    # unlearn(poisoned_data, poisoned_indices, poisoned_model)
-
-    utils.find_masks(
-        poisoned_data, poisoned_indices, args, attack_type=args.attack_type
-    )
-
-    if "gnndelete" in args.unlearning_model:
-        # Create a partial function with additional arguments
-        model = GCNDelete(
-            poisoned_data.num_features,
-            args.hidden_dim,
-            poisoned_data.num_classes,
-            mask_1hop=poisoned_data.sdf_node_1hop_mask,
-            mask_2hop=poisoned_data.sdf_node_2hop_mask,
-        )
-
-        # copy the weights from the poisoned model
-        state_dict = poisoned_model.state_dict()
-        state_dict["deletion1.deletion_weight"] = model.deletion1.deletion_weight
-        state_dict["deletion2.deletion_weight"] = model.deletion2.deletion_weight
-        state_dict["deletion3.deletion_weight"] = model.deletion3.deletion_weight
-
-        model.load_state_dict(state_dict)
-    else:
-        model = poisoned_model
-
-    objective_func = partial(objective, model=model, data=poisoned_data)
-
-    print("==HYPERPARAMETER TUNING==")
-    # Create a study with TPE sampler
-    study = optuna.create_study(
-        sampler=TPESampler(),
-        direction="maximize",
-        study_name=f"{args.dataset}_{args.attack_type}_{args.df_size}_{args.unlearning_model}_{args.random_seed}",
-        load_if_exists=True,
-        storage="sqlite:///hptune_newest.db",
-    )
-
-    print("==OPTIMIZING==")
-
-    # Optimize the objective function
-
-    # reduce trials for utu and contrastive
-    if args.unlearning_model == "utu" or args.unlearning_model == "retrain":
-        study.optimize(objective_func, n_trials=1)
-    elif args.unlearning_model == "contrastive":
-        study.optimize(objective_func, n_trials=100)
-    else:
-        study.optimize(objective_func, n_trials=200)
+    unlearn(poisoned_data, poisoned_idx, poisoned_model)

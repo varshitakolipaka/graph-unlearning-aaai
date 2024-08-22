@@ -30,4 +30,5 @@ def label_flip_attack(data, epsilon, seed):
     print(f"Poisoned {num_flips} labels in total from class {class1} and class {class2}")
     
     flipped_indices = np.concatenate([flip_indices_class1, flip_indices_class2])
+    data.poisoned_nodes = torch.tensor(flipped_indices)
     return data, flipped_indices

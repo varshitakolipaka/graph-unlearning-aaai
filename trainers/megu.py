@@ -116,19 +116,19 @@ class MeguTrainer(Trainer):
         self.data.edge_index_unlearn = self.data.edge_index.clone()
 
         if hasattr(self.data, 'df_mask'):
-            if self.data.df_mask.dim() == 1 and self.data.df_mask.size(0) == self.data.num_nodes:
-                # Node-level mask
-                unique_nodes = torch.where(self.data.df_mask)[0].cpu().numpy()
-            elif self.data.df_mask.dim() == 1 and self.data.df_mask.size(0) == self.data.edge_index.shape[1]:
-                # Edge-level mask
-                remove_indices = torch.where(self.data.df_mask)[0].cpu().numpy()
-                edge_index = self.data.edge_index.cpu().numpy()
-                remove_edges = edge_index[:, remove_indices]
-                unique_nodes = np.unique(remove_edges)
-            else:
-                raise ValueError("Unexpected shape for df_mask")
+            # if self.data.df_mask.dim() == 1 and self.data.df_mask.size(0) == self.data.num_nodes:
+            #     # Node-level mask
+            #     unique_nodes = torch.where(self.data.df_mask)[0].cpu().numpy()
+            # elif self.data.df_mask.dim() == 1 and self.data.df_mask.size(0) == self.data.edge_index.shape[1]:
+            #     # Edge-level mask
+            #     remove_indices = torch.where(self.data.df_mask)[0].cpu().numpy()
+            #     edge_index = self.data.edge_index.cpu().numpy()
+            #     remove_edges = edge_index[:, remove_indices]
+            #     unique_nodes = np.unique(remove_edges)
+            # else:
+            #     raise ValueError("Unexpected shape for df_mask")
 
-            unique_nodes = unique_nodes[unique_nodes < self.data.num_nodes]
+            unique_nodes = self.data.poisoned_nodes.cpu().numpy()
             
             self.data.edge_index_unlearn = self.update_edge_index_unlearn(unique_nodes)
             
@@ -163,7 +163,8 @@ class MeguTrainer(Trainer):
         
         remain_indices_not = unique_indices_not[sort_indices[valid_search_indices]]
         remain_indices = np.union1d(remain_indices, remain_indices_not)
-
+        self.data.dr_mask = torch.zeros(self.data.edge_index.shape[1], dtype=torch.bool)
+        self.data.dr_mask[remain_indices] = True
         return torch.from_numpy(edge_index[:, remain_indices])
 
     # def evaluate(self, run):
@@ -276,7 +277,7 @@ class MeguTrainer(Trainer):
                 preds = torch.argmax(preds, axis=1).type_as(self.data.y)
 
         start_time = time.time()
-        for epoch in range(self.args.unlearning_epochs):
+        for epoch in trange(self.args.unlearning_epochs):
             self.model.train()
             operator.train()
             optimizer.zero_grad()
@@ -293,13 +294,13 @@ class MeguTrainer(Trainer):
                 loss_r = criterionKD(out[self.neighbor_khop], out_ori[self.neighbor_khop]) + F.cross_entropy(out_ori[self.neighbor_khop], preds[self.neighbor_khop])
 
             loss = self.args.kappa * loss_u + loss_r
-
+            print(loss)
             loss.backward()
             optimizer.step()
 
         unlearn_time = time.time() - start_time
 
-        train_acc, msc_rate, f1 = self.evaluate(is_dr=False)
+        train_acc, msc_rate, f1 = self.evaluate(is_dr=True)
         print(f'Train Acc: {train_acc}, Misclassification: {msc_rate},  F1 Score: {f1}')
 
 

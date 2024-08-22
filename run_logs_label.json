@@ -1,9 +1,9 @@
 {
     "results": {
         "0": {
-            "original": {
-                "forget": NaN,
-                "utility": 0.8082382381723928
+            "poisoned": {
+                "forget": 0.4935324746505892,
+                "utility": 0.5870261645992406
             }
         },
         "1": {
@@ -63,9 +63,9 @@
             }
         },
         "0": {
-            "original": {
-                "forget": NaN,
-                "utility": 0.8082382381723928
+            "poisoned": {
+                "forget": 0.4935324746505892,
+                "utility": 0.5870261645992406
             }
         }
     },
