@@ -375,7 +375,7 @@ def main():
         load_if_exists=True,
         storage='sqlite:///hp_tuning_cora_p_mi.db',
     )
-    study.optimize(objective, n_trials=75)
+    study.optimize(objective, n_trials=1)
 
 if __name__ == "__main__":
     main()
