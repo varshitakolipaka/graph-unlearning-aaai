@@ -64,8 +64,7 @@ class ScrubTrainer(Trainer):
         self.curr_step = 0
         self.set_model(model)
         self.poisoned_dataset = poisoned_dataset
-
-
+        self.get_masks()
         self.scheduler = LinearLR(self.optimizer, T=self.opt.unlearn_iters*1.25, warmup_epochs=self.opt.unlearn_iters//100) # Spend 1% time in warmup, and stop 66% of the way through training 
         self.og_model = copy.deepcopy(model)
         self.og_model.eval()
@@ -74,6 +73,28 @@ class ScrubTrainer(Trainer):
 
     def set_model(self, model):
         self.model = model
+
+    def get_masks(self):
+        if not hasattr(self.poisoned_dataset, 'val_mask'):
+            # If val_mask doesn't exist, create it from train_mask
+            train_mask = self.poisoned_dataset.train_mask
+            test_mask = self.poisoned_dataset.test_mask
+            
+            # Determine the number of nodes to move to val_mask
+            val_size = int(train_mask.sum() * self.opt.val_ratio)
+            
+            # Randomly select nodes from train_mask to create val_mask
+            val_indices = torch.where(train_mask)[0][torch.randperm(train_mask.sum())[:val_size]]
+            val_mask = torch.zeros_like(train_mask)
+            val_mask[val_indices] = True
+            
+            # Remove val nodes from train_mask
+            train_mask[val_indices] = False
+            
+            # Assign the new masks to the dataset
+            self.poisoned_dataset.val_mask = val_mask
+            self.poisoned_dataset.train_mask = train_mask
+            
 
     def train_one_epoch(self, data, mask):
         self.model.train()
