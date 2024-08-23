@@ -64,8 +64,8 @@
         },
         "0": {
             "poisoned": {
-                "forget": 0.4731296245546725,
-                "utility": 0.5856679151209705
+                "forget": 0.5181624190938512,
+                "utility": 0.8785982478097623
             }
         }
     },
@@ -80,13 +80,13 @@
         "edge_attack_type": "specific",
         "df_size": 0.5,
         "test_poison_fraction": 0.2,
-        "dataset": "Cora",
+        "dataset": "PubMed",
         "random_seed": 0,
         "train_lr": 0.005191475570177285,
         "unlearn_lr": 0.015,
         "weight_decay": 0.00016211813194850176,
         "optimizer": "Adam",
-        "training_epochs": 50,
+        "training_epochs": 1208,
         "valid_freq": 30,
         "checkpoint_dir": "./checkpoint",
         "alpha": 0.5,

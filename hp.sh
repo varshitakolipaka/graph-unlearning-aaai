@@ -22,10 +22,10 @@
 # python hp_tune.py --unlearning_model retrain --dataset Cora --attack_type edge --request edge --df_size 5000 --random_seed 0
 
 # python hp_tune.py --unlearning_model gnndelete --dataset PubMed --df_size 0.5 --random_seed 0
-python hp_tune.py --unlearning_model utu --dataset PubMed --df_size 0.5 --random_seed 0
-python hp_tune.py --unlearning_model gif --dataset PubMed --df_size 0.5 --random_seed 0
+# python hp_tune.py --unlearning_model utu --dataset PubMed --df_size 0.5 --random_seed 0
+# python hp_tune.py --unlearning_model gif --dataset PubMed --df_size 0.5 --random_seed 0
 # python hp_tune.py --unlearning_model gradient_ascent --dataset PubMed --df_size 0.5 --random_seed 0
-python hp_tune.py --unlearning_model scrub --dataset PubMed --df_size 0.5 --random_seed 0
+# python hp_tune.py --unlearning_model scrub --dataset PubMed --df_size 0.5 --random_seed 0
 python hp_tune.py --unlearning_model contrastive --dataset PubMed --df_size 0.5 --random_seed 0
 
 # python hp_tune.py --unlearning_model gnndelete --dataset Amazon
