@@ -70,7 +70,7 @@ class Trainer:
             self.optimizer.zero_grad()
         time_taken = time.time() - st
         train_acc, msc_rate, f1 = self.evaluate()
-        print(f'Train Acc: {train_acc}, Misclassification: {msc_rate},  F1 Score: {f1}')
+        # print(f'Train Acc: {train_acc}, Misclassification: {msc_rate},  F1 Score: {f1}')
         # plot_loss_vs_epochs(losses)
         return train_acc, msc_rate, time_taken
 

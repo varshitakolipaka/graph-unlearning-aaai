@@ -301,7 +301,7 @@ class MeguTrainer(Trainer):
         unlearn_time = time.time() - start_time
 
         train_acc, msc_rate, f1 = self.evaluate(is_dr=True)
-        print(f'Train Acc: {train_acc}, Misclassification: {msc_rate},  F1 Score: {f1}')
+        # print(f'Train Acc: {train_acc}, Misclassification: {msc_rate},  F1 Score: {f1}')
 
 
         return train_acc, msc_rate, unlearn_time

@@ -23,6 +23,17 @@ from sklearn.manifold import TSNE
 args = parse_args()
 print(args)
 
+class_dataset_dict = {
+    'Cora': {
+        'class1': 57,
+        'class2': 33,
+    },
+    'PubMed': {
+        'class1': 2,
+        'class2': 1,
+    },
+}
+
 utils.seed_everything(args.random_seed)
 device = torch.device("cuda") if torch.cuda.is_available() else torch.device("cpu")
 
@@ -106,11 +117,12 @@ def train():
     clean_trainer.train()
 
     if args.attack_type != "trigger":
-        forg, util = clean_trainer.get_score(args.attack_type, class1=57, class2=33)
+        forg, util = clean_trainer.get_score(args.attack_type, class1=class_dataset_dict[args.dataset]['class1'], class2=class_dataset_dict[args.dataset]['class2'])
 
         print(f"==OG Model==\nForget Ability: {forg}, Utility: {util}")
         # logger.log_result(args.random_seed, "original", {"forget": forg, "utility": util})
-        plot_embeddings(clean_model, clean_data, 57, 33, is_dr=False, mask="test", name="original")
+        if args.embs_all:
+            plot_embeddings(clean_model, clean_data, class_dataset_dict[args.dataset]['class1'], class_dataset_dict[args.dataset]['class2'], is_dr=False, mask="test", name="original")
 
     return clean_data
 
@@ -138,9 +150,10 @@ def poison(clean_data=None):
         )
         poisoned_trainer.evaluate()
 
-        forg, util = poisoned_trainer.get_score(args.attack_type, class1=57, class2=33)
+        forg, util = poisoned_trainer.get_score(args.attack_type, class1=class_dataset_dict[args.dataset]['class1'], class2=class_dataset_dict[args.dataset]['class2'])
         print(f"==Poisoned Model==\nForget Ability: {forg}, Utility: {util}")
-        plot_embeddings(poisoned_model, poisoned_data, 57, 33, is_dr=False, mask="test", name="poisoned")
+        if args.embs_all:
+            plot_embeddings(poisoned_model, poisoned_data, class_dataset_dict[args.dataset]['class1'], class_dataset_dict[args.dataset]['class2'], is_dr=False, mask="test", name="poisoned")
         # logger.log_result(
         #     args.random_seed, "poisoned", {"forget": forg, "utility": util}
         # )
@@ -204,9 +217,10 @@ def poison(clean_data=None):
     #     f"./data/{args.dataset}_{args.attack_type}_{args.df_size}_{args.random_seed}_poisoned_indices.pt",
     # )
 
-    forg, util = poisoned_trainer.get_score(args.attack_type, class1=57, class2=33)
+    forg, util = poisoned_trainer.get_score(args.attack_type, class1=class_dataset_dict[args.dataset]['class1'], class2=class_dataset_dict[args.dataset]['class2'])
     print(f"==Poisoned Model==\nForget Ability: {forg}, Utility: {util}")
-    # plot_embeddings(poisoned_model, poisoned_data, 57, 33, is_dr=False, mask="test", name="poisoned")
+    if args.embs_all:
+        plot_embeddings(poisoned_model, poisoned_data, class_dataset_dict[args.dataset]['class1'], class_dataset_dict[args.dataset]['class2'], is_dr=False, mask="test", name="poisoned")
     # logger.log_result(args.random_seed, "poisoned", {"forget": forg, "utility": util})
     # print(f"PSR: {poisoned_trainer.calculate_PSR()}")
     return poisoned_data, poisoned_indices, poisoned_model
@@ -261,9 +275,10 @@ def unlearn(poisoned_data, poisoned_indices, poisoned_model):
         )
         print("Time to get trainer: ", time.time() - st)
         unlearn_trainer.train()
-    forg, util = unlearn_trainer.get_score(args.attack_type, class1=57, class2=33)
+    forg, util = unlearn_trainer.get_score(args.attack_type, class1=class_dataset_dict[args.dataset]['class1'], class2=class_dataset_dict[args.dataset]['class2'])
     print(f"==Unlearned Model==\nForget Ability: {forg}, Utility: {util}")
-    # plot_embeddings(unlearn_model, poisoned_data, 57, 33, is_dr=True, mask="test", name=args.unlearning_model)
+    if args.embs_all or args.embs_unlearn:
+        plot_embeddings(unlearn_model, poisoned_data, class_dataset_dict[args.dataset]['class1'], class_dataset_dict[args.dataset]['class2'], is_dr=True, mask="test", name=args.unlearning_model)
     # logger.log_result(
     #     args.random_seed, args.unlearning_model, {"forget": forg, "utility": util}
     # )
@@ -272,10 +287,10 @@ def unlearn(poisoned_data, poisoned_indices, poisoned_model):
 best_params_dict = {
     "retrain": {},
     "gnndelete": {
-        "unlearn_lr": 0.000022557174578512438,
+        "unlearn_lr": 0.00551402238578268,
         "weight_decay": 0.0005798215498447256,
-        "unlearning_epochs": 110,
-        "alpha": 0.0021765324727087056,
+        "unlearning_epochs": 72,
+        "alpha": 0.02811472371516137,
         "loss_type": "both_layerwise",
     },
     "gif": {

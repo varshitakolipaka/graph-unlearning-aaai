@@ -23,6 +23,16 @@ logger.log_arguments(args)
 utils.seed_everything(args.random_seed)
 device = torch.device("cuda") if torch.cuda.is_available() else torch.device("cpu")
 
+class_dataset_dict = {
+    'Cora': {
+        'class1': 57,
+        'class2': 33,
+    },
+    'PubMed': {
+        'class1': 2,
+        'class2': 1,
+    },
+}
 
 def train():
     # dataset
@@ -39,7 +49,7 @@ def train():
     clean_trainer.train()
 
     if args.attack_type != "trigger":
-        forg, util = clean_trainer.get_score(args.attack_type, class1=57, class2=33)
+        forg, util = clean_trainer.get_score(args.attack_type, class1=class_dataset_dict[args.dataset]['class1'], class2=class_dataset_dict[args.dataset]['class2'])
 
         print(f"==OG Model==\nForget Ability: {forg}, Utility: {util}")
         logger.log_result(args.random_seed, "original", {"forget": forg, "utility": util})
@@ -77,7 +87,7 @@ def poison(clean_data=None):
         )
         poisoned_trainer.evaluate()
 
-        forg, util = poisoned_trainer.get_score(args.attack_type, class1=57, class2=33)
+        forg, util = poisoned_trainer.get_score(args.attack_type, class1=class_dataset_dict[args.dataset]['class1'], class2=class_dataset_dict[args.dataset]['class2'])
         print(f"==Poisoned Model==\nForget Ability: {forg}, Utility: {util}")
         logger.log_result(
             args.random_seed, "poisoned", {"forget": forg, "utility": util}
@@ -141,7 +151,7 @@ def poison(clean_data=None):
         f"./data/{args.dataset}_{args.attack_type}_{args.df_size}_{args.random_seed}_poisoned_indices.pt",
     )
 
-    forg, util = poisoned_trainer.get_score(args.attack_type, class1=57, class2=33)
+    forg, util = poisoned_trainer.get_score(args.attack_type, class1=class_dataset_dict[args.dataset]['class1'], class2=class_dataset_dict[args.dataset]['class2'])
     print(f"==Poisoned Model==\nForget Ability: {forg}, Utility: {util}")
     logger.log_result(args.random_seed, "poisoned", {"forget": forg, "utility": util})
     # print(f"PSR: {poisoned_trainer.calculate_PSR()}")
@@ -305,7 +315,7 @@ def objective(trial, model, data):
 
     _, _, time_taken = trainer.train()
 
-    forg, util = trainer.get_score(args.attack_type, class1=57, class2=33)
+    forg, util = trainer.get_score(args.attack_type, class1=class_dataset_dict[args.dataset]['class1'], class2=class_dataset_dict[args.dataset]['class2'])
     if args.attack_type == "trigger":
         forg = 1 - forg
 
@@ -343,6 +353,7 @@ def objective_clean(trial, model, data):
 if __name__ == "__main__":
     # clean_data = train()
     poisoned_data, poisoned_indices, poisoned_model = poison()
+
     # unlearn(poisoned_data, poisoned_indices, poisoned_model)
 
     utils.find_masks(
@@ -391,4 +402,4 @@ if __name__ == "__main__":
     elif args.unlearning_model == "contrastive":
         study.optimize(objective_func, n_trials=100)
     else:
-        study.optimize(objective_func, n_trials=200)
+        study.optimize(objective_func, n_trials=100)
