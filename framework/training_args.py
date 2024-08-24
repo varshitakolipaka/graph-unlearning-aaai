@@ -42,7 +42,7 @@ def parse_args():
     parser.add_argument('--unlearn_lr', type=float, default=0.015, help='unlearn learning rate')
     parser.add_argument('--weight_decay', type=float, default=0.00016211813194850176, help='weight decay')
     parser.add_argument('--optimizer', type=str, default='Adam', help='optimizer to use')
-    parser.add_argument('--training_epochs', type=int, default=1208, help='number of epochs to train')
+    parser.add_argument('--training_epochs', type=int, default=50, help='number of epochs to train')
     parser.add_argument('--valid_freq', type=int, default=30, help='# of epochs to do validation')
     parser.add_argument('--checkpoint_dir', type=str, default='./checkpoint', help='checkpoint folder')
     parser.add_argument('--alpha', type=float, default=0.5, help='alpha in loss function')
