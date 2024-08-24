@@ -64,7 +64,7 @@ def train():
     clean_trainer = Trainer(clean_model, clean_data, optimizer, args.training_epochs)
     clean_trainer.train()
 
-    if args.attack_type != "random":
+    if args.attack_type != "label":
         forg, util = clean_trainer.get_score(args.attack_type, class1=57, class2=33)
 
         print(f"==OG Model==\nForget Ability: {forg}, Utility: {util}")
@@ -89,32 +89,39 @@ def train():
     labels = torch.cat((train_labels, test_labels), dim=0)
     # split train_logits into 80-20 train test split for probe
 
-    x_probe_train, x_probe_test, y_probe_train, y_probe_test = train_test_split(test_logits, test_labels, test_size=0.2, random_state=args.random_seed)
-    num_train = len(x_probe_train)
-    num_test = len(x_probe_test)
+    x_probe_train, x_probe_testval, y_probe_train, y_probe_testval = train_test_split(test_logits, test_labels, test_size=0.4, random_state=args.random_seed)
+    x_probe_test, x_probe_val, y_probe_test, y_probe_val = train_test_split(x_probe_testval, y_probe_testval, test_size=0.5, random_state=args.random_seed)
+    num_train = len(y_probe_train)
+    num_test = len(y_probe_test)
+    num_val = len(y_probe_val)
+
     # divide the train_logits into train and test for probe where num_train is the number of nodes in train and num_test is the number of nodes in test
 
-    x_probe_train = torch.cat((x_probe_train, train_logits[:num_train]), dim=0)
-    y_probe_train = torch.cat((y_probe_train, train_labels[:num_train]), dim=0)
-    x_probe_test = torch.cat((x_probe_test, train_logits[num_train:num_train+num_test]), dim=0)
-    y_probe_test = torch.cat((y_probe_test, train_labels[num_train:num_train+num_test]), dim=0)
+    x_probe_train = torch.cat((x_probe_train, train_logits[:num_train]), dim=0).to(device)
+    y_probe_train = torch.cat((y_probe_train, train_labels[:num_train]), dim=0).to(device)
+    x_probe_val = torch.cat((x_probe_val, train_logits[num_train:num_train+num_val]), dim=0).to(device)
+    y_probe_val = torch.cat((y_probe_val, train_labels[num_train:num_train+num_val]), dim=0).to(device)
+    x_probe_test = torch.cat((x_probe_test, train_logits[num_train+num_val:num_train+num_val+num_test]), dim=0).to(device)
+    y_probe_test = torch.cat((y_probe_test, train_labels[num_train+num_val:num_train+num_val+num_test]), dim=0).to(device)
 
-    tsne = TSNE(n_components=2, random_state=0)
-    logits_tsne = tsne.fit_transform(temp_logits.cpu().numpy())
+    # tsne = TSNE(n_components=2, random_state=0)
+    # logits_tsne = tsne.fit_transform(temp_logits.cpu().numpy())
 
-    # Plot
-    plt.figure(figsize=(10, 8))
-    scatter = plt.scatter(logits_tsne[:, 0], logits_tsne[:, 1], c=labels, cmap='viridis', alpha=0.7)
-    plt.colorbar(scatter, label='Labels')
-    plt.xlabel('t-SNE Dimension 1')
-    plt.ylabel('t-SNE Dimension 2')
-    plt.title('t-SNE of Logits Colored by Labels')
-    plt.savefig('tsne.png')
+    # # Plot
+    # plt.figure(figsize=(10, 8))
+    # scatter = plt.scatter(logits_tsne[:, 0], logits_tsne[:, 1], c=labels, cmap='viridis', alpha=0.7)
+    # plt.colorbar(scatter, label='Labels')
+    # plt.xlabel('t-SNE Dimension 1')
+    # plt.ylabel('t-SNE Dimension 2')
+    # plt.title('t-SNE of Logits Colored by Labels')
+    # plt.savefig('tsne.png')
 
     print(f"Number of nodes in probe train: {len(x_probe_train)}")
+    print(f"Number of nodes in probe val: {len(x_probe_val)}")
+    print(f"Number of nodes in probe test: {len(x_probe_test)}")
     
     criterion = nn.BCELoss()
-    optimizer = optim.Adam(attack_model.parameters(), lr=0.01)
+    optimizer = optim.Adam(attack_model.parameters(), lr=0.001)
 
     num_epochs = 200  # Example, you can adjust this
     attack_model = attack_model.to(device)
@@ -135,7 +142,13 @@ def train():
         optimizer.step()
 
         if (epoch + 1) % 10 == 0:
-            print(f'Epoch [{epoch + 1}/{num_epochs}], Loss: {loss.item():.4f}')
+            attack_model.eval()
+            with torch.no_grad():
+                val_outputs = attack_model(x_probe_val).squeeze()
+                val_loss = criterion(val_outputs, y_probe_val)
+                val_preds = (val_outputs > 0.5).float()
+                val_accuracy = accuracy_score(y_probe_val.cpu().numpy(), val_preds.cpu().numpy())
+                print(f'Epoch [{epoch + 1}/{num_epochs}], Loss: {loss.item()}, Val Loss: {val_loss.item():.4f}, Val Accuracy: {val_accuracy:.4f}')
 
     # Step 5: Evaluate the Attack Model (optional)
     attack_model.eval()
