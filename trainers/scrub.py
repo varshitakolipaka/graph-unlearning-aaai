@@ -8,6 +8,8 @@ opt = parse_args()
 from .base import Trainer
 from torch.optim.lr_scheduler import _LRScheduler
 
+device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+
 def distill_kl_loss(y_s, y_t, T, reduction='sum'):
     p_s = torch.nn.functional.log_softmax(y_s/T, dim=1)
     p_t = torch.nn.functional.softmax(y_t/T, dim=1)
@@ -70,6 +72,11 @@ class ScrubTrainer(Trainer):
         self.og_model.eval()
         opt.unlearn_iters = opt.unlearn_iters
         self.opt.unlearn_iters = opt.unlearn_iters
+        
+        # set to device
+        self.model.to(device)
+        self.og_model.to(device)
+        self.poisoned_dataset.to(device)
 
     def set_model(self, model):
         self.model = model
@@ -153,6 +160,7 @@ class ScrubTrainer(Trainer):
         self.maximize=False
         start_time = time.time()
         while self.curr_step < self.opt.unlearn_iters:
+            print("UNLEARNING STEP: ", self.curr_step, end='\r')
             if self.curr_step < self.opt.msteps:
                 self.maximize=True
                 # print("Gradient Ascent Step: ", self.curr_step)

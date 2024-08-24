@@ -70,7 +70,7 @@ class Trainer:
             self.optimizer.zero_grad()
         time_taken = time.time() - st
         train_acc, msc_rate, f1 = self.evaluate()
-        print(f'Train Acc: {train_acc}, Misclassification: {msc_rate},  F1 Score: {f1}')
+        # print(f'Train Acc: {train_acc}, Misclassification: {msc_rate},  F1 Score: {f1}')
         # plot_loss_vs_epochs(losses)
         return train_acc, msc_rate, time_taken
 
@@ -202,6 +202,7 @@ class Trainer:
         elif attack_type=="trigger":
             utility, _, _ = self.evaluate()
             forget_ability = self.calculate_PSR()
-        
-        return forget_ability, utility
+        elif attack_type=="random":
+            utility, _, f1 = self.evaluate()
+        return f1, utility
         

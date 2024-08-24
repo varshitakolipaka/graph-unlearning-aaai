@@ -1,68 +1,5 @@
 {
-    "results": {
-        "0": {
-            "original": {
-                "forget": NaN,
-                "utility": 0.8082382381723928
-            }
-        },
-        "1": {
-            "original": {
-                "forget": 0.7993666169895678,
-                "utility": 0.5935007415435251
-            },
-            "poisoned": {
-                "forget": 0.6393753104818678,
-                "utility": 0.5789522378325
-            },
-            "retrain": {
-                "forget": 0.696100347739692,
-                "utility": 0.6055584035755756
-            }
-        },
-        "2": {
-            "original": {
-                "forget": 0.7723816355810618,
-                "utility": 0.566000686333183
-            },
-            "poisoned": {
-                "forget": 0.5359397417503586,
-                "utility": 0.5624015626767751
-            },
-            "retrain": {
-                "forget": 0.6588952654232425,
-                "utility": 0.5692455552736736
-            }
-        },
-        "3": {
-            "original": {
-                "forget": 0.7903206291591046,
-                "utility": 0.5810864064613636
-            },
-            "poisoned": {
-                "forget": 0.6067150635208711,
-                "utility": 0.5803632689009273
-            },
-            "retrain": {
-                "forget": 0.6675438596491228,
-                "utility": 0.5860732511851341
-            }
-        },
-        "4": {
-            "original": {
-                "forget": 0.7907674626484484,
-                "utility": 0.5883442864032458
-            },
-            "poisoned": {
-                "forget": 0.5780870897714212,
-                "utility": 0.5743352983104247
-            },
-            "retrain": {
-                "forget": 0.6368758779210828,
-                "utility": 0.5837586396120609
-            }
-        }
-    },
+    "results": {},
     "arguments": {
         "train_ratio": 0.8,
         "attack_type": "label",
@@ -74,6 +11,7 @@
         "edge_attack_type": "specific",
         "df_size": 0.5,
         "test_poison_fraction": 0.2,
+        "poison_tensor_size": 100,
         "dataset": "Cora_p",
         "random_seed": 0,
         "train_lr": 0.005191475570177285,
@@ -119,10 +57,10 @@
         "k_hop": 2,
         "contrastive_eps": 0.001,
         "contrastive_frac": 0.1,
-        "num_runs": 2,
         "kappa": 0.01,
         "alpha1": 0.8,
         "alpha2": 0.5,
-        "poison_tensor_size": 100
+        "embs_all": false,
+        "embs_unlearn": false
     }
 }

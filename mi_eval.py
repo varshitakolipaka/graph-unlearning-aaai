@@ -23,8 +23,8 @@ import matplotlib.pyplot as plt
 args = parse_args()
 print(args)
 
-logger = Logger(f"run_logs_{args.attack_type}.json")
-logger.log_arguments(args)
+# logger = Logger(f"run_logs_{args.attack_type}.json")
+# logger.log_arguments(args)
 
 utils.seed_everything(args.random_seed)
 device = torch.device("cuda") if torch.cuda.is_available() else torch.device("cpu")
@@ -67,8 +67,8 @@ def train():
     if args.attack_type != "label":
         forg, util = clean_trainer.get_score(args.attack_type, class1=57, class2=33)
 
-        print(f"==OG Model==\nForget Ability: {forg}, Utility: {util}")
-        logger.log_result(args.random_seed, "original", {"forget": forg, "utility": util})
+        print(f"==OG Model==\nF1 Score: {forg}, Utility: {util}")
+        # logger.log_result(args.random_seed, "original", {"forget": forg, "utility": util})
 
     # save the clean model
     os.makedirs("./data", exist_ok=True)
@@ -87,22 +87,24 @@ def train():
     test_labels = torch.zeros(len(test_logits))
     temp_logits = torch.cat((train_logits, test_logits), dim=0)
     labels = torch.cat((train_labels, test_labels), dim=0)
+    x_probe_train, x_probe_testval, y_probe_train, y_probe_testval = train_test_split(temp_logits, labels, test_size=0.4, random_state=args.random_seed)
+    x_probe_test, x_probe_val, y_probe_test, y_probe_val = train_test_split(x_probe_testval, y_probe_testval, test_size=0.5, random_state=args.random_seed)
     # split train_logits into 80-20 train test split for probe
 
-    x_probe_train, x_probe_testval, y_probe_train, y_probe_testval = train_test_split(test_logits, test_labels, test_size=0.4, random_state=args.random_seed)
-    x_probe_test, x_probe_val, y_probe_test, y_probe_val = train_test_split(x_probe_testval, y_probe_testval, test_size=0.5, random_state=args.random_seed)
+    # x_probe_train, x_probe_testval, y_probe_train, y_probe_testval = train_test_split(test_logits, test_labels, test_size=0.4, random_state=args.random_seed)
+    # x_probe_test, x_probe_val, y_probe_test, y_probe_val = train_test_split(x_probe_testval, y_probe_testval, test_size=0.5, random_state=args.random_seed)
     num_train = len(y_probe_train)
     num_test = len(y_probe_test)
     num_val = len(y_probe_val)
 
     # divide the train_logits into train and test for probe where num_train is the number of nodes in train and num_test is the number of nodes in test
 
-    x_probe_train = torch.cat((x_probe_train, train_logits[:num_train]), dim=0).to(device)
-    y_probe_train = torch.cat((y_probe_train, train_labels[:num_train]), dim=0).to(device)
-    x_probe_val = torch.cat((x_probe_val, train_logits[num_train:num_train+num_val]), dim=0).to(device)
-    y_probe_val = torch.cat((y_probe_val, train_labels[num_train:num_train+num_val]), dim=0).to(device)
-    x_probe_test = torch.cat((x_probe_test, train_logits[num_train+num_val:num_train+num_val+num_test]), dim=0).to(device)
-    y_probe_test = torch.cat((y_probe_test, train_labels[num_train+num_val:num_train+num_val+num_test]), dim=0).to(device)
+    x_probe_train = x_probe_train.to(device)
+    y_probe_train = y_probe_train.to(device)
+    x_probe_val = x_probe_val.to(device)
+    y_probe_val = y_probe_val.to(device)
+    x_probe_test = x_probe_test.to(device)
+    y_probe_test = y_probe_test.to(device)
 
     # tsne = TSNE(n_components=2, random_state=0)
     # logits_tsne = tsne.fit_transform(temp_logits.cpu().numpy())
@@ -119,7 +121,13 @@ def train():
     print(f"Number of nodes in probe train: {len(x_probe_train)}")
     print(f"Number of nodes in probe val: {len(x_probe_val)}")
     print(f"Number of nodes in probe test: {len(x_probe_test)}")
+
+    # count number of 0s in y_probe_train, y_probe_val, y_probe_test
+    print(f"Number of 0s in y_probe_train: {len(y_probe_train) - y_probe_train.sum()}")
+    print(f"Number of 0s in y_probe_val: {len(y_probe_val) - y_probe_val.sum()}")
+    print(f"Number of 0s in y_probe_test: {len(y_probe_test) - y_probe_test.sum()}")
     
+
     criterion = nn.BCELoss()
     optimizer = optim.Adam(attack_model.parameters(), lr=0.001)
 
@@ -174,9 +182,9 @@ def train():
     print(f'Recall: {recall:.4f}')
     print(f'F1 Score: {f1:.4f}')
 
-    return clean_data
+    return clean_data, attack_model
 
-def poison(clean_data=None):
+def poison(clean_data=None, attack_model=None):
     if clean_data is None:
         # load the poisoned data and model and indices from np file
         poisoned_data = torch.load(
@@ -201,9 +209,9 @@ def poison(clean_data=None):
 
         forg, util = poisoned_trainer.get_score(args.attack_type, class1=57, class2=33)
         print(f"==Poisoned Model==\nForget Ability: {forg}, Utility: {util}")
-        logger.log_result(
-            args.random_seed, "poisoned", {"forget": forg, "utility": util}
-        )
+        # logger.log_result(
+        #     args.random_seed, "poisoned", {"forget": forg, "utility": util}
+        # )
 
         # print(poisoned_trainer.calculate_PSR())
         return poisoned_data, poisoned_indices, poisoned_model
@@ -229,10 +237,10 @@ def poison(clean_data=None):
     poisoned_data = poisoned_data.to(device)
 
     if "gnndelete" in args.unlearning_model:
-        # poisoned_model = GCNDelete(poisoned_data.num_features, args.hidden_dim, poisoned_data.num_classes)
-        poisoned_model = GCN(
-            poisoned_data.num_features, args.hidden_dim, poisoned_data.num_classes
-        )
+        poisoned_model = GCNDelete(poisoned_data.num_features, args.hidden_dim, poisoned_data.num_classes)
+        # poisoned_model = GCN(
+        #     poisoned_data.num_features, args.hidden_dim, poisoned_data.num_classes
+        # )
     else:
         poisoned_model = GCN(
             poisoned_data.num_features, args.hidden_dim, poisoned_data.num_classes
@@ -264,12 +272,39 @@ def poison(clean_data=None):
     )
 
     forg, util = poisoned_trainer.get_score(args.attack_type, class1=57, class2=33)
-    print(f"==Poisoned Model==\nForget Ability: {forg}, Utility: {util}")
-    logger.log_result(args.random_seed, "poisoned", {"forget": forg, "utility": util})
+    print(f"==Poisoned Model==\n F1 Score: {forg}, Acc: {util}")
+    # logger.log_result(args.random_seed, "poisoned", {"forget": forg, "utility": util})
     # print(f"PSR: {poisoned_trainer.calculate_PSR()}")
+
+    print("====Performing Membership Inference Attack Before Unlearning====")
+    logits = get_logits(poisoned_model, poisoned_data)
+    df_logits = logits[poisoned_indices]
+    df_labels = torch.ones(len(df_logits))
+    attack_model.eval()
+
+    # Make predictions
+    with torch.no_grad():
+        outputs = attack_model(df_logits).squeeze()  # Get model outputs
+        predicted = (outputs > 0.5).float()  # Convert probabilities to binary predictions
+
+    # Move data to CPU for metric computation
+    predicted = predicted.cpu().numpy()
+
+    # Compute metrics
+    accuracy = accuracy_score(df_labels, predicted)
+    precision = precision_score(df_labels, predicted)
+    recall = recall_score(df_labels, predicted)
+    f1 = f1_score(df_labels, predicted)
+
+    # Print evaluation metrics
+    print(f'Accuracy: {accuracy:.4f}')
+    print(f'Precision: {precision:.4f}')
+    print(f'Recall: {recall:.4f}')
+    print(f'F1 Score: {f1:.4f}')
+
     return poisoned_data, poisoned_indices, poisoned_model
 
-def unlearn(poisoned_data, poisoned_indices, poisoned_model):
+def unlearn(poisoned_data, poisoned_indices, poisoned_model, attack_model):
     print("==UNLEARNING==")
 
     utils.find_masks(
@@ -293,6 +328,7 @@ def unlearn(poisoned_data, poisoned_indices, poisoned_model):
             args, unlearn_model, poisoned_data, optimizer_unlearn
         )
         unlearn_trainer.train()
+        unlearnt_model = copy.deepcopy(unlearn_model)
     elif "retrain" in args.unlearning_model:
         unlearn_model = GCN(
             poisoned_data.num_features, args.hidden_dim, poisoned_data.num_classes
@@ -302,21 +338,50 @@ def unlearn(poisoned_data, poisoned_indices, poisoned_model):
             args, unlearn_model, poisoned_data, optimizer_unlearn
         )
         unlearn_trainer.train()
+        unlearnt_model = copy.deepcopy(unlearn_model)
     else:
         optimizer_unlearn = utils.get_optimizer(args, poisoned_model)
         unlearn_trainer = utils.get_trainer(
             args, poisoned_model, poisoned_data, optimizer_unlearn
         )
         unlearn_trainer.train()
-    forg, util = unlearn_trainer.get_score(args.attack_type, class1=57, class2=33)
-    print(f"==Unlearned Model==\nForget Ability: {forg}, Utility: {util}")
-    logger.log_result(
-        args.random_seed, args.unlearning_model, {"forget": forg, "utility": util}
-    )
+        unlearnt_model = copy.deepcopy(poisoned_model)
+    # forg, util = unlearn_trainer.get_score(args.attack_type, class1=57, class2=33)
+    # print(f"==Unlearned Model==\n F1: {forg}, Utility: {util}")
+    # # logger.log_result(
+    # #     args.random_seed, args.unlearning_model, {"forget": forg, "utility": util}
+    # # )
     print("==UNLEARNING DONE==")
 
+    print("====Performing Membership Inference Attack After Unlearning====")
+    logits = get_logits(unlearnt_model, poisoned_data)
+    print(logits.shape)
+    df_logits = logits[poisoned_indices]
+    print(df_logits.shape)  
+    df_labels = torch.ones(len(df_logits))
+    attack_model.eval()
+
+    # Make predictions
+    with torch.no_grad():
+        outputs = attack_model(df_logits).squeeze()  # Get model outputs
+        predicted = (outputs > 0.5).float()  # Convert probabilities to binary predictions
+
+    # Move data to CPU for metric computation
+    predicted = predicted.cpu().numpy()
+
+    # Compute metrics
+    accuracy = accuracy_score(df_labels, predicted)
+    precision = precision_score(df_labels, predicted)
+    recall = recall_score(df_labels, predicted)
+    f1 = f1_score(df_labels, predicted)
+
+    # Print evaluation metrics
+    print(f'Accuracy: {accuracy:.4f}')
+    print(f'Precision: {precision:.4f}')
+    print(f'Recall: {recall:.4f}')
+    print(f'F1 Score: {f1:.4f}')
+
 if __name__ == "__main__":
-    clean_data = train()
-    exit()
-    poisoned_data, poisoned_indices, poisoned_model = poison(clean_data)
-    unlearn(poisoned_data, poisoned_indices, poisoned_model)
+    clean_data, attack_model = train()
+    poisoned_data, poisoned_indices, poisoned_model = poison(clean_data, attack_model)
+    unlearn(poisoned_data, poisoned_indices, poisoned_model, attack_model)

@@ -13,6 +13,8 @@ data/
 
 plots/
 
+scrub_best_model.pth
+
 # Distribution / packaging
 .Python
 build/
