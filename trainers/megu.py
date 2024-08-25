@@ -100,7 +100,6 @@ class MeguTrainer(Trainer):
 
         self.num_layers = 2
         self.adj = sparse_mx_to_torch_sparse_tensor(normalize_adj(to_scipy_sparse_matrix(self.data.edge_index)))
-        self.neighbor_khop = self.neighbor_select(self.data.x)
 
     def train_test_split(self):
         if hasattr(self.data, 'train_mask') and hasattr(self.data, 'test_mask'):
@@ -127,8 +126,11 @@ class MeguTrainer(Trainer):
             #     unique_nodes = np.unique(remove_edges)
             # else:
             #     raise ValueError("Unexpected shape for df_mask")
-
-            unique_nodes = self.data.poisoned_nodes.cpu().numpy()
+            poisoned_nodes = self.data.poisoned_nodes
+            if type(poisoned_nodes) == torch.Tensor:
+                unique_nodes = poisoned_nodes.cpu().numpy()
+            else:
+                unique_nodes = poisoned_nodes
             
             self.data.edge_index_unlearn = self.update_edge_index_unlearn(unique_nodes)
             
@@ -277,6 +279,9 @@ class MeguTrainer(Trainer):
                 preds = torch.argmax(preds, axis=1).type_as(self.data.y)
 
         start_time = time.time()
+        
+        self.neighbor_khop = self.neighbor_select(self.data.x)
+        
         for epoch in trange(self.args.unlearning_epochs):
             self.model.train()
             operator.train()
@@ -294,7 +299,6 @@ class MeguTrainer(Trainer):
                 loss_r = criterionKD(out[self.neighbor_khop], out_ori[self.neighbor_khop]) + F.cross_entropy(out_ori[self.neighbor_khop], preds[self.neighbor_khop])
 
             loss = self.args.kappa * loss_u + loss_r
-            print(loss)
             loss.backward()
             optimizer.step()
 

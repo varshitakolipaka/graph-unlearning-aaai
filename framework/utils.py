@@ -172,24 +172,24 @@ def get_trainer(args, poisoned_model, poisoned_data, optimizer_unlearn) -> Train
 def get_optimizer(args, poisoned_model):
     if 'gnndelete' in args.unlearning_model:
         parameters_to_optimize = [
-            {'params': [p for n, p in poisoned_model.named_parameters() if 'del' in n], 'weight_decay': args.weight_decay}
+            {'params': [p for n, p in poisoned_model.named_parameters() if 'del' in n]}
         ]
         print('parameters_to_optimize', [n for n, p in poisoned_model.named_parameters() if 'del' in n])
         if 'layerwise' in args.loss_type:
-            optimizer1 = torch.optim.Adam(poisoned_model.deletion1.parameters(), lr=args.unlearn_lr)
-            optimizer2 = torch.optim.Adam(poisoned_model.deletion2.parameters(), lr=args.unlearn_lr)
-            optimizer3 = torch.optim.Adam(poisoned_model.deletion3.parameters(), lr=args.unlearn_lr)
+            optimizer1 = torch.optim.Adam(poisoned_model.deletion1.parameters(), lr=args.unlearn_lr, weight_decay=args.weight_decay)
+            optimizer2 = torch.optim.Adam(poisoned_model.deletion2.parameters(), lr=args.unlearn_lr, weight_decay=args.weight_decay)
+            optimizer3 = torch.optim.Adam(poisoned_model.deletion3.parameters(), lr=args.unlearn_lr, weight_decay=args.weight_decay)
             optimizer_unlearn = [optimizer1, optimizer2, optimizer3]
         else:
-            optimizer_unlearn = torch.optim.Adam(parameters_to_optimize, lr=args.unlearn_lr)
+            optimizer_unlearn = torch.optim.Adam(parameters_to_optimize, lr=args.unlearn_lr, weight_decay=args.weight_decay)
     elif 'retrain' in args.unlearning_model:
         optimizer_unlearn = torch.optim.Adam(poisoned_model.parameters(), lr=args.train_lr, weight_decay=args.weight_decay)
     else:
         parameters_to_optimize = [
-            {'params': [p for n, p in poisoned_model.named_parameters()], 'weight_decay': args.weight_decay}
+            {'params': [p for n, p in poisoned_model.named_parameters()]}
         ]
         print('parameters_to_optimize', [n for n, p in poisoned_model.named_parameters()])
-        optimizer_unlearn = torch.optim.Adam(parameters_to_optimize, lr=args.unlearn_lr)
+        optimizer_unlearn = torch.optim.Adam(parameters_to_optimize, lr=args.unlearn_lr, weight_decay=args.weight_decay)
     return optimizer_unlearn
 
 def prints_stats(data):

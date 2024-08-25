@@ -13,6 +13,8 @@ data/
 
 plots/
 
+logs/
+
 scrub_best_model.pth
 
 # Distribution / packaging

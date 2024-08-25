@@ -1,4 +1,7 @@
 import json
+import os
+from pprint import pprint
+import time
 
 class Logger():
     '''
@@ -22,20 +25,19 @@ class Logger():
     }
     '''
     
-    def __init__(self, filename):
-        self.filename = filename
+    def __init__(self, args, filename):
+        os.makedirs(f'logs/{args.dataset}', exist_ok=True)
+        self.filename = f"logs/{args.dataset}/{filename}"
         
         # we are appending to the file, so get the old logs to append to
         try:
-            with open(filename, 'r') as f:
+            with open(self.filename, 'r') as f:
                 self.logs = json.load(f)
         except:
             self.logs = {
                 'results': {},
                 'arguments': {}
             }
-            
-        print(self.logs)
             
     def log_arguments(self, args):
         '''
@@ -57,10 +59,13 @@ class Logger():
         method: str, name of the method
         result: dict, values to log
         '''
+        seed = str(seed)
         if seed not in self.logs['results']:
+            print(f"seed {seed} not in logs")
             self.logs['results'][seed] = {}
             
         if method not in self.logs['results'][seed]:
+            print(f"method {method} not in logs")
             self.logs['results'][seed][method] = {}
         
         for key, value in result.items():

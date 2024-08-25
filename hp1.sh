@@ -1,22 +1,37 @@
-python hp_tune.py --df_size 0.5 --random_seed 0 --unlearning_model utu
-# python hp_tune.py --df_size 0.4 --random_seed 1 --unlearning_model retrain
-# python hp_tune.py --df_size 0.4 --random_seed 2 --unlearning_model retrain
-# python hp_tune.py --df_size 0.4 --random_seed 3 --unlearning_model retrain
-# python hp_tune.py --df_size 0.4 --random_seed 4 --unlearning_model retrain
+# python hp_tune.py --unlearning_model utu --dataset Cora --df_size 0.5 --random_seed 0 --data_dir /scratch/akshit.sinha/data
+# python hp_tune.py --unlearning_model utu --dataset Cora --df_size 0.5 --random_seed 1 --data_dir /scratch/akshit.sinha/data
+# python hp_tune.py --unlearning_model utu --dataset Cora --df_size 0.5 --random_seed 2 --data_dir /scratch/akshit.sinha/data
+# python hp_tune.py --unlearning_model utu --dataset Cora --df_size 0.5 --random_seed 3 --data_dir /scratch/akshit.sinha/data
+# python hp_tune.py --unlearning_model utu --dataset Cora --df_size 0.5 --random_seed 4 --data_dir /scratch/akshit.sinha/data
 
-# python hp_tune.py --df_size 0.15 --random_seed 0 --unlearning_model retrain --attack_type trigger 
-# python hp_tune.py --df_size 0.15 --random_seed 1 --unlearning_model retrain --attack_type trigger
-# python hp_tune.py --df_size 0.15 --random_seed 2 --unlearning_model retrain --attack_type trigger
-# python hp_tune.py --df_size 0.15 --random_seed 3 --unlearning_model retrain --attack_type trigger
-# python hp_tune.py --df_size 0.15 --random_seed 4 --unlearning_model retrain --attack_type trigger
+# python hp_tune.py --unlearning_model retrain --dataset Amazon --df_size 0.5 --random_seed 0 --data_dir /scratch/akshit.sinha/data 
+# python hp_tune.py --unlearning_model retrain --dataset Amazon --df_size 0.5 --random_seed 2 --data_dir /scratch/akshit.sinha/data
+# python hp_tune.py --unlearning_model retrain --dataset Amazon --df_size 0.5 --random_seed 3 --data_dir /scratch/akshit.sinha/data
+# python hp_tune.py --unlearning_model retrain --dataset Amazon --df_size 0.5 --random_seed 4 --data_dir /scratch/akshit.sinha/data
+ 
+# python hp_tune.py --unlearning_model retrain --dataset PubMed --df_size 0.5 --random_seed 0 --data_dir /scratch/akshit.sinha/data
+# python hp_tune.py --unlearning_model retrain --dataset PubMed --df_size 0.5 --random_seed 2 --data_dir /scratch/akshit.sinha/data
+# python hp_tune.py --unlearning_model retrain --dataset PubMed --df_size 0.5 --random_seed 3 --data_dir /scratch/akshit.sinha/data
+# python hp_tune.py --unlearning_model retrain --dataset PubMed --df_size 0.5 --random_seed 4 --data_dir /scratch/akshit.sinha/data
 
-python hp_tune.py --df_size 5000 --random_seed 0 --unlearning_model utu --attack_type edge
-# python hp_tune.py --df_size 3000 --random_seed 10 --unlearning_model retrain --attack_type edge
-# python hp_tune.py --df_size 3000 --random_seed 69 --unlearning_model retrain --attack_type edge
-# python hp_tune.py --df_size 3000 --random_seed 1010 --unlearning_model retrain --attack_type edge
-# python hp_tune.py --df_size 3000 --random_seed 42 --unlearning_model retrain --attack_type edge
-# python hp_tune.py --df_size 5000 --random_seed 5 --unlearning_model retrain --attack_type edge
-# python hp_tune.py --df_size 5000 --random_seed 6 --unlearning_model retrain --attack_type edge
-# python hp_tune.py --df_size 5000 --random_seed 7 --unlearning_model retrain --attack_type edge
-# python hp_tune.py --df_size 5000 --random_seed 8 --unlearning_model retrain --attack_type edge
-# python hp_tune.py --df_size 5000 --random_seed 9 --unlearning_model retrain --attack_type edge
+
+python hp_tune.py --unlearning_model retrain --dataset PubMed --attack_type label  --df_size 0.5 --random_seed 0 --data_dir /scratch/akshit.sinha/data
+python hp_tune.py --unlearning_model retrain --dataset PubMed --attack_type label  --df_size 0.5 --random_seed 1 --data_dir /scratch/akshit.sinha/data
+python hp_tune.py --unlearning_model retrain --dataset PubMed --attack_type label  --df_size 0.5 --random_seed 2 --data_dir /scratch/akshit.sinha/data
+python hp_tune.py --unlearning_model retrain --dataset PubMed --attack_type label  --df_size 0.5 --random_seed 3 --data_dir /scratch/akshit.sinha/data
+python hp_tune.py --unlearning_model retrain --dataset PubMed --attack_type label  --df_size 0.5 --random_seed 4 --data_dir /scratch/akshit.sinha/data
+
+python hp_tune.py --unlearning_model retrain --dataset Amazon --attack_type label  --df_size 0.5 --random_seed 0 --data_dir /scratch/akshit.sinha/data
+python hp_tune.py --unlearning_model retrain --dataset Amazon --attack_type label  --df_size 0.5 --random_seed 1 --data_dir /scratch/akshit.sinha/data
+python hp_tune.py --unlearning_model retrain --dataset Amazon --attack_type label  --df_size 0.5 --random_seed 2 --data_dir /scratch/akshit.sinha/data
+python hp_tune.py --unlearning_model retrain --dataset Amazon --attack_type label  --df_size 0.5 --random_seed 3 --data_dir /scratch/akshit.sinha/data
+python hp_tune.py --unlearning_model retrain --dataset Amazon --attack_type label  --df_size 0.5 --random_seed 4 --data_dir /scratch/akshit.sinha/data
+
+python hp_tune.py --unlearning_model retrain --dataset Cora --attack_type label  --df_size 0.5 --random_seed 0 --data_dir /scratch/akshit.sinha/data
+python hp_tune.py --unlearning_model retrain --dataset Cora --attack_type label  --df_size 0.5 --random_seed 1 --data_dir /scratch/akshit.sinha/data
+python hp_tune.py --unlearning_model retrain --dataset Cora --attack_type label  --df_size 0.5 --random_seed 2 --data_dir /scratch/akshit.sinha/data
+python hp_tune.py --unlearning_model retrain --dataset Cora --attack_type label  --df_size 0.5 --random_seed 3 --data_dir /scratch/akshit.sinha/data
+python hp_tune.py --unlearning_model retrain --dataset Cora --attack_type label  --df_size 0.5 --random_seed 4 --data_dir /scratch/akshit.sinha/data
+# python hp_tune.py --unlearning_model utu --dataset Cora --attack_type edge --request edge --df_size 5000 --random_seed 0
+# python hp_tune.py --unlearning_model utu --dataset Amazon --attack_type edge --request edge --df_size 30000 --random_seed 0
+# python hp_tune.py --unlearning_model utu --dataset PubMed --attack_type edge --request edge --df_size 25000 --random_seed 0

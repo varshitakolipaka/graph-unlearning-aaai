@@ -43,7 +43,7 @@ def plot_embeddings(model, data, class1, class2, is_dr=False, mask="test", name=
 
     # Forward pass: get embeddings
     with torch.no_grad():
-        if is_dr:
+        if is_dr and args.unlearning_model != "scrub":
             embeddings = model(data.x, data.edge_index[:, data.dr_mask])
         else:
             embeddings = model(data.x, data.edge_index)
@@ -315,11 +315,11 @@ best_params_dict = {
     },
     "utu": {},
     "scrub": {
-        "unlearn_iters": (10, 500, "int"),
+        "unlearn_iters": 496,
         # 'kd_T': (1, 10, "float"),
-        "unlearn_lr": (1e-5, 1e-1, "log"),
-        "scrubAlpha": (1e-6, 10, "log"),
-        "msteps": (10, 500, "int"),
+        "unlearn_lr": 0.002891193845823931,
+        "scrubAlpha": 0.005974093857668415,
+        "msteps": 16,
         # 'weight_decay': (1e-5, 1e-1, "log"),
     },
     'megu': {

@@ -23,7 +23,8 @@ def parse_args():
     parser.add_argument('--edge_attack_type', type=str, default='specific', help='edge attack type', choices=['random', 'specific'])
 
     # Data
-    # parser.add_argument('--data_dir', type=str, default='./data', help='data dir')
+    parser.add_argument('--data_dir', type=str, default='./data', help='data dir')
+    
     # parser.add_argument('--df', type=str, default='in', help='Df set to use')
     # parser.add_argument('--df_idx', type=str, default=None, help='indices of data to be deleted')
     parser.add_argument('--df_size', type=float, default=0.5, help='Forgetting Fraction')
@@ -95,7 +96,6 @@ def parse_args():
     parser.add_argument('--contrastive_margin', type=int, default=500, help="margin for the contrastive loss")
     parser.add_argument('--contrastive_lambda', type=float, default=0.8, help="weight for the task loss [1 - lambda] is used for the contrastive loss")
     parser.add_argument('--k_hop', type=int, default=2, help="number of hops for the data sampling")
-    parser.add_argument('--contrastive_eps', type=float, default=1e-3, help="fraction of non-neighbors to sample for contrastive loss")
     parser.add_argument('--contrastive_frac', type=float, default=0.1, help="fraction of nodes to sample for contrastive loss")
 
     # MEGU
