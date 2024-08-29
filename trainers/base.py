@@ -63,8 +63,7 @@ class Trainer:
         self.data = data.to(device)
         self.optimizer = optimizer
         self.num_epochs= num_epochs
-        meow = random.random()
-        print("MEOW", meow)
+
         if hasattr(data, 'class1') and hasattr(data, 'class2'):
             self.class1 = data.class1
             self.class2 = data.class2
@@ -78,7 +77,7 @@ class Trainer:
         self.data = self.data.to(device)
         st = time.time()
         print("Initial parameters of the model:")
-        
+
         for epoch in trange(self.num_epochs, desc='Epoch'):
             self.model.train()
             z = F.log_softmax(self.model(self.data.x, self.data.edge_index), dim=1)
@@ -87,13 +86,6 @@ class Trainer:
             losses.append(loss)
             self.optimizer.step()
             self.optimizer.zero_grad()
-            if(epoch%500 == 0):
-                for name, param in self.model.state_dict().items():
-                    print(f"{name}: {param}")   
-                print(f"Python's random seed: {random.getstate()[1][0]}")
-                print(f"NumPy's random seed: {np.random.get_state()[1][0]}")
-                print(f"PyTorch's CPU random seed: {torch.initial_seed()}")
-                print(f"PyTorch's CUDA random seed: {torch.cuda.initial_seed()}")
 
         time_taken = time.time() - st
         train_acc, msc_rate, f1 = self.evaluate()
@@ -145,7 +137,7 @@ class Trainer:
             clean_indices = (true_labels == clean_class)
             accs_clean.append(accuracy_score(true_labels[clean_indices].cpu(), pred_labels[clean_indices].cpu()))
 
-        print(f'Poisoned class: {class1} -> {class2}')
+        # print(f'Poisoned class: {class1} -> {class2}')
         # print(f'Poisoned class acc: {accs_poisoned} | Clean class acc: {accs_clean}')
         # take average of the accs
         accs_poisoned = sum(accs_poisoned) / len(accs_poisoned)
@@ -220,7 +212,7 @@ class Trainer:
         pred = torch.argmax(z[self.data.poison_test_mask], dim=1).cpu()
         psr= sum(pred==self.data.target_class)/len(pred)
         return psr.item()
-    
+
     def get_score(self, attack_type, class1=None, class2=None):
         forget_ability = None
         utility = None
@@ -233,5 +225,5 @@ class Trainer:
             utility, _, f1 = self.evaluate()
         return forget_ability, utility
 
-        
-    
+
+

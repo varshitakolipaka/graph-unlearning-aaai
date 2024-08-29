@@ -87,7 +87,7 @@ class ScrubTrainer(Trainer):
         self.og_model.eval()
         opt.unlearn_iters = opt.unlearn_iters
         self.opt.unlearn_iters = opt.unlearn_iters
-        
+
         # set to device
         self.model.to(device)
         self.og_model.to(device)
@@ -125,9 +125,9 @@ class ScrubTrainer(Trainer):
             self.optimizer.zero_grad()
             loss = self.forward_pass(data, mask)
             val_acc, _, _ = self.evaluate(val_mask=self.data.val_mask)
-            print(val_acc, self.best_val_acc)
+            # print(val_acc, self.best_val_acc)
             if val_acc > self.best_val_acc:
-                print("updating best model...")
+                # print("updating best model...")
                 self.best_val_acc = val_acc
                 # write state_dict to file
                 with open(self.opt.unlearning_model + '_best_model.pth', 'wb') as f:
@@ -137,7 +137,7 @@ class ScrubTrainer(Trainer):
             self.scheduler.step()
             # print(self.scheduler.get_lr())
             self.curr_step += 1
-        
+
         return
 
     def forward_pass(self, data, mask):
@@ -171,7 +171,6 @@ class ScrubTrainer(Trainer):
 
     # scrub for label flipping
     def unlearn_nc_lf(self):
-        print("WTF???!?!?!!?")
         forget_mask = self.poisoned_dataset.df_mask
         self.maximize=False
         start_time = time.time()
@@ -186,9 +185,9 @@ class ScrubTrainer(Trainer):
             # print("Gradient Descent Step: ", self.curr_step)
             self.train_one_epoch(data=self.poisoned_dataset, mask=self.poisoned_dataset.dr_mask)
             train_acc, msc_rate, f1 = self.evaluate()
-            print(f'Test Acc: {train_acc}, Misclassification: {msc_rate},  F1 Score: {f1}')
+            # print(f'Test Acc: {train_acc}, Misclassification: {msc_rate},  F1 Score: {f1}')
             forg, util = self.get_score(self.opt.attack_type, class1=class_dataset_dict[self.opt.dataset]["class1"], class2=class_dataset_dict[self.opt.dataset]["class2"])
-            print(f"==Unlearned Model==\nForget Ability: {forg}, Utility: {util}")
+            # print(f"==Unlearned Model==\nForget Ability: {forg}, Utility: {util}")
         end_time = time.time()
         # load best model
         with open(self.opt.unlearning_model + '_best_model.pth', 'rb') as f:
