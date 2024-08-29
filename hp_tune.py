@@ -409,8 +409,6 @@ if __name__ == "__main__":
     poisoned_data, poisoned_indices, poisoned_model = poison(clean_data)
     unlearn(poisoned_data, poisoned_indices, poisoned_model)
 
-    exit(0)
-
     utils.find_masks(
         poisoned_data, poisoned_indices, args, attack_type=args.attack_type
     )

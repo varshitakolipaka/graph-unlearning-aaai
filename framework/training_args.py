@@ -73,6 +73,7 @@ def parse_args():
     # Evaluation
     parser.add_argument('--topk', type=int, default=500, help='top k for evaluation')
     parser.add_argument('--eval_on_cpu', type=bool, default=False, help='whether to evaluate on CPU')
+    parser.add_argument('--tuning', type=bool, default=False, help='whether to evaluate on CPU')
 
     # KG
     parser.add_argument('--num_edge_type', type=int, default=None, help='number of edges types')

@@ -151,6 +151,17 @@ def find_masks(data, poisoned_indices, args, attack_type="label"):
         get_sdf_masks(data, args)
 
 
+def set_global_seed(seed):
+    random.seed(seed)
+    np.random.seed(seed)
+    torch.manual_seed(seed)
+    if torch.cuda.is_available():
+        torch.cuda.manual_seed(seed)
+        torch.cuda.manual_seed_all(seed)
+    torch.backends.cudnn.deterministic = True
+    torch.backends.cudnn.benchmark = False
+
+
 def get_trainer(args, poisoned_model, poisoned_data, optimizer_unlearn) -> Trainer:
 
     trainer_map = {
