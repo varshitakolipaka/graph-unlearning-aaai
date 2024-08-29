@@ -204,5 +204,5 @@ class Trainer:
             forget_ability = self.calculate_PSR()
         elif attack_type=="random":
             utility, _, f1 = self.evaluate()
-        return f1, utility
+        return forget_ability, utility
         
