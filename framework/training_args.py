@@ -24,7 +24,7 @@ def parse_args():
 
     # Data
     parser.add_argument('--data_dir', type=str, default='./data', help='data dir')
-    
+
     # parser.add_argument('--df', type=str, default='in', help='Df set to use')
     # parser.add_argument('--df_idx', type=str, default=None, help='indices of data to be deleted')
     parser.add_argument('--df_size', type=float, default=0.5, help='Forgetting Fraction')
@@ -41,9 +41,9 @@ def parse_args():
     # parser.add_argument("--mode", type=str, default="disabled", help="#wandb mode")
     parser.add_argument('--train_lr', type=float, default=0.005191475570177285, help='initial learning rate')
     parser.add_argument('--unlearn_lr', type=float, default=0.015, help='unlearn learning rate')
-    parser.add_argument('--weight_decay', type=float, default=0.00016211813194850176, help='weight decay')
+    parser.add_argument('--weight_decay', type=float, default=0.005191475570177285, help='weight decay')
     parser.add_argument('--optimizer', type=str, default='Adam', help='optimizer to use')
-    parser.add_argument('--training_epochs', type=int, default=50, help='number of epochs to train')
+    parser.add_argument('--training_epochs', type=int, default=1208, help='number of epochs to train')
     parser.add_argument('--valid_freq', type=int, default=30, help='# of epochs to do validation')
     parser.add_argument('--checkpoint_dir', type=str, default='./checkpoint', help='checkpoint folder')
     parser.add_argument('--alpha', type=float, default=0.5, help='alpha in loss function')
@@ -93,7 +93,7 @@ def parse_args():
     # contrastive
     parser.add_argument('--contrastive_epochs_1', type=int, default=30, help="epochs for contrastive unlearning")
     parser.add_argument('--contrastive_epochs_2', type=int, default=10, help="epochs for contrastive unlearning")
-    parser.add_argument('--contrastive_margin', type=int, default=500, help="margin for the contrastive loss")
+    parser.add_argument('--contrastive_margin', type=float, default=500.0, help="margin for the contrastive loss")
     parser.add_argument('--contrastive_lambda', type=float, default=0.8, help="weight for the task loss [1 - lambda] is used for the contrastive loss")
     parser.add_argument('--k_hop', type=int, default=2, help="number of hops for the data sampling")
     parser.add_argument('--contrastive_frac', type=float, default=0.1, help="fraction of nodes to sample for contrastive loss")
@@ -102,7 +102,7 @@ def parse_args():
     parser.add_argument('--kappa', type=float, default=0.01)
     parser.add_argument('--alpha1', type=float, default=0.8)
     parser.add_argument('--alpha2', type=float, default=0.5)
-    
+
     # UTILITIES
     parser.add_argument('--embs_all', action='store_true', help='whether to plot embeddings in embs.py')
     parser.add_argument('--embs_unlearn', action='store_true', help='whether to plot embeddings in embs.py')

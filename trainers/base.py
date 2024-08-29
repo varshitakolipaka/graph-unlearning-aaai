@@ -8,6 +8,20 @@ import seaborn as sns
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
+import random
+from framework.training_args import parse_args
+args = parse_args()
+
+def seed_everything(seed):
+    random.seed(seed)
+    np.random.seed(seed)
+    torch.manual_seed(seed)
+    torch.cuda.manual_seed_all(seed)
+    torch.backends.cudnn.benchmark = False
+    torch.backends.cudnn.deterministic = True
+    return seed
+
+# seed_everything(args.random_seed)
 
 def plot_loss_vs_epochs(loss_values):
     """
@@ -49,6 +63,8 @@ class Trainer:
         self.data = data.to(device)
         self.optimizer = optimizer
         self.num_epochs= num_epochs
+        meow = random.random()
+        print("MEOW", meow)
         if hasattr(data, 'class1') and hasattr(data, 'class2'):
             self.class1 = data.class1
             self.class2 = data.class2
@@ -57,9 +73,12 @@ class Trainer:
             self.class2 = None
 
     def train(self):
+        seed_everything(args.random_seed)
         losses = []
         self.data = self.data.to(device)
         st = time.time()
+        print("Initial parameters of the model:")
+        
         for epoch in trange(self.num_epochs, desc='Epoch'):
             self.model.train()
             z = F.log_softmax(self.model(self.data.x, self.data.edge_index), dim=1)
@@ -68,9 +87,17 @@ class Trainer:
             losses.append(loss)
             self.optimizer.step()
             self.optimizer.zero_grad()
+            if(epoch%500 == 0):
+                for name, param in self.model.state_dict().items():
+                    print(f"{name}: {param}")   
+                print(f"Python's random seed: {random.getstate()[1][0]}")
+                print(f"NumPy's random seed: {np.random.get_state()[1][0]}")
+                print(f"PyTorch's CPU random seed: {torch.initial_seed()}")
+                print(f"PyTorch's CUDA random seed: {torch.cuda.initial_seed()}")
+
         time_taken = time.time() - st
         train_acc, msc_rate, f1 = self.evaluate()
-        # print(f'Train Acc: {train_acc}, Misclassification: {msc_rate},  F1 Score: {f1}')
+        print(f'Train Acc: {train_acc}, Misclassification: {msc_rate},  F1 Score: {f1}')
         # plot_loss_vs_epochs(losses)
         return train_acc, msc_rate, time_taken
 
@@ -204,5 +231,7 @@ class Trainer:
             forget_ability = self.calculate_PSR()
         elif attack_type=="random":
             utility, _, f1 = self.evaluate()
-        return f1, utility
+        return forget_ability, utility
+
         
+    

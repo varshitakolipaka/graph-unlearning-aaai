@@ -51,6 +51,8 @@ def train_test_split(data, seed, train_ratio=0.1):
     data.train_mask[train_idx] = True
     data.test_mask = torch.zeros(n, dtype=torch.bool)
     data.test_mask[test_idx] = True
+    print(train_idx[:100])
+    print(test_idx[:100])
     return data, train_idx, test_idx
 
 def seed_everything(seed):
@@ -58,6 +60,8 @@ def seed_everything(seed):
     np.random.seed(seed)
     torch.manual_seed(seed)
     torch.cuda.manual_seed_all(seed)
+    torch.backends.cudnn.deterministic = True
+    torch.backends.cudnn.benchmark = False
     return seed
 
 def get_sdf_masks(data, args):

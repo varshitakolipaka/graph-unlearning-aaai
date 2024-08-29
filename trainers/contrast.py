@@ -11,6 +11,19 @@ import torch.nn as nn
 import torch.nn.functional as F
 from torch_geometric.utils import negative_sampling, k_hop_subgraph, to_scipy_sparse_matrix
 from torch_geometric.loader import GraphSAINTRandomWalkSampler
+from framework.training_args import parse_args
+import random
+args = parse_args()
+def seed_everything(seed):
+    random.seed(seed)
+    np.random.seed(seed)
+    torch.manual_seed(seed)
+    torch.cuda.manual_seed_all(seed)
+    torch.backends.cudnn.benchmark = False
+    torch.backends.cudnn.deterministic = True
+    return seed
+
+seed_everything(args.random_seed)
 
 from .base import Trainer
 

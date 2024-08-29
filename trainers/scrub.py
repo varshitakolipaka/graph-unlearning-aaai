@@ -19,6 +19,21 @@ def distill_kl_loss(y_s, y_t, T, reduction='sum'):
     loss = loss * (T**2) / y_s.shape[0]
     return loss
 
+class_dataset_dict = {
+    "Cora": {
+        "class1": 57,
+        "class2": 33,
+    },
+    "PubMed": {
+        "class1": 2,
+        "class2": 1,
+    },
+    "Amazon": {
+        "class1": 6,
+        "class2": 1,
+    },
+}
+
 
 class LinearLR(_LRScheduler):
     r"""Set the learning rate of each parameter group with a linear
@@ -110,9 +125,9 @@ class ScrubTrainer(Trainer):
             self.optimizer.zero_grad()
             loss = self.forward_pass(data, mask)
             val_acc, _, _ = self.evaluate(val_mask=self.data.val_mask)
-            # print(val_acc, self.best_val_acc)
+            print(val_acc, self.best_val_acc)
             if val_acc > self.best_val_acc:
-                # print("updating best model...")
+                print("updating best model...")
                 self.best_val_acc = val_acc
                 # write state_dict to file
                 with open(self.opt.unlearning_model + '_best_model.pth', 'wb') as f:
@@ -156,11 +171,12 @@ class ScrubTrainer(Trainer):
 
     # scrub for label flipping
     def unlearn_nc_lf(self):
+        print("WTF???!?!?!!?")
         forget_mask = self.poisoned_dataset.df_mask
         self.maximize=False
         start_time = time.time()
         while self.curr_step < self.opt.unlearn_iters:
-            print("UNLEARNING STEP: ", self.curr_step, end='\r')
+            # print("UNLEARNING STEP: ", self.curr_step, end='\r')
             if self.curr_step < self.opt.msteps:
                 self.maximize=True
                 # print("Gradient Ascent Step: ", self.curr_step)
@@ -170,7 +186,9 @@ class ScrubTrainer(Trainer):
             # print("Gradient Descent Step: ", self.curr_step)
             self.train_one_epoch(data=self.poisoned_dataset, mask=self.poisoned_dataset.dr_mask)
             train_acc, msc_rate, f1 = self.evaluate()
-            # print(f'Test Acc: {train_acc}, Misclassification: {msc_rate},  F1 Score: {f1}')
+            print(f'Test Acc: {train_acc}, Misclassification: {msc_rate},  F1 Score: {f1}')
+            forg, util = self.get_score(self.opt.attack_type, class1=class_dataset_dict[self.opt.dataset]["class1"], class2=class_dataset_dict[self.opt.dataset]["class2"])
+            print(f"==Unlearned Model==\nForget Ability: {forg}, Utility: {util}")
         end_time = time.time()
         # load best model
         with open(self.opt.unlearning_model + '_best_model.pth', 'rb') as f:

@@ -29,6 +29,9 @@ class GCN(nn.Module):
             logits = (z[edge_index[0]] * z[edge_index[1]]).sum(dim=-1)
         return logits
 
+
+
+
 class GAT(nn.Module):
     def __init__(self, in_dim, hidden_dim, out_dim):
         super().__init__()

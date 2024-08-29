@@ -2,6 +2,10 @@ from collections import defaultdict
 import copy
 import os
 import torch
+
+# os.environ["CUBLAS_WORKSPACE_CONFIG"] = ":4096:8"
+# torch.use_deterministic_algorithms(True)
+
 from framework import utils
 from framework.training_args import parse_args
 from models.deletion import GCNDelete
@@ -97,11 +101,11 @@ def train(load=False):
         )
 
     # save the clean model
-    os.makedirs(args.data_dir, exist_ok=True)
-    torch.save(
-        clean_model,
-        f"{args.data_dir}/{args.dataset}_{args.attack_type}_{args.df_size}_{args.random_seed}_clean_model.pt",
-    )
+    # os.makedirs(args.data_dir, exist_ok=True)
+    # torch.save(
+    #     clean_model,
+    #     f"{args.data_dir}/{args.dataset}_{args.attack_type}_{args.df_size}_{args.random_seed}_clean_model.pt",
+    # )
 
     return clean_data
 
@@ -189,21 +193,21 @@ def poison(clean_data=None):
     poisoned_trainer.train()
 
     # save the poisoned data and model and indices to np file
-    os.makedirs(args.data_dir, exist_ok=True)
+    # os.makedirs(args.data_dir, exist_ok=True)
 
-    torch.save(
-        poisoned_model,
-        f"{args.data_dir}/{args.dataset}_{args.attack_type}_{args.df_size}_{args.random_seed}_poisoned_model.pt",
-    )
+    # torch.save(
+    #     poisoned_model,
+    #     f"{args.data_dir}/{args.dataset}_{args.attack_type}_{args.df_size}_{args.random_seed}_poisoned_model.pt",
+    # )
 
-    torch.save(
-        poisoned_data,
-        f"{args.data_dir}/{args.dataset}_{args.attack_type}_{args.df_size}_{args.random_seed}_poisoned_data.pt",
-    )
-    torch.save(
-        poisoned_indices,
-        f"{args.data_dir}/{args.dataset}_{args.attack_type}_{args.df_size}_{args.random_seed}_poisoned_indices.pt",
-    )
+    # torch.save(
+    #     poisoned_data,
+    #     f"{args.data_dir}/{args.dataset}_{args.attack_type}_{args.df_size}_{args.random_seed}_poisoned_data.pt",
+    # )
+    # torch.save(
+    #     poisoned_indices,
+    #     f"{args.data_dir}/{args.dataset}_{args.attack_type}_{args.df_size}_{args.random_seed}_poisoned_indices.pt",
+    # )
 
     forg, util = poisoned_trainer.get_score(
         args.attack_type,
@@ -399,9 +403,13 @@ def objective(trial, model, data):
 if __name__ == "__main__":
     print('\n\n\n')
     print(args.dataset, args.attack_type)
-    # clean_data = train(load=True)
-    poisoned_data, poisoned_indices, poisoned_model = poison()
-    # unlearn(poisoned_data, poisoned_indices, poisoned_model)
+    utils.seed_everything(args.random_seed)
+    clean_data = train(load=False)
+    # exit(0)
+    poisoned_data, poisoned_indices, poisoned_model = poison(clean_data)
+    unlearn(poisoned_data, poisoned_indices, poisoned_model)
+
+    exit(0)
 
     utils.find_masks(
         poisoned_data, poisoned_indices, args, attack_type=args.attack_type
@@ -433,11 +441,11 @@ if __name__ == "__main__":
     print("==HYPERPARAMETER TUNING==")
     # Create a study with TPE sampler
     study = optuna.create_study(
-        sampler=TPESampler(),
+        sampler=TPESampler(seed=args.random_seed),
         direction="maximize",
         study_name=f"{args.dataset}_{args.attack_type}_{args.df_size}_{args.unlearning_model}_{args.random_seed}",
         load_if_exists=True,
-        storage="sqlite:///temp.db",
+        storage="sqlite:///final_sanity_check.db",
     )
 
     print("==OPTIMIZING==")
