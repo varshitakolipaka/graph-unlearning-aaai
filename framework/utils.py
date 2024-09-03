@@ -5,6 +5,10 @@ from torch_geometric.utils import k_hop_subgraph
 import os
 from torch_geometric.datasets import CitationFull, Coauthor, Amazon, Planetoid, Reddit2, Flickr, Twitch
 import torch_geometric.transforms as T
+import matplotlib.pyplot as plt
+import seaborn as sns
+from sklearn.manifold import TSNE
+
 
 from trainers.contrast import ContrastiveUnlearnTrainer
 from trainers.gnndelete import GNNDeleteNodeembTrainer
@@ -17,9 +21,11 @@ from trainers.utu import UtUTrainer
 from trainers.retrain import RetrainTrainer
 from trainers.megu import MeguTrainer
 
+device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+
 def get_original_data(d):
     data_dir = './datasets'
-    if d in ['Cora', 'PubMed', 'DBLP']:
+    if d in ['Cora', 'PubMed', 'DBLP', 'Cora_ML']:
         dataset = CitationFull(os.path.join(data_dir, d), d, transform=T.NormalizeFeatures())
     elif d in ['Cora_p', 'PubMed_p', 'Citeseer_p']:
         dataset = Planetoid(os.path.join(data_dir, d), d.split('_')[0], transform=T.NormalizeFeatures())
@@ -40,17 +46,22 @@ def get_original_data(d):
     data.num_classes= dataset.num_classes
     return data
 
-def train_test_split(data, seed, train_ratio=0.1):
+def train_test_split(data, seed, train_ratio=0.1, val_ratio=0.1):
     n = data.num_nodes
     idx = np.arange(n)
     np.random.seed(seed)
     np.random.shuffle(idx)
-    train_idx = idx[:int(n*train_ratio)]
-    test_idx = idx[int(n*train_ratio):]
+    train_idx = idx[:int(train_ratio * n)]
+    val_idx = idx[int(train_ratio * n):int((train_ratio + val_ratio) * n)]
+    test_idx = idx[int((train_ratio + val_ratio) * n):]
     data.train_mask = torch.zeros(n, dtype=torch.bool)
-    data.train_mask[train_idx] = True
+    data.val_mask = torch.zeros(n, dtype=torch.bool)
     data.test_mask = torch.zeros(n, dtype=torch.bool)
+    
+    data.train_mask[train_idx] = True
+    data.val_mask[val_idx] = True
     data.test_mask[test_idx] = True
+    
     return data, train_idx, test_idx
 
 def seed_everything(seed):
@@ -200,3 +211,68 @@ def prints_stats(data):
     print("Number of classes: ", data.num_classes)
     print("Number of training nodes: ", data.train_mask.sum().item())
     print("Number of testing nodes: ", data.test_mask.sum().item())
+    
+def plot_embeddings(args, model, data, class1, class2, is_dr=False, mask="test", name=""):
+    # Set the model to evaluation mode
+    model.eval()
+
+    # Forward pass: get embeddings
+    with torch.no_grad():
+        if is_dr and args.unlearning_model != "scrub":
+            embeddings = model(data.x, data.edge_index[:, data.dr_mask])
+        else:
+            embeddings = model(data.x, data.edge_index)
+
+    # If embeddings have more than 2 dimensions, apply t-SNE
+    print("Embeddings shape:", embeddings.shape)
+    if embeddings.shape[1] > 2:
+        embeddings = TSNE(n_components=2).fit_transform(embeddings.cpu())
+        embeddings = torch.tensor(embeddings).to(device)
+    print("Embeddings shape after t-SNE:", embeddings.shape)
+    # Get the mask (either test, train, or val)
+    if mask == "test":
+        mask = data.test_mask
+    elif mask == "train":
+        mask = data.train_mask
+    else:
+        mask = data.val_mask
+
+    # Filter embeddings and labels based on the mask
+    embeddings = embeddings[mask]
+    labels = data.y[mask]
+
+    # Create masks for class1, class2, and other classes
+    class1_mask = (labels == class1)
+    class2_mask = (labels == class2)
+    other_mask = ~(class1_mask | class2_mask)
+
+    # convert masks to numpy
+    class1_mask = class1_mask.cpu().numpy()
+    class2_mask = class2_mask.cpu().numpy()
+    other_mask = other_mask.cpu().numpy()
+
+    # Prepare the plot
+    plt.figure(figsize=(10, 8))
+    sns.set(style="whitegrid")
+
+    # convert to numpy
+    embeddings = embeddings.cpu().numpy()
+    labels = labels.cpu().numpy()
+
+    # Plot class1
+    plt.scatter(embeddings[class1_mask, 0], embeddings[class1_mask, 1], label=f'Class {class1}', color='blue', alpha=0.6)
+    # Plot class2
+    plt.scatter(embeddings[class2_mask, 0], embeddings[class2_mask, 1], label=f'Class {class2}', color='red', alpha=0.6)
+    # Plot other classes
+    plt.scatter(embeddings[other_mask, 0], embeddings[other_mask, 1], label='Other Classes', color='gray', alpha=0.4)
+
+    # Add legend and labels
+    plt.legend()
+    plt.title("Embeddings Visualization")
+    plt.xlabel("Embedding Dimension 1")
+    plt.ylabel("Embedding Dimension 2")
+
+    # Save the plot
+    os.makedirs("./plots", exist_ok=True)
+    plt.savefig(f"./plots/{args.dataset}_{args.attack_type}_{args.df_size}_{args.random_seed}_{name}_embeddings.png")
+    plt.show()

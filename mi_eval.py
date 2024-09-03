@@ -54,7 +54,7 @@ def train():
     # dataset
     print("==TRAINING==")
     clean_data = utils.get_original_data(args.dataset)
-    d, train_idx, test_idx = utils.train_test_split(clean_data, args.random_seed, args.train_ratio)
+    d, train_idx, test_idx = utils.train_test_split(clean_data, args.random_seed, args.train_ratio, args.val_ratio)
     utils.prints_stats(clean_data)
     clean_model = GCN(clean_data.num_features, args.hidden_dim, clean_data.num_classes)
 

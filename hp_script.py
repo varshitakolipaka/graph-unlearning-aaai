@@ -14,7 +14,7 @@ def get_script(dataset, unlearning_model, attack, seed):
     if attack == 'edge':
         return f"python main.py --df_size {dataset_to_df[dataset]} --dataset {dataset} --unlearning_model {unlearning_model} --attack_type edge --request edge --random_seed {seed} --data_dir /scratch/akshit.sinha/data"
 
-# unlearning_models = ['utu', 'scrub','gnndelete','megu','gif','contrastive']
+# unlearning_models = ['utu', 'scrub','gnndelete','megu','gif','contrastive', 'retrain']
 unlearning_models = ['contrastive']
 # attacks = ['label', 'edge']
 attacks = ['label']

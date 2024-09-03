@@ -1,4 +1,5 @@
 import argparse
+import time
 
 
 num_edge_type_mapping = {
@@ -11,7 +12,8 @@ num_edge_type_mapping = {
 def parse_args():
     parser = argparse.ArgumentParser()
 
-    parser.add_argument('--train_ratio', type=float, default=0.8, help='train ratio')
+    parser.add_argument('--train_ratio', type=float, default=0.7, help='train ratio')
+    parser.add_argument('--val_ratio', type=float, default=0.1, help='train ratio')
     parser.add_argument('--attack_type', type=str, default='label', help='attack type', choices=["label", "edge", "random", "trigger"])
     parser.add_argument('--unlearning_model', type=str, default='scrub', help='unlearning method', choices=["original", "gradient_ascent", "gnndelete", "gnndelete_ni", "gif", "utu", "contrastive", "retrain", "scrub", "megu"])
     parser.add_argument('--gnn', type=str, default='gcn', help='GNN architecture', choices=['gcn', 'gat', 'gin'])
@@ -24,6 +26,7 @@ def parse_args():
 
     # Data
     parser.add_argument('--data_dir', type=str, default='./data', help='data dir')
+    parser.add_argument('--db_name', type=str, default='hp_tuning', help='db name')
     
     # parser.add_argument('--df', type=str, default='in', help='Df set to use')
     # parser.add_argument('--df_idx', type=str, default=None, help='indices of data to be deleted')
@@ -93,6 +96,7 @@ def parse_args():
     # contrastive
     parser.add_argument('--contrastive_epochs_1', type=int, default=30, help="epochs for contrastive unlearning")
     parser.add_argument('--contrastive_epochs_2', type=int, default=10, help="epochs for contrastive unlearning")
+    parser.add_argument('--maximise_epochs', type=int, default=0, help="epochs for grad asc in contrastive unlearning")
     parser.add_argument('--contrastive_margin', type=float, default=500, help="margin for the contrastive loss")
     parser.add_argument('--contrastive_lambda', type=float, default=0.8, help="weight for the task loss [1 - lambda] is used for the contrastive loss")
     parser.add_argument('--k_hop', type=int, default=2, help="number of hops for the data sampling")

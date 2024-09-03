@@ -109,7 +109,7 @@ class GIFTrainer(Trainer):
         time, model = self.gif_approxi(self.args, self.model, grad_tuple)
         z = model(self.data.x, self.data.train_pos_edge_index[:, self.data.dr_mask])
 
-        train_acc, msc_rate, f1 = self.evaluate(is_dr = True)
+        train_acc, msc_rate, f1 = self.evaluate(is_dr = True, use_val = True)
         # print(f'Train Acc: {train_acc}, Misclassification: {msc_rate},  F1 Score: {f1}')
 
         return train_acc, msc_rate, time

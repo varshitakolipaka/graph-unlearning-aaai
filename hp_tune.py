@@ -29,6 +29,10 @@ class_dataset_dict = {
         "class1": 57,
         "class2": 33,
     },
+    "Cora_ML": {
+        "class1": 4,
+        "class2": 2,
+    },
     "PubMed": {
         "class1": 2,
         "class2": 1,
@@ -37,13 +41,25 @@ class_dataset_dict = {
         "class1": 6,
         "class2": 1,
     },
+    "CS": {
+        "class1": 13,
+        "class2": 5,
+    },
+    'Citeseer_p': {
+        "class1": 3,
+        "class2": 2,
+    },
+    'DBLP': {
+        "class1": 0,
+        "class2": 1,
+    }
 }
 
 
 def train(load=False):
     if load:
         clean_data = utils.get_original_data(args.dataset)
-        utils.train_test_split(clean_data, args.random_seed, args.train_ratio)
+        utils.train_test_split(clean_data, args.random_seed, args.train_ratio, args.val_ratio)
         utils.prints_stats(clean_data)
 
         clean_model = torch.load(
@@ -74,7 +90,7 @@ def train(load=False):
     # dataset
     print("==TRAINING==")
     clean_data = utils.get_original_data(args.dataset)
-    utils.train_test_split(clean_data, args.random_seed, args.train_ratio)
+    utils.train_test_split(clean_data, args.random_seed, args.train_ratio, args.val_ratio)
     utils.prints_stats(clean_data)
     clean_model = GCN(clean_data.num_features, args.hidden_dim, clean_data.num_classes)
 
@@ -218,10 +234,11 @@ def poison(clean_data=None):
 
 def unlearn(poisoned_data, poisoned_indices, poisoned_model):
     print("==UNLEARNING==")
-
+    
     utils.find_masks(
         poisoned_data, poisoned_indices, args, attack_type=args.attack_type
     )
+    
     if "gnndelete" in args.unlearning_model:
         unlearn_model = GCNDelete(
             poisoned_data.num_features,
@@ -260,9 +277,14 @@ def unlearn(poisoned_data, poisoned_indices, poisoned_model):
             args, unlearn_model, poisoned_data, optimizer_unlearn
         )
     else:
-        optimizer_unlearn = utils.get_optimizer(args, poisoned_model)
+        unlearn_model = GCN(
+            poisoned_data.num_features, args.hidden_dim, poisoned_data.num_classes
+        )
+        # copy the weights from the poisoned model
+        unlearn_model.load_state_dict(poisoned_model.state_dict())
+        optimizer_unlearn = utils.get_optimizer(args, unlearn_model)
         unlearn_trainer = utils.get_trainer(
-            args, poisoned_model, poisoned_data, optimizer_unlearn
+            args, unlearn_model, poisoned_data, optimizer_unlearn
         )
 
     _, _, time_taken = unlearn_trainer.train()
@@ -323,21 +345,22 @@ hp_tuning_params_dict = {
     },
     "contrastive": {
         "contrastive_epochs_1": (5, 30, "int"),
-        "contrastive_epochs_2": (15, 30, "int"),
+        "contrastive_epochs_2": (5, 30, "int"),
+        # "maximise_epochs": (5, 50, "int"),
         "unlearn_lr": (1e-5, 1e-1, "log"),
         "weight_decay": (1e-5, 1e-1, "log"),
         "contrastive_margin": (1, 1e3, "log"),
         "contrastive_lambda": (0.0, 1.0, "float"),
-        "contrastive_frac": (0.01, 0.1, "float"),
+        "contrastive_frac": (0.01, 0.2, "float"),
         "k_hop": (1, 2, "int"),
     },
     "utu": {},
     "scrub": {
-        "unlearn_iters": (10, 500, "int"),
+        "unlearn_iters": (110, 200, "int"),
         # 'kd_T': (1, 10, "float"),
         "unlearn_lr": (1e-5, 1e-1, "log"),
         "scrubAlpha": (1e-6, 10, "log"),
-        "msteps": (10, 500, "int"),
+        "msteps": (10, 100, "int"),
         # 'weight_decay': (1e-5, 1e-1, "log"),
     },
     "megu": {
@@ -372,8 +395,10 @@ def objective(trial, model, data):
     # Define the hyperparameters to tune
     set_hp_tuning_params(trial)
 
-    optimizer = utils.get_optimizer(args, model)
-    trainer = utils.get_trainer(args, model, data, optimizer)
+    model_internal = copy.deepcopy(model)
+
+    optimizer = utils.get_optimizer(args, model_internal)
+    trainer = utils.get_trainer(args, model_internal, data, optimizer)
 
     _, _, time_taken = trainer.train()
 
@@ -399,8 +424,9 @@ def objective(trial, model, data):
 if __name__ == "__main__":
     print('\n\n\n')
     print(args.dataset, args.attack_type)
-    # clean_data = train(load=True)
+    clean_data = train(load=True)
     poisoned_data, poisoned_indices, poisoned_model = poison()
+
     # unlearn(poisoned_data, poisoned_indices, poisoned_model)
 
     utils.find_masks(
@@ -425,19 +451,26 @@ if __name__ == "__main__":
         state_dict["deletion3.deletion_weight"] = model.deletion3.deletion_weight
 
         model.load_state_dict(state_dict)
+    elif "retrain" in args.unlearning_model:
+        model = GCN(
+            poisoned_data.num_features, args.hidden_dim, poisoned_data.num_classes
+        )
     else:
-        model = poisoned_model
+        model = GCN(
+            poisoned_data.num_features, args.hidden_dim, poisoned_data.num_classes
+        )
+        model.load_state_dict(poisoned_model.state_dict())
 
     objective_func = partial(objective, model=model, data=poisoned_data)
 
     print("==HYPERPARAMETER TUNING==")
     # Create a study with TPE sampler
     study = optuna.create_study(
-        sampler=TPESampler(),
+        sampler=TPESampler(seed=42),
         direction="maximize",
         study_name=f"{args.dataset}_{args.attack_type}_{args.df_size}_{args.unlearning_model}_{args.random_seed}",
         load_if_exists=True,
-        storage="sqlite:///temp.db",
+        storage=f"sqlite:///hp_tuning/{args.db_name}.db",
     )
 
     print("==OPTIMIZING==")
@@ -448,8 +481,6 @@ if __name__ == "__main__":
     if args.unlearning_model == "utu" or args.unlearning_model == "retrain":
         study.optimize(objective_func, n_trials=1)
     elif args.unlearning_model == "contrastive":
-        study.optimize(objective_func, n_trials=100)
-    elif args.unlearning_model == "megu":
         study.optimize(objective_func, n_trials=200)
     else:
         study.optimize(objective_func, n_trials=100)

@@ -113,15 +113,29 @@ class ContrastiveUnlearnTrainer(Trainer):
         self.data.sample_mask[influence_nodes_with_unlearning_nodes] = True
 
     @time_it
-    def task_loss(self):
+    def task_loss(self, mask=None):
         # use the retain mask to calculate the loss
         if self.args.request == "edge":
             self.embeddings = self.model(self.data.x, self.data.edge_index[:, self.data.dr_mask])
-        try:
-            mask = self.data.retain_mask
-        except:
-            mask = self.data.train_mask
+        
+        if mask is None:    
+            try:
+                mask = self.data.retain_mask
+            except:
+                mask = self.data.train_mask
+
         loss = self.criterion(self.embeddings[mask], self.data.y[mask])
+        return loss
+    
+    def grad_ascent_loss(self):
+        self.model = self.model.to(device)
+        self.data = self.data.to(device)
+        self.embeddings = self.model(self.data.x, self.data.edge_index)
+        if not hasattr(self.data, "poison_mask"):
+            self.data.poison_mask = torch.zeros(self.data.num_nodes, dtype=torch.bool)
+            self.data.poison_mask[self.data.poisoned_nodes] = True
+
+        loss = -self.task_loss(mask=self.data.poison_mask)
         return loss
 
     @time_it
@@ -299,20 +313,25 @@ class ContrastiveUnlearnTrainer(Trainer):
         optimizer = self.optimizer
         # attacked idx must be a list of nodes
         for epoch in trange(
-            args.contrastive_epochs_1 + args.contrastive_epochs_2, desc="Unlearning"
+            args.contrastive_epochs_1 + args.contrastive_epochs_2 + args.maximise_epochs, desc="Unlearning"
         ):
             self.model.train()
             self.embeddings = self.model(self.data.x, self.data.edge_index)
             if epoch <= args.contrastive_epochs_1:
                 pos_dist, neg_dist = self.get_distances_batch()
                 lmda = args.contrastive_lambda
+                loss = self.unlearn_loss(
+                    pos_dist, neg_dist, margin=args.contrastive_margin, lmda=lmda
+                )
+            elif epoch <= args.contrastive_epochs_1 + args.maximise_epochs:
+                loss = self.grad_ascent_loss()
             else:
                 pos_dist = None
                 neg_dist = None
                 lmda = 1
-            loss = self.unlearn_loss(
-                pos_dist, neg_dist, margin=args.contrastive_margin, lmda=lmda
-            )
+                loss = self.unlearn_loss(
+                    pos_dist, neg_dist, margin=args.contrastive_margin, lmda=lmda
+                )
             optimizer.zero_grad()
             loss.backward()
             optimizer.step()
@@ -355,7 +374,7 @@ class ContrastiveUnlearnTrainer(Trainer):
         elif self.args.request == "edge":
             self.train_edge()
         end_time = time.time()
-        train_acc, msc_rate, f1 = self.evaluate(is_dr=True)
+        train_acc, msc_rate, f1 = self.evaluate(is_dr=True, use_val=True)
         print(f"Train Acc: {train_acc}, Misclassification: {msc_rate},  F1 Score: {f1}")
 
         print(f"Training time: {end_time - start_time}")

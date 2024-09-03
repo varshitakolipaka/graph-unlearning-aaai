@@ -31,4 +31,8 @@ def label_flip_attack(data, epsilon, seed):
     
     flipped_indices = np.concatenate([flip_indices_class1, flip_indices_class2])
     data.poisoned_nodes = torch.tensor(flipped_indices)
+    
+    data.poison_mask = torch.zeros(data.num_nodes, dtype=torch.bool)
+    data.poison_mask[list(flipped_indices)] = True
+    
     return data, flipped_indices

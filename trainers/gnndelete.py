@@ -239,7 +239,7 @@ class GNNDeleteNodeembTrainer(Trainer):
             # end_time = time.time()
             # epoch_time = end_time - start_time
         end_time = time.time()
-        train_acc, msc_rate, f1 = self.evaluate(is_dr=True)
+        train_acc, msc_rate, f1 = self.evaluate(is_dr=True, use_val=True)
         print(f'Train Acc: {train_acc}, Misclassification: {msc_rate},  F1 Score: {f1}')
 
         return train_acc, msc_rate, end_time - start_time

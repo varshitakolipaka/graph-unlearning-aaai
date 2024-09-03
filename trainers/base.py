@@ -116,10 +116,12 @@ class Trainer:
 
         for clean_class in clean_classes:
             clean_indices = (true_labels == clean_class)
+            if clean_indices.sum() == 0:
+                continue
             accs_clean.append(accuracy_score(true_labels[clean_indices].cpu(), pred_labels[clean_indices].cpu()))
 
         print(f'Poisoned class: {class1} -> {class2}')
-        # print(f'Poisoned class acc: {accs_poisoned} | Clean class acc: {accs_clean}')
+        
         # take average of the accs
         accs_poisoned = sum(accs_poisoned) / len(accs_poisoned)
         accs_clean = sum(accs_clean) / len(accs_clean)
@@ -166,17 +168,23 @@ class Trainer:
 
     #     return dt_acc, msc_rate, dt_f1
 
-    def evaluate(self, val_mask=None, is_dr=False):
+    def evaluate(self, is_dr=False, use_val=False):
         self.model.eval()
 
         with torch.no_grad():
             if is_dr:
                 z = F.log_softmax(self.model(self.data.x, self.data.edge_index[:, self.data.dr_mask]), dim=1)
-                mask = self.data.test_mask
             else:
                 z = F.log_softmax(self.model(self.data.x, self.data.edge_index), dim=1)
-                mask = val_mask if val_mask is not None else self.data.test_mask
-
+                
+            if use_val:
+                mask = self.data.val_mask
+            else:
+                mask = self.data.test_mask
+                
+            # print sum of mask
+            print(mask.sum())
+                
             loss = F.nll_loss(z[mask], self.data.y[mask]).cpu().item()
             pred = torch.argmax(z[mask], dim=1).cpu()
             acc = accuracy_score(self.data.y[mask].cpu(), pred)
@@ -185,6 +193,7 @@ class Trainer:
 
         self.true = self.data.y[mask].cpu()
         self.pred = pred
+    
 
         return acc, msc_rate, f1
 

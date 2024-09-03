@@ -109,7 +109,7 @@ class ScrubTrainer(Trainer):
         if self.curr_step <= self.opt.unlearn_iters:
             self.optimizer.zero_grad()
             loss = self.forward_pass(data, mask)
-            val_acc, _, _ = self.evaluate(val_mask=self.data.val_mask)
+            val_acc, _, _ = self.evaluate(use_val=True)
             # print(val_acc, self.best_val_acc)
             if val_acc > self.best_val_acc:
                 # print("updating best model...")
@@ -169,7 +169,7 @@ class ScrubTrainer(Trainer):
             self.maximize=False
             # print("Gradient Descent Step: ", self.curr_step)
             self.train_one_epoch(data=self.poisoned_dataset, mask=self.poisoned_dataset.dr_mask)
-            train_acc, msc_rate, f1 = self.evaluate()
+            train_acc, msc_rate, f1 = self.evaluate(use_val=True)
             # print(f'Test Acc: {train_acc}, Misclassification: {msc_rate},  F1 Score: {f1}')
         end_time = time.time()
         # load best model
