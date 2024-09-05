@@ -11,6 +11,7 @@ from sklearn.manifold import TSNE
 
 
 from trainers.contrast import ContrastiveUnlearnTrainer
+from trainers.contrast_another import ContrastiveUnlearnTrainer_NEW
 from trainers.gnndelete import GNNDeleteNodeembTrainer
 from trainers.gnndelete_ni import GNNDeleteNITrainer
 from trainers.gradient_ascent import GradientAscentTrainer
@@ -170,6 +171,7 @@ def get_trainer(args, poisoned_model, poisoned_data, optimizer_unlearn) -> Train
         "gif": GIFTrainer,
         "utu": UtUTrainer,
         "contrastive": ContrastiveUnlearnTrainer,
+        'contra_2': ContrastiveUnlearnTrainer_NEW,
         "retrain": RetrainTrainer,
         "scrub": ScrubTrainer,
         "megu": MeguTrainer
@@ -276,3 +278,12 @@ def plot_embeddings(args, model, data, class1, class2, is_dr=False, mask="test",
     os.makedirs("./plots", exist_ok=True)
     plt.savefig(f"./plots/{args.dataset}_{args.attack_type}_{args.df_size}_{args.random_seed}_{name}_embeddings.png")
     plt.show()
+
+def sample_poison_data(data, frac):
+    assert frac <= 1.0 and frac >= 0.0, "frac must be between 0 and 1"
+    # randomly sample frac of the poisoned indices to be exposed to unlearning methods
+    poisoned_indices = data.poisoned_nodes.cpu().numpy()
+    
+    num_to_sample = int(frac * len(poisoned_indices))
+    
+    return torch.tensor(np.random.choice(poisoned_indices, num_to_sample, replace=False))

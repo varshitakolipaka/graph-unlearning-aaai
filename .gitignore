@@ -11,6 +11,8 @@ data/
 # SQL
 *.db
 
+*.pth
+
 plots/
 
 logs/

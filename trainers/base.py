@@ -182,9 +182,6 @@ class Trainer:
             else:
                 mask = self.data.test_mask
                 
-            # print sum of mask
-            print(mask.sum())
-                
             loss = F.nll_loss(z[mask], self.data.y[mask]).cpu().item()
             pred = torch.argmax(z[mask], dim=1).cpu()
             acc = accuracy_score(self.data.y[mask].cpu(), pred)

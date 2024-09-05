@@ -52,10 +52,6 @@ class_dataset_dict = {
     'DBLP': {
         "class1": 0,
         "class2": 1,
-    },
-    'Flickr': {
-        "class1": 6,
-        "class2": 4,
     }
 }
 
@@ -350,24 +346,12 @@ hp_tuning_params_dict = {
     "contrastive": {
         "contrastive_epochs_1": (5, 30, "int"),
         "contrastive_epochs_2": (5, 30, "int"),
-        # "maximise_epochs": (5, 30, "int"),
+        "maximise_epochs": (5, 30, "int"),
         "unlearn_lr": (1e-5, 1e-1, "log"),
         "weight_decay": (1e-5, 1e-1, "log"),
         "contrastive_margin": (1, 1e3, "log"),
         "contrastive_lambda": (0.0, 1.0, "float"),
         "contrastive_frac": (0.01, 0.2, "float"),
-        "k_hop": (1, 2, "int"),
-    },
-    "contra_2": {
-        "contrastive_epochs_1": (1, 15, "int"),
-        "contrastive_epochs_2": (1, 30, "int"),
-        "steps": (1, 15, "int"),
-        # "maximise_epochs": (5, 30, "int"),
-        "unlearn_lr": (1e-5, 1e-1, "log"),
-        "weight_decay": (1e-5, 1e-1, "log"),
-        "contrastive_margin": (1, 1e3, "log"),
-        # "contrastive_lambda": (0.0, 1.0, "float"),
-        "contrastive_frac": (0.01, 0.15, "float"),
         "k_hop": (1, 2, "int"),
     },
     "utu": {},
@@ -496,7 +480,7 @@ if __name__ == "__main__":
     # reduce trials for utu and contrastive
     if args.unlearning_model == "utu" or args.unlearning_model == "retrain":
         study.optimize(objective_func, n_trials=1)
-    elif args.unlearning_model == "contrastive" or args.unlearning_model == "contra_2":
+    elif args.unlearning_model == "contrastive":
         study.optimize(objective_func, n_trials=200)
     else:
         study.optimize(objective_func, n_trials=100)

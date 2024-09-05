@@ -72,7 +72,7 @@ def train(load=False):
             logger.log_result(
                 args.random_seed, "original", {"forget": forg, "utility": util}
             )
-
+            
         return clean_data
 
     # dataset
@@ -277,6 +277,10 @@ def unlearn(poisoned_data, poisoned_indices, poisoned_model):
         )
 
     _, _, time_taken = unlearn_trainer.train()
+    if args.unlearning_model == "scrub":
+        unlearn_trainer.evaluate()
+    else:
+        unlearn_trainer.evaluate(is_dr = True)
     forg, util = unlearn_trainer.get_score(
         args.attack_type,
         class1=class_dataset_dict[args.dataset]["class1"],
@@ -369,7 +373,7 @@ d = {
             "Amazon": {
                 "contrastive_epochs_1": 30,
                 "contrastive_epochs_2": 35,
-                'maximise_epochs': 0,
+                "maximise_epochs": 0,
                 "unlearn_lr": 0.016411,
                 "weight_decay": 0.0005263,
                 "contrastive_margin": 113.10661,
@@ -378,16 +382,27 @@ d = {
                 "k_hop": 1,
             },
             "Cora": {
-                "contrastive_epochs_1": 26,
-                "contrastive_epochs_2": 29,
-                'maximise_epochs': 0,
-                "unlearn_lr": 0.0143046,
-                "weight_decay": 0.000061,
-                "contrastive_margin": 482.75,
-                "contrastive_lambda": 0.177,
-                "contrastive_frac": 0.072,
+                "contrastive_epochs_1": 8,
+                "contrastive_epochs_2": 21,
+                "maximise_epochs": 0,
+                "unlearn_lr": 0.0267,
+                "weight_decay": 0.00008,
+                "contrastive_margin": 500,
+                "contrastive_lambda": 0.067,
+                "contrastive_frac": 0.19004,
                 "k_hop": 2,
             },
+            # "Cora": {
+            #     "contrastive_epochs_1": 8,
+            #     "contrastive_epochs_2": 21,
+            #     'maximise_epochs': 0,
+            #     "unlearn_lr": 0.0267,
+            #     "weight_decay": 0.00008,
+            #     "contrastive_margin": 499.81,
+            #     "contrastive_lambda": 0.067,
+            #     "contrastive_frac": 0.19004,
+            #     "k_hop": 2,
+            # },
             "PubMed": {
                 "contrastive_epochs_1": 24,
                 "contrastive_epochs_2": 28,
@@ -432,13 +447,60 @@ d = {
             },
         },
     },
+    "contra_2": {
+        "label": {
+            "Amazon": {
+                "contrastive_epochs_1": 1,
+                "contrastive_epochs_2": 15,
+                "steps": 15,
+                "unlearn_lr": 0.05330,
+                "weight_decay": 0.0000149,
+                "contrastive_margin": 1775,
+                "contrastive_lambda": 0.2,
+                "contrastive_frac": 0.153951,
+                "k_hop": 2,
+            },
+            "Cora": {
+                "contrastive_epochs_1": 8,
+                "contrastive_epochs_2": 21,
+                "maximise_epochs": 0,
+                "unlearn_lr": 0.0267,
+                "weight_decay": 0.00008,
+                "contrastive_margin": 500,
+                "contrastive_lambda": 0.067,
+                "contrastive_frac": 0.19004,
+                "k_hop": 2,
+            },
+            # "Cora": {
+            #     "contrastive_epochs_1": 8,
+            #     "contrastive_epochs_2": 21,
+            #     'maximise_epochs': 0,
+            #     "unlearn_lr": 0.0267,
+            #     "weight_decay": 0.00008,
+            #     "contrastive_margin": 499.81,
+            #     "contrastive_lambda": 0.067,
+            #     "contrastive_frac": 0.19004,
+            #     "k_hop": 2,
+            # },
+            "PubMed": {
+                "contrastive_epochs_1": 24,
+                "contrastive_epochs_2": 28,
+                "unlearn_lr": 0.025,
+                "weight_decay": 0.000019,
+                "contrastive_margin": 10,
+                "contrastive_lambda": 0.0301,
+                "contrastive_frac": 0.01569,
+                "k_hop": 2,
+            },
+        },
+    },
     "utu": {},
     "scrub": {
         "label": {
             "Amazon": {
-                "unlearn_iters": 467,
-                "unlearn_lr": 0.04673,
-                "scrubAlpha": 0.000004,
+                "unlearn_iters": 191,
+                "unlearn_lr": 0.0082,
+                "scrubAlpha": 0.00032,
                 "msteps": 10,
             },
             "Cora": {
@@ -510,8 +572,13 @@ if __name__ == "__main__":
 
     print(args.dataset, args.attack_type)
     clean_data = train(load=True)
-    poisoned_data, poisoned_indices, poisoned_model = poison()
 
+    poisoned_data, poisoned_indices, poisoned_model = poison()
+    
+    if args.corrective_frac < 1:
+        poisoned_indices = utils.sample_poison_data(poisoned_data, args.corrective_frac)
+        poisoned_data.poisoned_nodes = poisoned_indices
+    
     try:
         params = d[args.unlearning_model][args.attack_type][args.dataset]
     except:
@@ -534,5 +601,5 @@ if __name__ == "__main__":
         class1=class_dataset_dict[args.dataset]["class1"],
         class2=class_dataset_dict[args.dataset]["class2"],
         is_dr=True,
-        name=f"unlearned {args.unlearning_model}",
+        name=f"unlearned_{args.unlearning_model}_2",
     )

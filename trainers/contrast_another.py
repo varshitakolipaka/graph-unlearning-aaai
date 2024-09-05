@@ -29,7 +29,7 @@ def time_it(func):
     return wrapper
 
 
-class ContrastiveUnlearnTrainer(Trainer):
+class ContrastiveUnlearnTrainer_NEW(Trainer):
     def __init__(self, model, data, optimizer, args):
         super().__init__(model, data, optimizer)
         self.args = args
@@ -115,7 +115,8 @@ class ContrastiveUnlearnTrainer(Trainer):
     @time_it
     def task_loss(self, mask=None, ascent=False):        
         # use the retain mask to calculate the loss
-        embeddings = self.model(self.data.x, self.data.edge_index[:, self.data.dr_mask])
+        if self.args.request == "edge":
+            self.embeddings = self.model(self.data.x, self.data.edge_index[:, self.data.dr_mask])
         
         if mask is None:    
             try:
@@ -126,7 +127,7 @@ class ContrastiveUnlearnTrainer(Trainer):
         if ascent:
             mask = self.data.poison_mask
 
-        loss = self.criterion(embeddings[mask], self.data.y[mask])
+        loss = self.criterion(self.embeddings[mask], self.data.y[mask])
         
         if ascent:
             return -loss
@@ -144,12 +145,17 @@ class ContrastiveUnlearnTrainer(Trainer):
     def unlearn_loss(self, pos_dist, neg_dist, margin=1.0, lmda=0.8, ascent=False):
         if lmda == 1:
             return self.task_loss()
+        
+        if lmda == 0:
+            return self.contrastive_loss(pos_dist, neg_dist, margin)
+        
         return lmda * self.task_loss(ascent=ascent) + (1 - lmda) * self.contrastive_loss(
             pos_dist, neg_dist, margin
         )
 
     def calc_distances(self, nodes, positive_samples, negative_samples):
         # Vectorized contrastive loss calculation
+        
         anchors = self.embeddings[nodes].unsqueeze(1)  # Shape: (N, 1, D)
         positives = self.embeddings[positive_samples]  # Shape: (N, P, D)
         negatives = self.embeddings[negative_samples]  # Shape: (N, Q, D)
@@ -234,10 +240,13 @@ class ContrastiveUnlearnTrainer(Trainer):
             )
 
             st_2 = time.time()
-            batch_pos_dist, batch_neg_dist = self.calc_distances(
-                batch_indices, batch_pos, batch_neg
-            )
-            calc_time += time.time() - st_2
+            try:
+                batch_pos_dist, batch_neg_dist = self.calc_distances(
+                    batch_indices, batch_pos, batch_neg
+                )
+                calc_time += time.time() - st_2
+            except:
+                continue
 
             pos_dist[batch_indices] = batch_pos_dist.to(pos_dist.device)
             neg_dist[batch_indices] = batch_neg_dist.to(neg_dist.device)
@@ -306,28 +315,32 @@ class ContrastiveUnlearnTrainer(Trainer):
         self.data = self.data.to(device)
         args = self.args
         optimizer = self.optimizer
+        best_val_acc = 0
         # attacked idx must be a list of nodes
         for epoch in trange(
-            args.contrastive_epochs_1 + args.contrastive_epochs_2, desc="Unlearning"
+            args.steps, desc="Unlearning"
         ):
-            self.model.train()
-            self.embeddings = self.model(self.data.x, self.data.edge_index[:, self.data.dr_mask])
-            if epoch <= args.contrastive_epochs_1:
-                pos_dist, neg_dist = self.get_distances_batch()
-                lmda = args.contrastive_lambda
-                loss = self.unlearn_loss(
-                    pos_dist, neg_dist, margin=args.contrastive_margin, lmda=lmda
-                )
-            else:
-                pos_dist = None
-                neg_dist = None
-                lmda = 1
-                loss = self.unlearn_loss(
-                    pos_dist, neg_dist, margin=args.contrastive_margin, lmda=lmda
-                )
-            optimizer.zero_grad()
-            loss.backward()
-            optimizer.step()
+            for i in range(args.contrastive_epochs_1 + args.contrastive_epochs_2):
+                self.model.train()
+                
+                self.embeddings = self.model(self.data.x, self.data.edge_index[:, self.data.dr_mask])
+                if i < args.contrastive_epochs_1:
+                    pos_dist, neg_dist = self.get_distances_batch()
+                    lmda = 0
+                    loss = self.unlearn_loss(
+                        pos_dist, neg_dist, margin=args.contrastive_margin, lmda=lmda
+                    )
+                else:
+                    pos_dist = None
+                    neg_dist = None
+                    lmda = 1
+                    loss = self.unlearn_loss(
+                        pos_dist, neg_dist, margin=args.contrastive_margin, lmda=lmda
+                    )
+                    
+                optimizer.zero_grad()
+                loss.backward()
+                optimizer.step()
 
     def train_edge(self):
         # attack idx must be a list of tuples (u,v)
