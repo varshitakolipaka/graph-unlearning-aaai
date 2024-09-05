@@ -1,0 +1,58 @@
+{
+    "contra_2": {
+        "label": {
+            "Amazon": {
+                "contrastive_epochs_1": 1,
+                "contrastive_epochs_2": 27,
+                "steps": 14,
+                "unlearn_lr": 0.00574545596753458,
+                "weight_decay": 1.7549203848008e-05,
+                "contrastive_margin": 419.57509395181427,
+                "contrastive_frac": 0.09285349203751109,
+                "k_hop": 1
+            },
+            "Cora": {
+                "contrastive_epochs_1": 2,
+                "contrastive_epochs_2": 17,
+                "steps": 11,
+                "unlearn_lr": 0.05573726498347427,
+                "weight_decay": 6.261312882920229e-05,
+                "contrastive_margin": 505.0287104899078,
+                "contrastive_frac": 0.11613764733590672,
+                "k_hop": 2
+            },
+            "CS": {
+                "contrastive_epochs_1": 3,
+                "contrastive_epochs_2": 5,
+                "steps": 12,
+                "unlearn_lr": 0.007670153305204662,
+                "weight_decay": 1.5091499375669488e-05,
+                "contrastive_margin": 987.9838966887119,
+                "contrastive_frac": 0.02964791798044718,
+                "k_hop": 1
+            }
+        }
+    },
+    "scrub": {
+        "label": {
+            "CS": {
+                "unlearn_iters": 195,
+                "unlearn_lr": 0.007070559390726338,
+                "scrubAlpha": 0.00043040106533787125,
+                "msteps": 13
+            },
+            "Amazon": {
+                "unlearn_iters": 191,
+                "unlearn_lr": 0.008204215907698287,
+                "scrubAlpha": 0.0003226502407764585,
+                "msteps": 10
+            },
+            "Cora": {
+                "unlearn_iters": 127,
+                "unlearn_lr": 1.05560071478776e-05,
+                "scrubAlpha": 5.083650186321295e-05,
+                "msteps": 13
+            }
+        }
+    }
+}

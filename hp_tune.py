@@ -132,15 +132,11 @@ def poison(clean_data=None):
         poisoned_data = torch.load(
             f"{args.data_dir}/{args.dataset}_{args.attack_type}_{args.df_size}_{args.random_seed}_poisoned_data.pt"
         )
-        poisoned_indices = torch.load(
-            f"{args.data_dir}/{args.dataset}_{args.attack_type}_{args.df_size}_{args.random_seed}_poisoned_indices.pt"
-        )
         poisoned_model = torch.load(
             f"{args.data_dir}/{args.dataset}_{args.attack_type}_{args.df_size}_{args.random_seed}_poisoned_model.pt"
         )
-
-        if not hasattr(poisoned_data, "poisoned_nodes"):
-            poisoned_data.poisoned_nodes = poisoned_indices
+        
+        poisoned_indices = poisoned_data.poisoned_nodes
 
         optimizer = torch.optim.Adam(
             poisoned_model.parameters(),
@@ -220,11 +216,7 @@ def poison(clean_data=None):
         poisoned_data,
         f"{args.data_dir}/{args.dataset}_{args.attack_type}_{args.df_size}_{args.random_seed}_poisoned_data.pt",
     )
-    torch.save(
-        poisoned_indices,
-        f"{args.data_dir}/{args.dataset}_{args.attack_type}_{args.df_size}_{args.random_seed}_poisoned_indices.pt",
-    )
-
+    
     forg, util = poisoned_trainer.get_score(
         args.attack_type,
         class1=class_dataset_dict[args.dataset]["class1"],

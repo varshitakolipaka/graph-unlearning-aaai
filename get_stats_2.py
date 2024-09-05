@@ -1,3 +1,4 @@
+import csv
 import os
 import json
 import pandas as pd
@@ -10,27 +11,35 @@ def load_data_from_json(file_path):
         data = json.load(file)["results"]
     return data
 
+def convert_dict_to_csv(data, csv_file):
+    """
+    Convert a dictionary to a CSV file.
 
-def create_dataframe(data):
-    # Flattening the data into a DataFrame
-    df_avg = pd.DataFrame(data["average"]).T
-    df_std = pd.DataFrame(data["standard_dev"]).T
+    Parameters:
+    data (dict): The dictionary containing the data.
+    csv_file (str): The name of the output CSV file.
+    """
+    with open(f"{csv_file}_avg.csv", mode='w', newline='') as file:
+        writer = csv.writer(file)
+        
+        # Write the header
+        writer.writerow(["Method", "Forget", "Time Taken", "Utility"])
+        
+        # Write the data
+        for method, metrics in data["average"].items():
+            writer.writerow([method, metrics["forget"], metrics["time_taken"], metrics["utility"]])
+            
+    with open(f"{csv_file}_std.csv", mode='w', newline='') as file:
+        writer = csv.writer(file)
+        
+        # Write the header
+        writer.writerow(["Method", "Forget", "Time Taken", "Utility"])
+        
+        # Write the data
+        for method, metrics in data["standard_dev"].items():
+            writer.writerow([method, metrics["forget"], metrics["time_taken"], metrics["utility"]])
 
-    # Combine average and standard deviation
-    df_combined = pd.concat(
-        [df_avg, df_std], axis=1, keys=["Average", "Standard Deviation"]
-    )
-    df_combined.columns = [
-        "avg_time_taken",
-        "avg_forget",
-        "avg_utility",
-        "std_time_taken",
-        "std_forget",
-        "std_utility",
-    ]
-    
-    return df_combined
-
+    print(f"Data has been written to {csv_file}")
 
 def create_subplots(df_combined, fname):
     # Create subplots
@@ -75,13 +84,4 @@ if __name__ == "__main__":
 
     for file_path in file_paths:
         data = load_data_from_json(file_path)
-
-        # Create DataFrame
-        df_combined = create_dataframe(data)
-
-        # Display the DataFrame
-        print(df_combined)
-
-        # Create and display subplots
-        fname = file_path.replace(".json", ".png")
-        create_subplots(df_combined, fname)
+        convert_dict_to_csv(data, file_path.replace(".json", ""))

@@ -1,5 +1,6 @@
 from collections import defaultdict
 import copy
+import json
 import os
 import torch
 from framework import utils
@@ -29,6 +30,10 @@ class_dataset_dict = {
         "class1": 57,
         "class2": 33,
     },
+    "Cora_ML": {
+        "class1": 4,
+        "class2": 2,
+    },
     "PubMed": {
         "class1": 2,
         "class2": 1,
@@ -37,8 +42,23 @@ class_dataset_dict = {
         "class1": 6,
         "class2": 1,
     },
+    "CS": {
+        "class1": 13,
+        "class2": 5,
+    },
+    'Citeseer_p': {
+        "class1": 3,
+        "class2": 2,
+    },
+    'DBLP': {
+        "class1": 0,
+        "class2": 1,
+    },
+    'Flickr': {
+        "class1": 6,
+        "class2": 4,
+    }
 }
-
 
 def train(load=False):
     if load:
@@ -297,283 +317,17 @@ def unlearn(poisoned_data, poisoned_indices, poisoned_model):
     print("==UNLEARNING DONE==")
     return unlearn_model
 
-
-d = {
-    "retrain": {},
-    "gnndelete": {
-        "label": {
-            "Amazon": {
-                "unlearn_lr": 0.005,
-                "weight_decay": 0.0141,
-                "unlearning_epochs": 110,
-                "alpha": 0.0055,
-                "loss_type": "only3",
-            },
-            "Cora": {
-                "unlearn_lr": 0.0199,
-                "weight_decay": 0.0883,
-                "unlearning_epochs": 50,
-                "alpha": 0.0899,
-                "loss_type": "only3_all",
-            },
-            "PubMed": {
-                "unlearn_lr": 0.00072,
-                "weight_decay": 0.000019,
-                "unlearning_epochs": 183,
-                "alpha": 0.13588,
-                "loss_type": "only3_all",
-            },
-        },
-        "edge": {
-            "Amazon": {
-                "unlearn_lr": 0.0254,
-                "weight_decay": 0.000025,
-                "unlearning_epochs": 110,
-                "alpha": 0.9329,
-                "loss_type": "only3_all",
-            },
-            "Cora": {
-                "unlearn_lr": 0.000016,
-                "weight_decay": 0.000309,
-                "unlearning_epochs": 50,
-                "alpha": 0.1743,
-                "loss_type": "both_all",
-            },
-            "PubMed": {
-                "unlearn_lr": 0.02,
-                "weight_decay": 0.002213,
-                "unlearning_epochs": 172,
-                "alpha": 0.164591,
-                "loss_type": "both_layerwise",
-            },
-        },
-    },
-    "gif": {
-        "label": {
-            "Amazon": {
-                "iteration": 700,
-                "scale": 50825608154.821434,
-                "damp": 0.92,
-            },
-            "Cora": {"iteration": 60, "scale": 57264906553.625755, "damp": 0.638},
-            "PubMed": {"iteration": 228, "scale": 87234771604.55779, "damp": 0.77494},
-        },
-        "edge": {
-            "Amazon": {
-                "iteration": 700,
-                "scale": 18469584144.482,
-                "damp": 0.38,
-            },
-            "Cora": {"iteration": 133, "scale": 2611000768.2023053, "damp": 0.720},
-            "PubMed": {"iteration": 350, "scale": 2728338855.556325, "damp": 0.80018},
-        },
-    },
-    "contrastive": {
-        "label": {
-            "Amazon": {
-                "contrastive_epochs_1": 30,
-                "contrastive_epochs_2": 35,
-                "maximise_epochs": 0,
-                "unlearn_lr": 0.016411,
-                "weight_decay": 0.0005263,
-                "contrastive_margin": 113.10661,
-                "contrastive_lambda": 0.2,
-                "contrastive_frac": 0.15,
-                "k_hop": 1,
-            },
-            "Cora": {
-                "contrastive_epochs_1": 8,
-                "contrastive_epochs_2": 21,
-                "maximise_epochs": 0,
-                "unlearn_lr": 0.0267,
-                "weight_decay": 0.00008,
-                "contrastive_margin": 500,
-                "contrastive_lambda": 0.067,
-                "contrastive_frac": 0.19004,
-                "k_hop": 2,
-            },
-            # "Cora": {
-            #     "contrastive_epochs_1": 8,
-            #     "contrastive_epochs_2": 21,
-            #     'maximise_epochs': 0,
-            #     "unlearn_lr": 0.0267,
-            #     "weight_decay": 0.00008,
-            #     "contrastive_margin": 499.81,
-            #     "contrastive_lambda": 0.067,
-            #     "contrastive_frac": 0.19004,
-            #     "k_hop": 2,
-            # },
-            "PubMed": {
-                "contrastive_epochs_1": 24,
-                "contrastive_epochs_2": 28,
-                "unlearn_lr": 0.025,
-                "weight_decay": 0.000019,
-                "contrastive_margin": 10,
-                "contrastive_lambda": 0.0301,
-                "contrastive_frac": 0.01569,
-                "k_hop": 2,
-            },
-        },
-        "edge": {
-            "Amazon": {
-                "contrastive_epochs_1": 27,
-                "contrastive_epochs_2": 27,
-                "unlearn_lr": 0.02271,
-                "weight_decay": 0.0000186,
-                "contrastive_margin": 25.053,
-                "contrastive_lambda": 0.3592,
-                "contrastive_frac": 0.08,
-                "k_hop": 1,
-            },
-            "Cora": {
-                "contrastive_epochs_1": 8,
-                "contrastive_epochs_2": 30,
-                "unlearn_lr": 0.01718,
-                "weight_decay": 0.00002,
-                "contrastive_margin": 87.41,
-                "contrastive_lambda": 0.2194,
-                "contrastive_frac": 0.0756,
-                "k_hop": 1,
-            },
-            "PubMed": {
-                "contrastive_epochs_1": 20,
-                "contrastive_epochs_2": 26,
-                "unlearn_lr": 0.01220,
-                "weight_decay": 0.0000373,
-                "contrastive_margin": 465.637,
-                "contrastive_lambda": 0.1763,
-                "contrastive_frac": 0.0119,
-                "k_hop": 1,
-            },
-        },
-    },
-    "contra_2": {
-        "label": {
-            "Amazon": {
-                "contrastive_epochs_1": 1,
-                "contrastive_epochs_2": 15,
-                "steps": 15,
-                "unlearn_lr": 0.05330,
-                "weight_decay": 0.0000149,
-                "contrastive_margin": 1775,
-                "contrastive_lambda": 0.2,
-                "contrastive_frac": 0.153951,
-                "k_hop": 2,
-            },
-            "Cora": {
-                "contrastive_epochs_1": 8,
-                "contrastive_epochs_2": 21,
-                "maximise_epochs": 0,
-                "unlearn_lr": 0.0267,
-                "weight_decay": 0.00008,
-                "contrastive_margin": 500,
-                "contrastive_lambda": 0.067,
-                "contrastive_frac": 0.19004,
-                "k_hop": 2,
-            },
-            # "Cora": {
-            #     "contrastive_epochs_1": 8,
-            #     "contrastive_epochs_2": 21,
-            #     'maximise_epochs': 0,
-            #     "unlearn_lr": 0.0267,
-            #     "weight_decay": 0.00008,
-            #     "contrastive_margin": 499.81,
-            #     "contrastive_lambda": 0.067,
-            #     "contrastive_frac": 0.19004,
-            #     "k_hop": 2,
-            # },
-            "PubMed": {
-                "contrastive_epochs_1": 24,
-                "contrastive_epochs_2": 28,
-                "unlearn_lr": 0.025,
-                "weight_decay": 0.000019,
-                "contrastive_margin": 10,
-                "contrastive_lambda": 0.0301,
-                "contrastive_frac": 0.01569,
-                "k_hop": 2,
-            },
-        },
-    },
-    "utu": {},
-    "scrub": {
-        "label": {
-            "Amazon": {
-                "unlearn_iters": 191,
-                "unlearn_lr": 0.0082,
-                "scrubAlpha": 0.00032,
-                "msteps": 10,
-            },
-            "Cora": {
-                "unlearn_iters": 34,
-                "unlearn_lr": 0.00228,
-                "scrubAlpha": 0.015506,
-                "msteps": 418,
-            },
-            "PubMed": {
-                "unlearn_iters": 460,
-                "unlearn_lr": 0.00872,
-                "scrubAlpha": 0.1755,
-                "msteps": 11,
-            },
-        }
-    },
-    "megu": {
-        "label": {
-            "Amazon": {
-                "unlearn_lr": 0.000002,
-                "unlearning_epochs": 645,
-                "kappa": 0.0012,
-                "alpha1": 0.1580,
-                "alpha2": 0.8388,
-            },
-            "Cora": {
-                "unlearn_lr": 0.000094,
-                "unlearning_epochs": 926,
-                "kappa": 0.0141,
-                "alpha1": 0.960,
-                "alpha2": 0.0217,
-            },
-            "PubMed": {
-                "unlearn_lr": 0.00000716,
-                "unlearning_epochs": 116,
-                "kappa": 0.0338,
-                "alpha1": 0.766,
-                "alpha2": 0.620,
-            },
-        },
-        "edge": {
-            "Amazon": {
-                "unlearn_lr": 00.00006,
-                "unlearning_epochs": 800,
-                "kappa": 0.00193,
-                "alpha1": 0.08793,
-                "alpha2": 0.1095,
-            },
-            "Cora": {
-                "unlearn_lr": 0.00078,
-                "unlearning_epochs": 200,
-                "kappa": 0.0033,
-                "alpha1": 0.622,
-                "alpha2": 0.7175,
-            },
-            "PubMed": {
-                "unlearn_lr": 0.000871,
-                "unlearning_epochs": 716,
-                "kappa": 0.00514,
-                "alpha1": 0.5217,
-                "alpha2": 0.282,
-            },
-        },
-    },
-}
-
 if __name__ == "__main__":
     print("\n\n\n")
 
     print(args.dataset, args.attack_type)
-    clean_data = train(load=True)
+    # clean_data = train()
 
     poisoned_data, poisoned_indices, poisoned_model = poison()
+    
+    # load best params file
+    with open('best_params.json', 'r') as f:
+        d = json.load(f)
     
     if args.corrective_frac < 1:
         poisoned_indices = utils.sample_poison_data(poisoned_data, args.corrective_frac)
@@ -594,12 +348,12 @@ if __name__ == "__main__":
 
     unlearnt_model = unlearn(poisoned_data, poisoned_indices, poisoned_model)
 
-    utils.plot_embeddings(
-        args,
-        unlearnt_model,
-        poisoned_data,
-        class1=class_dataset_dict[args.dataset]["class1"],
-        class2=class_dataset_dict[args.dataset]["class2"],
-        is_dr=True,
-        name=f"unlearned_{args.unlearning_model}_2",
-    )
+    # utils.plot_embeddings(
+    #     args,
+    #     unlearnt_model,
+    #     poisoned_data,
+    #     class1=class_dataset_dict[args.dataset]["class1"],
+    #     class2=class_dataset_dict[args.dataset]["class2"],
+    #     is_dr=True,
+    #     name=f"unlearned_{args.unlearning_model}_2",
+    # )
