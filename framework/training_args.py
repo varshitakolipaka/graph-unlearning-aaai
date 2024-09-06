@@ -13,7 +13,7 @@ def parse_args():
 
     parser.add_argument('--train_ratio', type=float, default=0.8, help='train ratio')
     parser.add_argument('--attack_type', type=str, default='label', help='attack type', choices=["label", "edge", "random", "trigger"])
-    parser.add_argument('--unlearning_model', type=str, default='scrub', help='unlearning method', choices=["original", "gradient_ascent", "gnndelete", "gnndelete_ni", "gif", "utu", "contrastive", "retrain", "scrub", "megu"])
+    parser.add_argument('--unlearning_model', type=str, default='scrub', help='unlearning method', choices=["original", "gradient_ascent", "gnndelete", "gnndelete_ni", "gif", "utu", "contrastive", "retrain", "scrub", "megu", "SSD"])
     parser.add_argument('--gnn', type=str, default='gcn', help='GNN architecture', choices=['gcn', 'gat', 'gin'])
     # parser.add_argument('--in_dim', type=int, default=128, help='input dimension')
     parser.add_argument('--hidden_dim', type=int, default=64, help='hidden dimension')
@@ -30,7 +30,7 @@ def parse_args():
     parser.add_argument('--df_size', type=float, default=0.5, help='Forgetting Fraction')
     parser.add_argument('--test_poison_fraction', type=float, default=0.2, help='Test Poisoning Fraction')
     parser.add_argument('--poison_tensor_size', type=int, default=100, help='Poison Tensor Size')
-    parser.add_argument('--dataset', type=str, default='Cora', help='dataset')
+    parser.add_argument('--dataset', type=str, default='Cora_p', help='dataset')
     parser.add_argument('--random_seed', type=int, default=0, help='random seed')
     # parser.add_argument('--batch_size', type=int, default=2048, help='batch size for GraphSAINTRandomWalk sampler')
     # parser.add_argument('--walk_length', type=int, default=2, help='random walk length for GraphSAINTRandomWalk sampler')
@@ -43,7 +43,7 @@ def parse_args():
     parser.add_argument('--unlearn_lr', type=float, default=0.015, help='unlearn learning rate')
     parser.add_argument('--weight_decay', type=float, default=0, help='weight decay')
     parser.add_argument('--optimizer', type=str, default='Adam', help='optimizer to use')
-    parser.add_argument('--training_epochs', type=int, default=1208, help='number of epochs to train')
+    parser.add_argument('--training_epochs', type=int, default=50, help='number of epochs to train')
     parser.add_argument('--valid_freq', type=int, default=30, help='# of epochs to do validation')
     parser.add_argument('--checkpoint_dir', type=str, default='./checkpoint', help='checkpoint folder')
     parser.add_argument('--alpha', type=float, default=0.5, help='alpha in loss function')
@@ -73,7 +73,7 @@ def parse_args():
     # Evaluation
     parser.add_argument('--topk', type=int, default=500, help='top k for evaluation')
     parser.add_argument('--eval_on_cpu', type=bool, default=False, help='whether to evaluate on CPU')
-    parser.add_argument('--tuning', type=bool, default=False, help='whether to evaluate on CPU')
+    parser.add_argument('--tuning', type=bool, default=False, help='whether to hptune')
 
     # KG
     parser.add_argument('--num_edge_type', type=int, default=None, help='number of edges types')
@@ -103,6 +103,11 @@ def parse_args():
     parser.add_argument('--kappa', type=float, default=0.01)
     parser.add_argument('--alpha1', type=float, default=0.8)
     parser.add_argument('--alpha2', type=float, default=0.5)
+
+    # SSD
+    parser.add_argument('--SSDdampening', type=float, default=10, help='SSD: lambda aka dampening constant, lower leads to more forgetting')
+    parser.add_argument('--SSDselectwt', type=float, default=1, help='SSD: alpha aka selection weight, lower leads to more forgetting')
+    parser.add_argument('--num_classes', type=int, default='7', help='whether to plot embeddings in embs.py')
 
     # UTILITIES
     parser.add_argument('--embs_all', action='store_true', help='whether to plot embeddings in embs.py')

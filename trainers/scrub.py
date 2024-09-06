@@ -10,15 +10,6 @@ from torch.optim.lr_scheduler import _LRScheduler
 
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
-def distill_kl_loss(y_s, y_t, T, reduction='sum'):
-    p_s = torch.nn.functional.log_softmax(y_s/T, dim=1)
-    p_t = torch.nn.functional.softmax(y_t/T, dim=1)
-    loss = torch.nn.functional.kl_div(p_s, p_t, reduction=reduction)
-    if reduction == 'none':
-        loss = torch.sum(loss, dim=1)
-    loss = loss * (T**2) / y_s.shape[0]
-    return loss
-
 class_dataset_dict = {
     "Cora": {
         "class1": 57,
@@ -32,8 +23,20 @@ class_dataset_dict = {
         "class1": 6,
         "class2": 1,
     },
+    "Cora_p": {
+        "class1": 1,
+        "class2": 2,
+    },
 }
 
+def distill_kl_loss(y_s, y_t, T, reduction='sum'):
+    p_s = torch.nn.functional.log_softmax(y_s/T, dim=1)
+    p_t = torch.nn.functional.softmax(y_t/T, dim=1)
+    loss = torch.nn.functional.kl_div(p_s, p_t, reduction=reduction)
+    if reduction == 'none':
+        loss = torch.sum(loss, dim=1)
+    loss = loss * (T**2) / y_s.shape[0]
+    return loss
 
 class LinearLR(_LRScheduler):
     r"""Set the learning rate of each parameter group with a linear

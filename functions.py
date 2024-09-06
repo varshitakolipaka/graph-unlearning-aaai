@@ -25,6 +25,10 @@ class_dataset_dict = {
         "class1": 6,
         "class2": 1,
     },
+    "Cora_p": {
+        "class1": 1,
+        "class2": 2,
+    },
 }
 
 def train(load=False):
