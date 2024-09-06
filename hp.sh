@@ -7,6 +7,10 @@
 # python hp_tune.py --unlearning_model retrain --dataset Reddit --df_size 0.5 --random_seed 1 --data_dir /scratch/akshit.sinha/data --attack_type label
 # python hp_tune.py --unlearning_model scrub --dataset Reddit --df_size 0.5 --random_seed 1 --data_dir /scratch/akshit.sinha/data --attack_type label
 
+python run_hp_tune.py --dataset Cora --df_size 0.5 --random_seed 1 --data_dir /scratch/akshit.sinha/data --attack_type label --db_name hp_tuning_gat --gnn gat
+python run_hp_tune.py --dataset Amazon --df_size 0.5 --random_seed 1 --data_dir /scratch/akshit.sinha/data --attack_type label --db_name hp_tuning_gat --gnn gat
+python run_hp_tune.py --dataset CS --df_size 0.5 --random_seed 1 --data_dir /scratch/akshit.sinha/data --attack_type label --db_name hp_tuning_gat --gnn gat
+
 # python hp_tune.py --unlearning_model contra_2 --dataset CS --df_size 0.5 --random_seed 1 --data_dir /scratch/akshit.sinha/data --attack_type label --db_name hp_tuning_w_ascent_contra_with_timeout
 # python hp_tune.py --unlearning_model megu --dataset CS --df_size 0.5 --random_seed 1 --data_dir /scratch/akshit.sinha/data --attack_type label
 # python hp_tune.py --unlearning_model gnndelete --dataset CS --df_size 0.5 --random_seed 1 --data_dir /scratch/akshit.sinha/data --attack_type label
@@ -23,7 +27,7 @@
 # python hp_tune.py --unlearning_model retrain --dataset Amazon --df_size 0.5 --random_seed 1 --data_dir /scratch/akshit.sinha/data --attack_type label --db_name hp_tuning_2
 
 # python hp_tune.py --unlearning_model contra_2 --dataset Cora --df_size 0.5 --random_seed 1 --data_dir /scratch/akshit.sinha/data --attack_type label --db_name hp_tuning_w_ascent_contra_with_timeout
-python hp_tune.py --unlearning_model scrub --dataset Cora --df_size 0.5 --random_seed 1 --data_dir /scratch/akshit.sinha/data --attack_type label --db_name scrub_utu_finetune
+# python hp_tune.py --unlearning_model scrub --dataset Cora --df_size 0.5 --random_seed 1 --data_dir /scratch/akshit.sinha/data --attack_type label --db_name scrub_utu_finetune
 # python hp_tune.py --unlearning_model megu --dataset Cora --df_size 0.5 --random_seed 1 --data_dir /scratch/akshit.sinha/data --attack_type label
 # python hp_tune.py --unlearning_model gnndelete --dataset Cora --df_size 0.5 --random_seed 1 --data_dir /scratch/akshit.sinha/data --attack_type label
 # python hp_tune.py --unlearning_model utu --dataset Cora --df_size 0.5 --random_seed 1 --data_dir /scratch/akshit.sinha/data --attack_type label

@@ -56,6 +56,10 @@ class_dataset_dict = {
     'Flickr': {
         "class1": 6,
         "class2": 4,
+    },
+    'Computers': {
+        'class1': 4,
+        'class2': 8
     }
 }
 
@@ -432,7 +436,7 @@ def objective(trial, model, data):
 if __name__ == "__main__":
     print('\n\n\n')
     print(args.dataset, args.attack_type)
-    clean_data = train(load=True)
+    # clean_data = train(load=True)
     poisoned_data, poisoned_indices, poisoned_model = poison()
 
     # unlearn(poisoned_data, poisoned_indices, poisoned_model)
@@ -476,7 +480,7 @@ if __name__ == "__main__":
     study = optuna.create_study(
         sampler=TPESampler(seed=42),
         direction="maximize",
-        study_name=f"{args.dataset}_{args.attack_type}_{args.df_size}_{args.unlearning_model}_{args.random_seed}",
+        study_name=f"{args.gnn}_{args.dataset}_{args.attack_type}_{args.df_size}_{args.unlearning_model}_{args.random_seed}",
         load_if_exists=True,
         storage=f"sqlite:///hp_tuning/{args.db_name}.db",
     )

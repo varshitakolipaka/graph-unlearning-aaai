@@ -36,6 +36,8 @@ def get_original_data(d):
         dataset = Coauthor(os.path.join(data_dir, d), d, transform=T.NormalizeFeatures())
     elif d in ['Amazon']:
         dataset = Amazon(os.path.join(data_dir, d), 'Photo', transform=T.NormalizeFeatures())
+    elif d in ['Computers']:
+        dataset = Amazon(os.path.join(data_dir, d), 'Computers', transform=T.NormalizeFeatures())
     elif d in ['Reddit']:
         dataset = Reddit2(os.path.join(data_dir, d), transform=T.NormalizeFeatures())
     elif d in ['Flickr']:

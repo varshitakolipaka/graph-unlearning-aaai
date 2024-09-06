@@ -58,6 +58,10 @@ class_dataset_dict = {
         "class1": 6,
         "class2": 4,
     },
+    'Computers': {
+        'class1': 4,
+        'class2': 8
+    }
 }
 
 
