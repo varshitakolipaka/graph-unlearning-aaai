@@ -67,7 +67,7 @@ def train(load=False):
         utils.prints_stats(clean_data)
 
         clean_model = torch.load(
-            f"{args.data_dir}/{args.dataset}_{args.attack_type}_{args.df_size}_{args.random_seed}_clean_model.pt"
+            f"{args.data_dir}/{args.gnn}_{args.dataset}_{args.attack_type}_{args.df_size}_{args.random_seed}_clean_model.pt"
         )
 
         optimizer = torch.optim.Adam(
@@ -120,7 +120,7 @@ def train(load=False):
     os.makedirs(args.data_dir, exist_ok=True)
     torch.save(
         clean_model,
-        f"{args.data_dir}/{args.dataset}_{args.attack_type}_{args.df_size}_{args.random_seed}_clean_model.pt",
+        f"{args.data_dir}/{args.gnn}_{args.dataset}_{args.attack_type}_{args.df_size}_{args.random_seed}_clean_model.pt",
     )
 
     return clean_data
@@ -133,7 +133,7 @@ def poison(clean_data=None):
             f"{args.data_dir}/{args.dataset}_{args.attack_type}_{args.df_size}_{args.random_seed}_poisoned_data.pt"
         )
         poisoned_model = torch.load(
-            f"{args.data_dir}/{args.dataset}_{args.attack_type}_{args.df_size}_{args.random_seed}_poisoned_model.pt"
+            f"{args.data_dir}/{args.gnn}_{args.dataset}_{args.attack_type}_{args.df_size}_{args.random_seed}_poisoned_model.pt"
         )
         
         poisoned_indices = poisoned_data.poisoned_nodes
@@ -209,7 +209,7 @@ def poison(clean_data=None):
 
     torch.save(
         poisoned_model,
-        f"{args.data_dir}/{args.dataset}_{args.attack_type}_{args.df_size}_{args.random_seed}_poisoned_model.pt",
+        f"{args.data_dir}/{args.gnn}_{args.dataset}_{args.attack_type}_{args.df_size}_{args.random_seed}_poisoned_model.pt",
     )
 
     torch.save(

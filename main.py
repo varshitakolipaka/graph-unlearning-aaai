@@ -46,19 +46,20 @@ class_dataset_dict = {
         "class1": 13,
         "class2": 5,
     },
-    'Citeseer_p': {
+    "Citeseer_p": {
         "class1": 3,
         "class2": 2,
     },
-    'DBLP': {
+    "DBLP": {
         "class1": 0,
         "class2": 1,
     },
-    'Flickr': {
+    "Flickr": {
         "class1": 6,
         "class2": 4,
-    }
+    },
 }
+
 
 def train(load=False):
     if load:
@@ -69,7 +70,7 @@ def train(load=False):
         utils.prints_stats(clean_data)
 
         clean_model = torch.load(
-            f"{args.data_dir}/{args.dataset}_{args.attack_type}_{args.df_size}_{args.random_seed}_clean_model.pt"
+            f"{args.data_dir}/{args.gnn}_{args.dataset}_{args.attack_type}_{args.df_size}_{args.random_seed}_clean_model.pt"
         )
 
         optimizer = torch.optim.Adam(
@@ -92,7 +93,7 @@ def train(load=False):
             logger.log_result(
                 args.random_seed, "original", {"forget": forg, "utility": util}
             )
-            
+
         return clean_data
 
     # dataset
@@ -102,7 +103,9 @@ def train(load=False):
         clean_data, args.random_seed, args.train_ratio, args.val_ratio
     )
     utils.prints_stats(clean_data)
-    clean_model = GCN(clean_data.num_features, args.hidden_dim, clean_data.num_classes)
+    clean_model = utils.get_model(
+        args, clean_data.num_features, args.hidden_dim, clean_data.num_classes
+    )
 
     optimizer = torch.optim.Adam(
         clean_model.parameters(), lr=args.train_lr, weight_decay=args.weight_decay
@@ -122,13 +125,6 @@ def train(load=False):
             args.random_seed, "original", {"forget": forg, "utility": util}
         )
 
-    # save the clean model
-    os.makedirs(args.data_dir, exist_ok=True)
-    torch.save(
-        clean_model,
-        f"{args.data_dir}/{args.dataset}_{args.attack_type}_{args.df_size}_{args.random_seed}_clean_model.pt",
-    )
-
     return clean_data
 
 
@@ -138,15 +134,11 @@ def poison(clean_data=None):
         poisoned_data = torch.load(
             f"{args.data_dir}/{args.dataset}_{args.attack_type}_{args.df_size}_{args.random_seed}_poisoned_data.pt"
         )
-        poisoned_indices = torch.load(
-            f"{args.data_dir}/{args.dataset}_{args.attack_type}_{args.df_size}_{args.random_seed}_poisoned_indices.pt"
-        )
         poisoned_model = torch.load(
-            f"{args.data_dir}/{args.dataset}_{args.attack_type}_{args.df_size}_{args.random_seed}_poisoned_model.pt"
+            f"{args.data_dir}/{args.gnn}_{args.dataset}_{args.attack_type}_{args.df_size}_{args.random_seed}_poisoned_model.pt"
         )
 
-        if not hasattr(poisoned_data, "poisoned_nodes"):
-            poisoned_data.poisoned_nodes = poisoned_indices
+        poisoned_indices = poisoned_data.poisoned_nodes
 
         optimizer = torch.optim.Adam(
             poisoned_model.parameters(),
@@ -196,15 +188,9 @@ def poison(clean_data=None):
         )
     poisoned_data = poisoned_data.to(device)
 
-    if "gnndelete" in args.unlearning_model:
-        # poisoned_model = GCNDelete(poisoned_data.num_features, args.hidden_dim, poisoned_data.num_classes)
-        poisoned_model = GCN(
-            poisoned_data.num_features, args.hidden_dim, poisoned_data.num_classes
-        )
-    else:
-        poisoned_model = GCN(
-            poisoned_data.num_features, args.hidden_dim, poisoned_data.num_classes
-        )
+    poisoned_model = utils.get_model(
+        args, poisoned_data.num_features, args.hidden_dim, poisoned_data.num_classes
+    )
 
     optimizer = torch.optim.Adam(
         poisoned_model.parameters(), lr=args.train_lr, weight_decay=args.weight_decay
@@ -213,23 +199,6 @@ def poison(clean_data=None):
         poisoned_model, poisoned_data, optimizer, args.training_epochs
     )
     poisoned_trainer.train()
-
-    # save the poisoned data and model and indices to np file
-    os.makedirs(args.data_dir, exist_ok=True)
-
-    torch.save(
-        poisoned_model,
-        f"{args.data_dir}/{args.dataset}_{args.attack_type}_{args.df_size}_{args.random_seed}_poisoned_model.pt",
-    )
-
-    torch.save(
-        poisoned_data,
-        f"{args.data_dir}/{args.dataset}_{args.attack_type}_{args.df_size}_{args.random_seed}_poisoned_data.pt",
-    )
-    torch.save(
-        poisoned_indices,
-        f"{args.data_dir}/{args.dataset}_{args.attack_type}_{args.df_size}_{args.random_seed}_poisoned_indices.pt",
-    )
 
     forg, util = poisoned_trainer.get_score(
         args.attack_type,
@@ -249,7 +218,8 @@ def unlearn(poisoned_data, poisoned_indices, poisoned_model):
         poisoned_data, poisoned_indices, args, attack_type=args.attack_type
     )
     if "gnndelete" in args.unlearning_model:
-        unlearn_model = GCNDelete(
+        unlearn_model = utils.get_model(
+            args,
             poisoned_data.num_features,
             args.hidden_dim,
             poisoned_data.num_classes,
@@ -278,16 +248,16 @@ def unlearn(poisoned_data, poisoned_indices, poisoned_model):
             args, unlearn_model, poisoned_data, optimizer_unlearn
         )
     elif "retrain" in args.unlearning_model:
-        unlearn_model = GCN(
-            poisoned_data.num_features, args.hidden_dim, poisoned_data.num_classes
+        unlearn_model = utils.get_model(
+            args, poisoned_data.num_features, args.hidden_dim, poisoned_data.num_classes
         )
         optimizer_unlearn = utils.get_optimizer(args, unlearn_model)
         unlearn_trainer = utils.get_trainer(
             args, unlearn_model, poisoned_data, optimizer_unlearn
         )
     else:
-        unlearn_model = GCN(
-            poisoned_data.num_features, args.hidden_dim, poisoned_data.num_classes
+        unlearn_model = utils.get_model(
+            args, poisoned_data.num_features, args.hidden_dim, poisoned_data.num_classes
         )
         # copy the weights from the poisoned model
         unlearn_model.load_state_dict(poisoned_model.state_dict())
@@ -300,7 +270,7 @@ def unlearn(poisoned_data, poisoned_indices, poisoned_model):
     if args.unlearning_model == "scrub":
         unlearn_trainer.evaluate()
     else:
-        unlearn_trainer.evaluate(is_dr = True)
+        unlearn_trainer.evaluate(is_dr=True)
     forg, util = unlearn_trainer.get_score(
         args.attack_type,
         class1=class_dataset_dict[args.dataset]["class1"],
@@ -317,22 +287,23 @@ def unlearn(poisoned_data, poisoned_indices, poisoned_model):
     print("==UNLEARNING DONE==")
     return unlearn_model
 
+
 if __name__ == "__main__":
     print("\n\n\n")
 
     print(args.dataset, args.attack_type)
-    # clean_data = train()
+    clean_data = train()
 
-    poisoned_data, poisoned_indices, poisoned_model = poison()
-    
+    poisoned_data, poisoned_indices, poisoned_model = poison(clean_data)
+
     # load best params file
-    with open('best_params.json', 'r') as f:
+    with open("best_params.json", "r") as f:
         d = json.load(f)
-    
+
     if args.corrective_frac < 1:
         poisoned_indices = utils.sample_poison_data(poisoned_data, args.corrective_frac)
         poisoned_data.poisoned_nodes = poisoned_indices
-    
+
     try:
         params = d[args.unlearning_model][args.attack_type][args.dataset]
     except:

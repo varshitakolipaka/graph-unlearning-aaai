@@ -114,7 +114,7 @@ class MeguTrainer(Trainer):
         self.data.x_unlearn = self.data.x.clone()
         self.data.edge_index_unlearn = self.data.edge_index.clone()
 
-        if hasattr(self.data, 'df_mask'):
+        if hasattr(self.data, 'poisoned_nodes'):
             # if self.data.df_mask.dim() == 1 and self.data.df_mask.size(0) == self.data.num_nodes:
             #     # Node-level mask
             #     unique_nodes = torch.where(self.data.df_mask)[0].cpu().numpy()

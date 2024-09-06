@@ -156,7 +156,7 @@ class ScrubTrainer(Trainer):
 
     # scrub for label flipping
     def unlearn_nc_lf(self):
-        forget_mask = self.poisoned_dataset.df_mask
+        forget_mask = self.poisoned_dataset.node_df_mask
         self.maximize=False
         start_time = time.time()
         while self.curr_step < self.opt.unlearn_iters:
@@ -168,7 +168,7 @@ class ScrubTrainer(Trainer):
 
             self.maximize=False
             # print("Gradient Descent Step: ", self.curr_step)
-            self.train_one_epoch(data=self.poisoned_dataset, mask=self.poisoned_dataset.dr_mask)
+            self.train_one_epoch(data=self.poisoned_dataset, mask=self.poisoned_dataset.node_dr_mask)
             train_acc, msc_rate, f1 = self.evaluate(use_val=True)
             # print(f'Test Acc: {train_acc}, Misclassification: {msc_rate},  F1 Score: {f1}')
         end_time = time.time()

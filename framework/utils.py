@@ -1,4 +1,6 @@
 import random
+from models.deletion import GATDelete, GCNDelete, GINDelete
+from models.models import GAT, GCN, GIN
 import numpy as np
 import torch
 from torch_geometric.utils import k_hop_subgraph
@@ -46,6 +48,17 @@ def get_original_data(d):
 
     data.num_classes= dataset.num_classes
     return data
+
+def get_model(args, in_dim, hidden_dim, out_dim, mask_1hop=None, mask_2hop=None):
+
+    if 'gnndelete' in args.unlearning_model:
+        model_mapping = {'gcn': GCNDelete, 'gat': GATDelete, 'gin': GINDelete}
+        return model_mapping[args.gnn](in_dim=in_dim, hidden_dim=hidden_dim, out_dim=out_dim, mask_1hop=mask_1hop, mask_2hop=mask_2hop)
+
+    else:
+        model_mapping = {'gcn': GCN, 'gat': GAT, 'gin': GIN}
+        return model_mapping[args.gnn](in_dim=in_dim, hidden_dim=hidden_dim, out_dim=out_dim)
+
 
 def train_test_split(data, seed, train_ratio=0.1, val_ratio=0.1):
     n = data.num_nodes
@@ -135,22 +148,22 @@ def find_masks(data, poisoned_indices, args, attack_type="label"):
     if attack_type == "label" or attack_type == "random"  or attack_type == "trigger":
 
         if "scrub" in args.unlearning_model or ("megu" in args.unlearning_model and "node" in args.request):
-            data.df_mask = torch.zeros(data.num_nodes, dtype=torch.bool)  # of size num nodes
-            data.dr_mask = data.train_mask
-            data.df_mask[poisoned_indices] = True
-            data.dr_mask[poisoned_indices] = False
-        else:
+            data.node_df_mask = torch.zeros(data.num_nodes, dtype=torch.bool)  # of size num nodes
+            data.node_dr_mask = data.train_mask
+            data.node_df_mask[poisoned_indices] = True
+            data.node_dr_mask[poisoned_indices] = False
 
-            data.df_mask = torch.zeros(data.edge_index.shape[1], dtype=torch.bool)
-            data.dr_mask = torch.zeros(data.edge_index.shape[1], dtype=torch.bool)
-            for node in poisoned_indices:
-                data.train_mask[node] = False
-                node_tensor = torch.tensor([node], dtype=torch.long)
-                _, local_edges, _, mask = k_hop_subgraph(
-                    node_tensor, 1, data.edge_index, num_nodes=data.num_nodes
-                )
-                data.df_mask[mask] = True
-            data.dr_mask = ~data.df_mask
+        data.df_mask = torch.zeros(data.edge_index.shape[1], dtype=torch.bool)
+        data.dr_mask = torch.zeros(data.edge_index.shape[1], dtype=torch.bool)
+        for node in poisoned_indices:
+            data.train_mask[node] = False
+            node_tensor = torch.tensor([node], dtype=torch.long)
+            _, local_edges, _, mask = k_hop_subgraph(
+                node_tensor, 1, data.edge_index, num_nodes=data.num_nodes
+            )
+            data.df_mask[mask] = True
+        data.dr_mask = ~data.df_mask
+
     elif attack_type == "edge":
         data.df_mask = torch.zeros(data.edge_index.shape[1], dtype=torch.bool)
         data.dr_mask = torch.zeros(data.edge_index.shape[1], dtype=torch.bool)
