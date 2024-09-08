@@ -57,6 +57,9 @@ def edge_attack_specific_nodes(data, epsilon, seed, class1=None, class2=None):
     
     if class1 is None or class2 is None:
         class1, class2 = get_closest_classes(train_labels, counts)
+        
+    class1_indices = train_indices[data.y[train_indices] == class1]
+    class2_indices = train_indices[data.y[train_indices] == class2]
 
     class1_indices=class1_indices.cpu().detach().numpy()
     class2_indices=class2_indices.cpu().detach().numpy()

@@ -200,6 +200,6 @@ def poison(clean_data=None):
 
 
 if __name__ == "__main__":
-    clean_data = train(load=True)
+    clean_data = train()
     poisoned_data, poisoned_indices, poisoned_model = poison(clean_data)
     print("==DONE==")
