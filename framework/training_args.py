@@ -15,7 +15,7 @@ def parse_args():
     parser.add_argument('--train_ratio', type=float, default=0.7, help='train ratio')
     parser.add_argument('--val_ratio', type=float, default=0.1, help='train ratio')
     parser.add_argument('--attack_type', type=str, default='label', help='attack type', choices=["label", "edge", "random", "trigger"])
-    parser.add_argument('--unlearning_model', type=str, default='scrub', help='unlearning method', choices=["original", "gradient_ascent", "gnndelete", "gnndelete_ni", "gif", "utu", "contrastive", "retrain", "scrub", "megu", "contra_2"])
+    parser.add_argument('--unlearning_model', type=str, default='scrub', help='unlearning method', choices=["original", "gradient_ascent", "gnndelete", "gnndelete_ni", "gif", "utu", "contrastive", "retrain", "scrub", "megu", "contra_2", "ssd"])
     parser.add_argument('--gnn', type=str, default='gcn', help='GNN architecture', choices=['gcn', 'gat', 'gin'])
     # parser.add_argument('--in_dim', type=int, default=128, help='input dimension')
     parser.add_argument('--hidden_dim', type=int, default=64, help='hidden dimension')
@@ -107,6 +107,10 @@ def parse_args():
     parser.add_argument('--kappa', type=float, default=0.01)
     parser.add_argument('--alpha1', type=float, default=0.8)
     parser.add_argument('--alpha2', type=float, default=0.5)
+    
+    # SSD
+    parser.add_argument('--SSDdampening', type=float, default=10, help='SSD: lambda aka dampening constant, lower leads to more forgetting')
+    parser.add_argument('--SSDselectwt', type=float, default=1, help='SSD: alpha aka selection weight, lower leads to more forgetting')
     
     # UTILITIES
     parser.add_argument('--embs_all', action='store_true', help='whether to plot embeddings in embs.py')

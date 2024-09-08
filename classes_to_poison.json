@@ -1,0 +1,18 @@
+{
+    "Cora": {
+        "class1": 5,
+        "class2": 63
+    },
+    "Amazon": {
+        "class1": 3,
+        "class2": 4
+    },
+    "CS": {
+        "class1": 3,
+        "class2": 12
+    },
+    "Computers": {
+        "class1": 0,
+        "class2": 6
+    }
+}

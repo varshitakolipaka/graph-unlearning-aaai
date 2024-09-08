@@ -1,5 +1,6 @@
 from collections import defaultdict
 import copy
+import json
 import os
 import torch
 from framework import utils
@@ -23,51 +24,16 @@ logger.log_arguments(args)
 utils.seed_everything(args.random_seed)
 device = torch.device("cuda") if torch.cuda.is_available() else torch.device("cpu")
 
-
-class_dataset_dict = {
-    "Cora": {
-        "class1": 57,
-        "class2": 33,
-    },
-    "Cora_ML": {
-        "class1": 4,
-        "class2": 2,
-    },
-    "PubMed": {
-        "class1": 2,
-        "class2": 1,
-    },
-    "Amazon": {
-        "class1": 6,
-        "class2": 1,
-    },
-    "CS": {
-        "class1": 13,
-        "class2": 5,
-    },
-    'Citeseer_p': {
-        "class1": 3,
-        "class2": 2,
-    },
-    'DBLP': {
-        "class1": 0,
-        "class2": 1,
-    },
-    'Flickr': {
-        "class1": 6,
-        "class2": 4,
-    },
-    'Computers': {
-        'class1': 4,
-        'class2': 8
-    }
-}
+with open("classes_to_poison.json", "r") as f:
+    class_dataset_dict = json.load(f)
 
 
 def train(load=False):
     if load:
         clean_data = utils.get_original_data(args.dataset)
-        utils.train_test_split(clean_data, args.random_seed, args.train_ratio, args.val_ratio)
+        utils.train_test_split(
+            clean_data, args.random_seed, args.train_ratio, args.val_ratio
+        )
         utils.prints_stats(clean_data)
 
         clean_model = torch.load(
@@ -78,7 +44,9 @@ def train(load=False):
             clean_model.parameters(), lr=args.train_lr, weight_decay=args.weight_decay
         )
 
-        clean_trainer = Trainer(clean_model, clean_data, optimizer, args.training_epochs)
+        clean_trainer = Trainer(
+            clean_model, clean_data, optimizer, args.training_epochs
+        )
 
         if args.attack_type != "trigger":
             clean_trainer.evaluate()
@@ -89,16 +57,14 @@ def train(load=False):
             )
 
             print(f"==OG Model==\nForget Ability: {forg}, Utility: {util}")
-            logger.log_result(
-                args.random_seed, "original", {"forget": forg, "utility": util}
-            )
-
         return clean_data
 
     # dataset
     print("==TRAINING==")
     clean_data = utils.get_original_data(args.dataset)
-    utils.train_test_split(clean_data, args.random_seed, args.train_ratio, args.val_ratio)
+    utils.train_test_split(
+        clean_data, args.random_seed, args.train_ratio, args.val_ratio
+    )
     utils.prints_stats(clean_data)
     clean_model = GCN(clean_data.num_features, args.hidden_dim, clean_data.num_classes)
 
@@ -116,10 +82,6 @@ def train(load=False):
         )
 
         print(f"==OG Model==\nForget Ability: {forg}, Utility: {util}")
-        logger.log_result(
-            args.random_seed, "original", {"forget": forg, "utility": util}
-        )
-
     # save the clean model
     os.makedirs(args.data_dir, exist_ok=True)
     torch.save(
@@ -139,7 +101,7 @@ def poison(clean_data=None):
         poisoned_model = torch.load(
             f"{args.data_dir}/{args.gnn}_{args.dataset}_{args.attack_type}_{args.df_size}_{args.random_seed}_poisoned_model.pt"
         )
-        
+
         poisoned_indices = poisoned_data.poisoned_nodes
 
         optimizer = torch.optim.Adam(
@@ -158,21 +120,25 @@ def poison(clean_data=None):
             class2=class_dataset_dict[args.dataset]["class2"],
         )
         print(f"==Poisoned Model==\nForget Ability: {forg}, Utility: {util}")
-        logger.log_result(
-            args.random_seed, "poisoned", {"forget": forg, "utility": util}
-        )
-
         # print(poisoned_trainer.calculate_PSR())
         return poisoned_data, poisoned_indices, poisoned_model
 
     print("==POISONING==")
     if args.attack_type == "label":
         poisoned_data, poisoned_indices = label_flip_attack(
-            clean_data, args.df_size, args.random_seed
+            clean_data,
+            args.df_size,
+            args.random_seed,
+            class_dataset_dict[args.dataset]["class1"],
+            class_dataset_dict[args.dataset]["class2"],
         )
     elif args.attack_type == "edge":
         poisoned_data, poisoned_indices = edge_attack_specific_nodes(
-            clean_data, args.df_size, args.random_seed
+            clean_data,
+            args.df_size,
+            args.random_seed,
+            class1=class_dataset_dict[args.dataset]["class1"],
+            class2=class_dataset_dict[args.dataset]["class2"],
         )
     elif args.attack_type == "random":
         poisoned_data = copy.deepcopy(clean_data)
@@ -220,84 +186,23 @@ def poison(clean_data=None):
         poisoned_data,
         f"{args.data_dir}/{args.dataset}_{args.attack_type}_{args.df_size}_{args.random_seed}_poisoned_data.pt",
     )
-    
+
     forg, util = poisoned_trainer.get_score(
         args.attack_type,
         class1=class_dataset_dict[args.dataset]["class1"],
         class2=class_dataset_dict[args.dataset]["class2"],
     )
     print(f"==Poisoned Model==\nForget Ability: {forg}, Utility: {util}")
-    logger.log_result(args.random_seed, "poisoned", {"forget": forg, "utility": util})
     # print(f"PSR: {poisoned_trainer.calculate_PSR()}")
     return poisoned_data, poisoned_indices, poisoned_model
 
 
-def unlearn(poisoned_data, poisoned_indices, poisoned_model):
-    print("==UNLEARNING==")
-    
-    utils.find_masks(
-        poisoned_data, poisoned_indices, args, attack_type=args.attack_type
-    )
-    
-    if "gnndelete" in args.unlearning_model:
-        unlearn_model = GCNDelete(
-            poisoned_data.num_features,
-            args.hidden_dim,
-            poisoned_data.num_classes,
-            mask_1hop=poisoned_data.sdf_node_1hop_mask,
-            mask_2hop=poisoned_data.sdf_node_2hop_mask,
-            mask_3hop=poisoned_data.sdf_node_3hop_mask,
-        )
-
-        # copy the weights from the poisoned model
-        state_dict = poisoned_model.state_dict()
-        state_dict["deletion1.deletion_weight"] = (
-            unlearn_model.deletion1.deletion_weight
-        )
-        state_dict["deletion2.deletion_weight"] = (
-            unlearn_model.deletion2.deletion_weight
-        )
-        state_dict["deletion3.deletion_weight"] = (
-            unlearn_model.deletion3.deletion_weight
-        )
-
-        # copy the weights from the poisoned model
-        unlearn_model.load_state_dict(state_dict)
-
-        optimizer_unlearn = utils.get_optimizer(args, unlearn_model)
-        unlearn_trainer = utils.get_trainer(
-            args, unlearn_model, poisoned_data, optimizer_unlearn
-        )
-    elif "retrain" in args.unlearning_model:
-        unlearn_model = GCN(
-            poisoned_data.num_features, args.hidden_dim, poisoned_data.num_classes
-        )
-        optimizer_unlearn = utils.get_optimizer(args, unlearn_model)
-        unlearn_trainer = utils.get_trainer(
-            args, unlearn_model, poisoned_data, optimizer_unlearn
-        )
-    else:
-        unlearn_model = GCN(
-            poisoned_data.num_features, args.hidden_dim, poisoned_data.num_classes
-        )
-        # copy the weights from the poisoned model
-        unlearn_model.load_state_dict(poisoned_model.state_dict())
-        optimizer_unlearn = utils.get_optimizer(args, unlearn_model)
-        unlearn_trainer = utils.get_trainer(
-            args, unlearn_model, poisoned_data, optimizer_unlearn
-        )
-
-    _, _, time_taken = unlearn_trainer.train()
-    forg, util = unlearn_trainer.get_score(args.attack_type, class1=class_dataset_dict[args.dataset]["class1"], class2=class_dataset_dict[args.dataset]["class2"])
-    print(f"==Unlearned Model==\nForget Ability: {forg}, Utility: {util}, Time Taken: {time_taken}")
-    logger.log_result(
-        args.random_seed, args.unlearning_model, {"forget": forg, "utility": util, "time_taken": time_taken}
-    )
-    print("==UNLEARNING DONE==")
-
-
 hp_tuning_params_dict = {
-    "retrain": {},
+    "retrain": {
+        "unlearn_lr": (1e-5, 1e-1, "log"),
+        "weight_decay": (1e-5, 1e-1, "log"),
+        "unlearning_epochs": (600, 1000, "int"),
+    },
     "gnndelete": {
         "unlearn_lr": (1e-5, 1e-1, "log"),
         "weight_decay": (1e-5, 1e-1, "log"),
@@ -382,6 +287,10 @@ hp_tuning_params_dict = {
         "alpha1": (0, 1, "float"),
         "alpha2": (0, 1, "float"),
     },
+    "ssd": {
+        "SSDdampening": (0.1, 10, "log"),
+        "SSDselectwt": (0.1, 100, "log"),
+    },
     "clean": {
         "train_lr": (1e-5, 1e-1, "log"),
         "weight_decay": (1e-5, 1e-1, "log"),
@@ -434,12 +343,10 @@ def objective(trial, model, data):
 
 
 if __name__ == "__main__":
-    print('\n\n\n')
+    print("\n\n\n")
     print(args.dataset, args.attack_type)
-    # clean_data = train(load=True)
+    # clean_data = train()
     poisoned_data, poisoned_indices, poisoned_model = poison()
-
-    # unlearn(poisoned_data, poisoned_indices, poisoned_model)
 
     utils.find_masks(
         poisoned_data, poisoned_indices, args, attack_type=args.attack_type
@@ -447,7 +354,8 @@ if __name__ == "__main__":
 
     if "gnndelete" in args.unlearning_model:
         # Create a partial function with additional arguments
-        model = GCNDelete(
+        model = utils.get_model(
+            args,
             poisoned_data.num_features,
             args.hidden_dim,
             poisoned_data.num_classes,
@@ -464,12 +372,12 @@ if __name__ == "__main__":
 
         model.load_state_dict(state_dict)
     elif "retrain" in args.unlearning_model:
-        model = GCN(
-            poisoned_data.num_features, args.hidden_dim, poisoned_data.num_classes
+        model = utils.get_model(
+            args, poisoned_data.num_features, args.hidden_dim, poisoned_data.num_classes
         )
     else:
-        model = GCN(
-            poisoned_data.num_features, args.hidden_dim, poisoned_data.num_classes
+        model = utils.get_model(
+            args, poisoned_data.num_features, args.hidden_dim, poisoned_data.num_classes
         )
         model.load_state_dict(poisoned_model.state_dict())
 
@@ -490,9 +398,9 @@ if __name__ == "__main__":
     # Optimize the objective function
 
     # reduce trials for utu and contrastive
-    if args.unlearning_model == "utu" or args.unlearning_model == "retrain":
+    if args.unlearning_model == "utu":
         study.optimize(objective_func, n_trials=1)
-    elif args.unlearning_model == "contrastive" or args.unlearning_model == "contra_2":
-        study.optimize(objective_func, n_trials=200)
+    # elif args.unlearning_model == "contrastive" or args.unlearning_model == "contra_2":
+    #     study.optimize(objective_func, n_trials=200)
     else:
         study.optimize(objective_func, n_trials=100)

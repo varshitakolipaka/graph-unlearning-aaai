@@ -24,46 +24,8 @@ logger.log_arguments(args)
 utils.seed_everything(args.random_seed)
 device = torch.device("cuda") if torch.cuda.is_available() else torch.device("cpu")
 
-
-class_dataset_dict = {
-    "Cora": {
-        "class1": 57,
-        "class2": 33,
-    },
-    "Cora_ML": {
-        "class1": 4,
-        "class2": 2,
-    },
-    "PubMed": {
-        "class1": 2,
-        "class2": 1,
-    },
-    "Amazon": {
-        "class1": 6,
-        "class2": 1,
-    },
-    "CS": {
-        "class1": 13,
-        "class2": 5,
-    },
-    "Citeseer_p": {
-        "class1": 3,
-        "class2": 2,
-    },
-    "DBLP": {
-        "class1": 0,
-        "class2": 1,
-    },
-    "Flickr": {
-        "class1": 6,
-        "class2": 4,
-    },
-    'Computers': {
-        'class1': 4,
-        'class2': 8
-    }
-}
-
+with open('classes_to_poison.json', 'r') as f:
+    class_dataset_dict = json.load(f)
 
 def train(load=False):
     if load:
@@ -170,7 +132,7 @@ def poison(clean_data=None):
     print("==POISONING==")
     if args.attack_type == "label":
         poisoned_data, poisoned_indices = label_flip_attack(
-            clean_data, args.df_size, args.random_seed
+            clean_data, args.df_size, args.random_seed, class_dataset_dict[args.dataset]["class1"], class_dataset_dict[args.dataset]["class2"]
         )
     elif args.attack_type == "edge":
         poisoned_data, poisoned_indices = edge_attack_specific_nodes(
@@ -181,15 +143,8 @@ def poison(clean_data=None):
         poisoned_indices = torch.randperm(clean_data.num_nodes)[
             : int(clean_data.num_nodes * args.df_size)
         ]
-    elif args.attack_type == "trigger":
-        poisoned_data, poisoned_indices = trigger_attack(
-            clean_data,
-            args.df_size,
-            args.poison_tensor_size,
-            args.random_seed,
-            args.test_poison_fraction,
-            target_class=57,
-        )
+        poisoned_data.poisoned_nodes = poisoned_indices
+
     poisoned_data = poisoned_data.to(device)
 
     poisoned_model = utils.get_model(
@@ -296,9 +251,9 @@ if __name__ == "__main__":
     print("\n\n\n")
 
     print(args.dataset, args.attack_type)
-    clean_data = train()
+    clean_data = train(load=True)
 
-    poisoned_data, poisoned_indices, poisoned_model = poison(clean_data)
+    poisoned_data, poisoned_indices, poisoned_model = poison()
 
     # load best params file
     with open("best_params.json", "r") as f:
@@ -313,13 +268,9 @@ if __name__ == "__main__":
     except:
         params = {}
 
-    print(params)
-
     # set args
     for key, value in params.items():
         setattr(args, key, value)
-
-    print(args, "\n\n\n")
 
     unlearnt_model = unlearn(poisoned_data, poisoned_indices, poisoned_model)
 

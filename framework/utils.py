@@ -20,6 +20,7 @@ from trainers.gradient_ascent import GradientAscentTrainer
 from trainers.gif import GIFTrainer
 from trainers.base import Trainer
 from trainers.scrub import ScrubTrainer
+from trainers.ssd import SSDTrainer
 from trainers.utu import UtUTrainer
 from trainers.retrain import RetrainTrainer
 from trainers.megu import MeguTrainer
@@ -51,11 +52,11 @@ def get_original_data(d):
     data.num_classes= dataset.num_classes
     return data
 
-def get_model(args, in_dim, hidden_dim, out_dim, mask_1hop=None, mask_2hop=None):
+def get_model(args, in_dim, hidden_dim, out_dim, mask_1hop=None, mask_2hop=None, mask_3hop=None):
 
     if 'gnndelete' in args.unlearning_model:
         model_mapping = {'gcn': GCNDelete, 'gat': GATDelete, 'gin': GINDelete}
-        return model_mapping[args.gnn](in_dim=in_dim, hidden_dim=hidden_dim, out_dim=out_dim, mask_1hop=mask_1hop, mask_2hop=mask_2hop)
+        return model_mapping[args.gnn](in_dim=in_dim, hidden_dim=hidden_dim, out_dim=out_dim, mask_1hop=mask_1hop, mask_2hop=mask_2hop, mask_3hop=mask_3hop)
 
     else:
         model_mapping = {'gcn': GCN, 'gat': GAT, 'gin': GIN}
@@ -149,7 +150,7 @@ def find_masks(data, poisoned_indices, args, attack_type="label"):
 
     if attack_type == "label" or attack_type == "random"  or attack_type == "trigger":
 
-        if "scrub" in args.unlearning_model or ("megu" in args.unlearning_model and "node" in args.request):
+        if "scrub" in args.unlearning_model or "ssd" in args.unlearning_model or ("megu" in args.unlearning_model and "node" in args.request):
             data.node_df_mask = torch.zeros(data.num_nodes, dtype=torch.bool)  # of size num nodes
             data.node_dr_mask = data.train_mask
             data.node_df_mask[poisoned_indices] = True
@@ -189,7 +190,8 @@ def get_trainer(args, poisoned_model, poisoned_data, optimizer_unlearn) -> Train
         'contra_2': ContrastiveUnlearnTrainer_NEW,
         "retrain": RetrainTrainer,
         "scrub": ScrubTrainer,
-        "megu": MeguTrainer
+        "megu": MeguTrainer,
+        "ssd": SSDTrainer
     }
 
     if args.unlearning_model in trainer_map:
@@ -211,7 +213,7 @@ def get_optimizer(args, poisoned_model):
         else:
             optimizer_unlearn = torch.optim.Adam(parameters_to_optimize, lr=args.unlearn_lr, weight_decay=args.weight_decay)
     elif 'retrain' in args.unlearning_model:
-        optimizer_unlearn = torch.optim.Adam(poisoned_model.parameters(), lr=args.train_lr, weight_decay=args.weight_decay)
+        optimizer_unlearn = torch.optim.Adam(poisoned_model.parameters(), lr=args.unlearn_lr, weight_decay=args.weight_decay)
     else:
         parameters_to_optimize = [
             {'params': [p for n, p in poisoned_model.named_parameters()]}
@@ -228,6 +230,13 @@ def prints_stats(data):
     print("Number of classes: ", data.num_classes)
     print("Number of training nodes: ", data.train_mask.sum().item())
     print("Number of testing nodes: ", data.test_mask.sum().item())
+    
+    # get counts of each class
+    counts = [0] * data.num_classes
+    for i in range(data.num_classes):
+        counts[i] = (data.y == i).sum().item()
+    for i in range(data.num_classes):
+        print(f"Number of nodes in class {i}: {counts[i]}")
     
 def plot_embeddings(args, model, data, class1, class2, is_dr=False, mask="test", name=""):
     # Set the model to evaluation mode
@@ -281,7 +290,7 @@ def plot_embeddings(args, model, data, class1, class2, is_dr=False, mask="test",
     # Plot class2
     plt.scatter(embeddings[class2_mask, 0], embeddings[class2_mask, 1], label=f'Class {class2}', color='red', alpha=0.6)
     # Plot other classes
-    plt.scatter(embeddings[other_mask, 0], embeddings[other_mask, 1], label='Other Classes', color='gray', alpha=0.4)
+    plt.scatter(embeddings[other_mask, 0], embeddings[other_mask, 1], label='Other Classes', color='gray', alpha=0.3)
 
     # Add legend and labels
     plt.legend()
@@ -302,3 +311,18 @@ def sample_poison_data(data, frac):
     num_to_sample = int(frac * len(poisoned_indices))
     
     return torch.tensor(np.random.choice(poisoned_indices, num_to_sample, replace=False))
+
+def get_closest_classes(classes, counts):
+    '''
+    returns the two classes with the closest number of samples in the training set
+    '''
+
+    pairwise_diffs = []
+    for i in range(len(classes)):
+        for j in range(i+1, len(classes)):
+            pairwise_diffs.append((classes[i], classes[j], abs(counts[i] - counts[j])))
+
+    pairwise_diffs = sorted(pairwise_diffs, key=lambda x: x[2])
+    
+    return pairwise_diffs
+

@@ -1,14 +1,23 @@
 import torch
 import numpy as np
+import json
+from framework.utils import get_closest_classes
 
-def label_flip_attack(data, epsilon, seed):
+def label_flip_attack(data, epsilon, seed, class1=None, class2=None):
     np.random.seed(seed)
     data= data.cpu()
     train_indices = data.train_mask.nonzero(as_tuple=False).view(-1)
     train_labels, counts = torch.unique(data.y[train_indices], return_counts=True)
     
-    sorted_indices = torch.argsort(counts, descending=True)
-    class1, class2 = train_labels[sorted_indices[:2]]
+    for i, label in enumerate(train_labels):
+        print(f"Class {label}: {counts[i]}")
+    
+    if class1 is None or class2 is None:
+        class_pairs = get_closest_classes(train_labels, counts)
+        
+        class1, class2, _ = class_pairs[0]
+        
+
     class1_indices = train_indices[data.y[train_indices] == class1]
     class2_indices = train_indices[data.y[train_indices] == class2]
     

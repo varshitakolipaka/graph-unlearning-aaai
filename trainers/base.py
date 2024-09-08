@@ -93,6 +93,8 @@ class Trainer:
             class2 = self.class2
 
         poisoned_classes = [class1, class2]
+        
+        print(f'Poisoned classes: {poisoned_classes}')
 
         true_labels = self.true.to(device)
         pred_labels = self.pred.to(device)

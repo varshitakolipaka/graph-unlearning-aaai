@@ -21,7 +21,7 @@ class RetrainTrainer(Trainer):
     def train(self):
         self.data = self.data.to(device)
         start_time = time.time()
-        for epoch in trange(self.args.training_epochs, desc='Epoch'):
+        for epoch in trange(self.args.unlearning_epochs, desc='Epoch'):
             self.model.train()
             z = F.log_softmax(self.model(self.data.x, self.data.edge_index[:, self.data.dr_mask]), dim=1)
             loss = F.nll_loss(z[self.data.train_mask], self.data.y[self.data.train_mask])

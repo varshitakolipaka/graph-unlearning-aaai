@@ -1,8 +1,7 @@
 import argparse
 import os
 
-def run_hp_tuning(df_size, random_seed, dataset, attack_type, data_dir, db_name, gnn):
-    unlearning_models = ['contra_2', 'megu', 'gnndelete', 'utu', 'gif', 'retrain', 'scrub']
+def run_hp_tuning(unlearning_models, df_size, random_seed, dataset, attack_type, data_dir, db_name, gnn):
     
     for model in unlearning_models:
         cmd = f"python hp_tune.py --unlearning_model {model} --dataset {dataset} --df_size {df_size} --random_seed {random_seed} --data_dir {data_dir} --attack_type {attack_type} --db_name {db_name} --gnn {gnn}"
@@ -19,6 +18,39 @@ if __name__ == "__main__":
     parser.add_argument('--data_dir', type=str, required=True, help='Directory containing the data')
     parser.add_argument('--gnn', type=str, required=True, help='GNN model to use')
     parser.add_argument('--db_name', type=str, default=None, help='Database name (only for contra_2 model)')
+    
+    parser.add_argument('--contra_2', action='store_true', help='Run HP tuning for contra_2 model')
+    parser.add_argument('--retrain', action='store_true', help='Run HP tuning for retrain model')
+    parser.add_argument('--scrub', action='store_true', help='Run HP tuning for scrub model')
+    parser.add_argument('--megu', action='store_true', help='Run HP tuning for megu model')
+    parser.add_argument('--gnndelete', action='store_true', help='Run HP tuning for gnndelete model')
+    parser.add_argument('--utu', action='store_true', help='Run HP tuning for utu model')
+    parser.add_argument('--gif', action='store_true', help='Run HP tuning for gif model')
+    parser.add_argument('--ssd', action='store_true', help='Run HP tuning for ssd model')
 
     args = parser.parse_args()
-    run_hp_tuning(args.df_size, args.random_seed, args.dataset, args.attack_type, args.data_dir, args.db_name, args.gnn)
+    
+    # check if the model is specified
+    if not any([args.contra_2, args.retrain, args.scrub, args.megu, args.gnndelete, args.utu, args.gif, args.ssd]):
+        print("Please specify the model to run HP tuning for")
+        exit(1)
+    
+    unlearning_models = []
+    if args.utu:
+        unlearning_models.append('utu')
+    if args.retrain:
+        unlearning_models.append('retrain')
+    if args.scrub:
+        unlearning_models.append('scrub')
+    if args.contra_2:
+        unlearning_models.append('contra_2')
+    if args.megu:
+        unlearning_models.append('megu')
+    if args.gnndelete:
+        unlearning_models.append('gnndelete')
+    if args.gif:
+        unlearning_models.append('gif')
+    if args.ssd:
+        unlearning_models.append('ssd')
+    
+    run_hp_tuning(unlearning_models, args.df_size, args.random_seed, args.dataset, args.attack_type, args.data_dir, args.db_name, args.gnn)

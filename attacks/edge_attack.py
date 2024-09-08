@@ -3,6 +3,8 @@ import numpy as np
 import random
 import copy
 from torch_geometric import utils
+from framework.utils import get_closest_classes
+
 device = torch.device('cuda') if torch.cuda.is_available() else torch.device('cpu')
 
 def edge_attack_random_nodes(data, epsilon, seed):
@@ -52,9 +54,9 @@ def edge_attack_specific_nodes(data, epsilon, seed, class1=None, class2=None):
     train_indices = data.train_mask.nonzero(as_tuple=False).view(-1)
     train_labels, counts = torch.unique(data.y[train_indices], return_counts=True)
     sorted_indices = torch.argsort(counts, descending=True)
-    class1, class2 = train_labels[sorted_indices[:2]]
-    class1_indices = train_indices[data.y[train_indices] == class1]
-    class2_indices = train_indices[data.y[train_indices] == class2]
+    
+    if class1 is None or class2 is None:
+        class1, class2 = get_closest_classes(train_labels, counts)
 
     class1_indices=class1_indices.cpu().detach().numpy()
     class2_indices=class2_indices.cpu().detach().numpy()
