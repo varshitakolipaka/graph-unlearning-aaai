@@ -15,14 +15,14 @@ def get_script(dataset, unlearning_model, attack, seed):
         return f"python main.py --df_size {dataset_to_df[dataset]} --dataset {dataset} --unlearning_model {unlearning_model} --attack_type edge --request edge --random_seed {seed} --data_dir /scratch/akshit.sinha/data"
 
 # unlearning_models = ['utu', 'scrub','gnndelete','megu','gif','contra_2', 'retrain', 'ssd']
-unlearning_models = ['retrain']
+unlearning_models = ['utu', 'gnndelete', 'megu', 'gif']
 # attacks = ['label', 'edge']
 attacks = ['label']
 # datasets = ['Amazon', 'Cora', 'CS']
-datasets = ['Computers']
+datasets = ['CS']
 
 for dataset in datasets:
-    for seed in range(5,7):
+    for seed in range(10):
         for unlearning_model in unlearning_models:
             for attack in attacks:
                     script = get_script(dataset, unlearning_model, attack, seed)

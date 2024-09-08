@@ -260,7 +260,7 @@ hp_tuning_params_dict = {
         "k_hop": (1, 2, "int"),
     },
     "contra_2": {
-        "contrastive_epochs_1": (1, 15, "int"),
+        "contrastive_epochs_1": (1, 5, "int"),
         "contrastive_epochs_2": (1, 30, "int"),
         "steps": (1, 15, "int"),
         # "maximise_epochs": (5, 30, "int"),
@@ -268,7 +268,7 @@ hp_tuning_params_dict = {
         "weight_decay": (1e-5, 1e-1, "log"),
         "contrastive_margin": (1, 1e3, "log"),
         # "contrastive_lambda": (0.0, 1.0, "float"),
-        "contrastive_frac": (0.01, 0.15, "float"),
+        "contrastive_frac": (0.01, 0.1, "float"),
         "k_hop": (1, 2, "int"),
     },
     "utu": {},

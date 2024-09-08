@@ -79,6 +79,13 @@
                 "unlearning_epochs": 182,
                 "alpha": 0.0008760893405628501,
                 "loss_type": "only3"
+            },
+            "CS": {
+                "unlearn_lr": 0.03594886302302719,
+                "weight_decay": 0.00033499935622528836,
+                "unlearning_epochs": 177,
+                "alpha": 0.079621809714594,
+                "loss_type": "only3_all"
             }
         }
     },
@@ -88,6 +95,11 @@
                 "iteration": 563,
                 "scale": 14449830545.981762,
                 "damp": 0.49444478638616457
+            },
+            "CS": {
+                "iteration": 937,
+                "scale": 1036630937.1180391,
+                "damp": 0.47884269469918034
             }
         }
     },
@@ -99,6 +111,13 @@
                 "kappa": 0.4507065298274842,
                 "alpha1": 0.1132807095968088,
                 "alpha2": 0.2238614666491252
+            },
+            "CS": {
+                "unlearn_lr": 7.24872043169006e-06,
+                "unlearning_epochs": 869,
+                "kappa": 0.01760434411056529,
+                "alpha1": 0.47133606689518726,
+                "alpha2": 0.5927122957887847
             }
         }
     },
@@ -107,6 +126,30 @@
             "Computers": {
                 "SSDdampening": 0.20513382630874505,
                 "SSDselectwt": 0.2937538457632829
+            }
+        }
+    },
+    "retrain": {
+        "label": {
+            "Computers": {
+                "unlearn_lr": 0.00795511017451776,
+                "weight_decay": 1.0269492622240163e-05,
+                "unlearning_epochs": 948
+            },
+            "CS": {
+                "unlearn_lr": 0.0011179279092192933,
+                "weight_decay": 2.3374361985475374e-05,
+                "unlearning_epochs": 965
+            },
+            "Cora": {
+                "unlearn_lr": 0.014303267969387167,
+                "weight_decay": 2.231608789357135e-05,
+                "unlearning_epochs": 784
+            },
+            "Amazon": {
+                "unlearn_lr": 0.012241369083963024,
+                "weight_decay": 7.93412494336878e-05,
+                "unlearning_epochs": 961
             }
         }
     }

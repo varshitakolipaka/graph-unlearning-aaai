@@ -78,8 +78,8 @@ def train(load=False):
     if args.attack_type != "trigger":
         forg, util = clean_trainer.get_score(
             args.attack_type,
-            class1=0,
-            class2=1,
+            class1=class_dataset_dict[args.dataset]["class1"],
+            class2=class_dataset_dict[args.dataset]["class2"],
         )
 
         print(f"==OG Model==\nForget Ability: {forg}, Utility: {util}")
