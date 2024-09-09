@@ -11,8 +11,8 @@ from trainers.base import Trainer
 from attacks.edge_attack import edge_attack_specific_nodes
 from attacks.label_flip import label_flip_attack
 from attacks.feature_attack import trigger_attack
-import optuna
-from optuna.samplers import TPESampler
+# import optuna
+# from optuna.samplers import TPESampler
 from functools import partial
 from logger import Logger
 

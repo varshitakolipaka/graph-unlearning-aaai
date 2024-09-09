@@ -14,7 +14,7 @@ data/
 *.pth
 
 plots/
-
+flickr/
 logs/
 
 scrub_best_model.pth
