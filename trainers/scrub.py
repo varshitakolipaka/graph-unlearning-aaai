@@ -100,14 +100,27 @@ class ScrubTrainer(Trainer):
         self.model = model
 
     def get_masks(self):
+
+        if self.opt.attack_type == "edge":
+            edge_mask = ~self.poisoned_dataset.df_mask
+            df_nodes = torch.unique(self.poisoned_dataset.edge_index[:, self.poisoned_dataset.df_mask])
+            node_mask = torch.zeros(self.poisoned_dataset.num_nodes, dtype=torch.bool)
+            node_mask[df_nodes] = True
+            self.poisoned_dataset.df_mask = node_mask
+            print(f"FORGETTING {node_mask.sum()} NODES....")
+            self.poisoned_dataset.edge_index = self.poisoned_dataset.edge_index[:, edge_mask]
+            self.poisoned_dataset.dr_mask = self.poisoned_dataset.train_mask & ~node_mask
+            print(f"REMEMBERING {self.poisoned_dataset.dr_mask.sum()} NODES....")
+
         if not hasattr(self.poisoned_dataset, 'val_mask'):
+            print("interesting it doesnt have a val mask")
             # If val_mask doesn't exist, create it from train_mask
             train_mask = self.poisoned_dataset.train_mask
             test_mask = self.poisoned_dataset.test_mask
 
             # Determine the number of nodes to move to val_mask
             # val_size = int(train_mask.sum() * self.opt.val_ratio)
-            val_size = int(train_mask.sum() * 0.1)
+            val_size = int(train_mask.sum() * self.opt.val_ratio)
 
             # Randomly select nodes from train_mask to create val_mask
             val_indices = torch.where(train_mask)[0][torch.randperm(train_mask.sum())[:val_size]]
@@ -136,6 +149,7 @@ class ScrubTrainer(Trainer):
                 with open(self.opt.unlearning_model + '_best_model.pth', 'wb') as f:
                     torch.save(self.model.state_dict(), f)
             loss.backward()
+            print(loss.item())
             self.optimizer.step()
             self.scheduler.step()
             # print(self.scheduler.get_lr())
@@ -158,34 +172,21 @@ class ScrubTrainer(Trainer):
 
         return loss
 
-    def unlearn_nc(self, dataset, train_mask, forget_mask):
-
-        self.maximize=False
-        while self.curr_step < self.opt.unlearn_iters:
-            if self.curr_step < self.opt.msteps:
-                self.maximize=True
-                # print("Gradient Ascent Step: ", self.curr_step)
-                self.train_one_epoch(data=dataset, mask=forget_mask)
-
-            self.maximize=False
-            # print("Gradient Descent Step: ", self.curr_step)
-            self.train_one_epoch(data=dataset, mask=train_mask)
-        return
-
     # scrub for label flipping
     def unlearn_nc_lf(self):
         forget_mask = self.poisoned_dataset.df_mask
+        print("MEOW MEH: ", forget_mask.shape)
         self.maximize=False
         start_time = time.time()
         while self.curr_step < self.opt.unlearn_iters:
-            # print("UNLEARNING STEP: ", self.curr_step, end='\r')
+            print("UNLEARNING STEP: ", self.curr_step, end='\r')
             if self.curr_step < self.opt.msteps:
                 self.maximize=True
-                # print("Gradient Ascent Step: ", self.curr_step)
+                print("Gradient Ascent Step: ", self.curr_step)
                 self.train_one_epoch(data=self.poisoned_dataset, mask=forget_mask)
 
             self.maximize=False
-            # print("Gradient Descent Step: ", self.curr_step)
+            print("Gradient Descent Step: ", self.curr_step)
             self.train_one_epoch(data=self.poisoned_dataset, mask=self.poisoned_dataset.dr_mask)
             train_acc, msc_rate, f1 = self.evaluate()
             # print(f'Test Acc: {train_acc}, Misclassification: {msc_rate},  F1 Score: {f1}')
@@ -200,7 +201,6 @@ class ScrubTrainer(Trainer):
 
     def train(self):
         return self.unlearn_nc_lf()
-
 
     def get_save_prefix(self):
         self.unlearn_file_prefix = self.opt.pretrain_file_prefix+'/'+str(self.opt.deletion_size)+'_'+self.opt.unlearn_method+'_'+self.opt.exp_name

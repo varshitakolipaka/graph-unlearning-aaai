@@ -18,6 +18,7 @@ from trainers.retrain import RetrainTrainer
 from trainers.megu import MeguTrainer
 from trainers.ssd import SSDTrainer
 
+
 def get_original_data(d):
     print(d)
     data_dir = './datasets'
@@ -123,9 +124,9 @@ def get_sdf_masks(data, args):
 
 
 def find_masks(data, poisoned_indices, args, attack_type="label"):
+    print("BROOOO T-T", data.edge_index.shape)
 
     if attack_type == "label" or attack_type == "random"  or attack_type == "trigger":
-
         if "scrub" in args.unlearning_model or "SSD" in args.unlearning_model or ("megu" in args.unlearning_model and "node" in args.request):
             data.df_mask = torch.zeros(data.num_nodes, dtype=torch.bool)  # of size num nodes
             data.dr_mask = data.train_mask
@@ -145,9 +146,11 @@ def find_masks(data, poisoned_indices, args, attack_type="label"):
             data.dr_mask = ~data.df_mask
     elif attack_type == "edge":
         data.df_mask = torch.zeros(data.edge_index.shape[1], dtype=torch.bool)
+        print("HIIIIIIIIIIIIII:", data.df_mask.shape)
         data.dr_mask = torch.zeros(data.edge_index.shape[1], dtype=torch.bool)
         data.df_mask[poisoned_indices] = 1
         data.dr_mask = ~data.df_mask
+        print(data.df_mask.sum())
     data.attacked_idx = torch.tensor(poisoned_indices, dtype=torch.long)
     if not ("scrub" in args.unlearning_model) and not ("megu" in args.unlearning_model)  and not ("SSD" in args.unlearning_model):
         get_sdf_masks(data, args)
@@ -177,7 +180,7 @@ def get_trainer(args, poisoned_model, poisoned_data, optimizer_unlearn) -> Train
         "retrain": RetrainTrainer,
         "scrub": ScrubTrainer,
         "megu": MeguTrainer,
-        "SSD": SSDTrainer
+        "SSD": SSDTrainer,
     }
 
     if args.unlearning_model in trainer_map:
