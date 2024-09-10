@@ -102,7 +102,10 @@ def poison(clean_data=None):
             f"{args.data_dir}/{args.gnn}_{args.dataset}_{args.attack_type}_{args.df_size}_{args.random_seed}_poisoned_model.pt"
         )
 
-        poisoned_indices = poisoned_data.poisoned_nodes
+        if args.attack_type == "edge":
+            poisoned_indices = poisoned_data.poisoned_edge_indices
+        else:
+            poisoned_indices = poisoned_data.poisoned_nodes
 
         optimizer = torch.optim.Adam(
             poisoned_model.parameters(),
@@ -400,6 +403,8 @@ if __name__ == "__main__":
     # reduce trials for utu and contrastive
     if args.unlearning_model == "utu":
         study.optimize(objective_func, n_trials=1)
+    elif args.unlearning_model == "retrain":
+        study.optimize(objective_func, n_trials=15)
     # elif args.unlearning_model == "contrastive" or args.unlearning_model == "contra_2":
     #     study.optimize(objective_func, n_trials=200)
     else:

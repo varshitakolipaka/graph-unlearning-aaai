@@ -64,7 +64,7 @@ class ContrastiveUnlearnTrainer_NEW(Trainer):
             self.data.sample_mask = torch.zeros(self.data.num_nodes, dtype=torch.bool)
             self.data.sample_mask[influence_nodes_with_unlearning_nodes] = True
 
-            poisoned_edges = self.data.edge_index[:, self.attacked_idx]
+            poisoned_edges = self.data.edge_index[:, self.data.df_mask]
             negative_sample_dict= {int: set()}
 
             for i in range(len(poisoned_edges[0])):
@@ -258,7 +258,6 @@ class ContrastiveUnlearnTrainer_NEW(Trainer):
 
     def get_distances_edge(self, batch_size=64):
         # attacked edge index contains all the edges that were maliciously added
-        self.embeddings = self.model(self.data.x, self.data.edge_index)
         num_masks = len(self.data.train_mask)
         pos_dist = torch.zeros(num_masks).to(device)
         neg_dist = torch.zeros(num_masks).to(device)
@@ -302,8 +301,6 @@ class ContrastiveUnlearnTrainer_NEW(Trainer):
             pos_dist[batch_indices] = batch_pos_dist.to(pos_dist.device)
             neg_dist[batch_indices] = batch_neg_dist.to(neg_dist.device)
 
-        pos_dist = torch.tensor(pos_dist)
-        neg_dist = torch.tensor(neg_dist)
         return pos_dist, neg_dist
 
     @time_it
@@ -348,24 +345,29 @@ class ContrastiveUnlearnTrainer_NEW(Trainer):
         optimizer = self.optimizer
         
         for epoch in trange(
-            args.contrastive_epochs_1 + args.contrastive_epochs_2, desc="Unlearning"
+            args.steps, desc="Unlearning"
         ):
-            self.model.train()
-            self.embeddings = self.model(self.data.x, self.data.edge_index)
-            if epoch <= args.contrastive_epochs_1:
-                pos_dist, neg_dist = self.get_distances_edge()
-                lmda = args.contrastive_lambda
-            else:
-                pos_dist = None
-                neg_dist = None
-                lmda = 1
-            loss = self.unlearn_loss(
-                pos_dist, neg_dist, margin=args.contrastive_margin, lmda=lmda
-            )
-            optimizer.zero_grad()
-            loss.backward()
-            optimizer.step()
-        return
+            for i in range(args.contrastive_epochs_1 + args.contrastive_epochs_2):
+                self.model.train()
+                optimizer.zero_grad()
+                
+                self.embeddings = self.model(self.data.x, self.data.edge_index[:, self.data.dr_mask])
+                if i < args.contrastive_epochs_1:
+                    pos_dist, neg_dist = self.get_distances_edge()
+                    lmda = 0
+                    loss = self.unlearn_loss(
+                        pos_dist, neg_dist, margin=args.contrastive_margin, lmda=lmda
+                    )
+                else:
+                    pos_dist = None
+                    neg_dist = None
+                    lmda = 1
+                    loss = self.unlearn_loss(
+                        pos_dist, neg_dist, margin=args.contrastive_margin, lmda=lmda
+                    )
+
+                loss.backward()
+                optimizer.step()
 
     def train(self):
 

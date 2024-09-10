@@ -41,6 +41,28 @@
                 "contrastive_frac": 0.10895191501232199,
                 "k_hop": 2
             }
+        },
+        "edge": {
+            "Amazon": {
+                "contrastive_epochs_1": 5,
+                "contrastive_epochs_2": 25,
+                "steps": 14,
+                "unlearn_lr": 0.06074651059666654,
+                "weight_decay": 1.9426178138197024e-05,
+                "contrastive_margin": 209.66178319864625,
+                "contrastive_frac": 0.033285927419715554,
+                "k_hop": 2
+            },
+            "Cora": {
+                "contrastive_epochs_1": 2,
+                "contrastive_epochs_2": 26,
+                "steps": 15,
+                "unlearn_lr": 0.014627462678991185,
+                "weight_decay": 9.536010373649415e-05,
+                "contrastive_margin": 137.55451223539802,
+                "contrastive_frac": 0.0824795220349824,
+                "k_hop": 1
+            }
         }
     },
     "scrub": {
@@ -64,10 +86,24 @@
                 "msteps": 16
             },
             "Computers": {
+                "unlearn_iters": 146,
+                "unlearn_lr": 0.005493937194422348,
+                "scrubAlpha": 2.20978319651635,
+                "msteps": 12
+            }
+        },
+        "edge": {
+            "CS": {
+                "unlearn_iters": 164,
+                "unlearn_lr": 0.006796578090758156
+            },
+            "Cora": {
                 "unlearn_iters": 144,
-                "unlearn_lr": 0.06351221010640701,
-                "scrubAlpha": 0.1330324510152292,
-                "msteps": 64
+                "unlearn_lr": 0.06351221010640701
+            },
+            "Amazon": {
+                "unlearn_iters": 144,
+                "unlearn_lr": 0.06351221010640701
             }
         }
     },
@@ -86,6 +122,50 @@
                 "unlearning_epochs": 177,
                 "alpha": 0.079621809714594,
                 "loss_type": "only3_all"
+            },
+            "Amazon": {
+                "unlearn_lr": 0.015709532466239344,
+                "weight_decay": 7.829379105504289e-05,
+                "unlearning_epochs": 132,
+                "alpha": 0.002682458113346664,
+                "loss_type": "both_layerwise"
+            },
+            "Cora": {
+                "unlearn_lr": 0.013555124061685693,
+                "weight_decay": 0.00025499741072346796,
+                "unlearning_epochs": 36,
+                "alpha": 0.04116495753554496,
+                "loss_type": "only3_all"
+            }
+        },
+        "edge": {
+            "CS": {
+                "unlearn_lr": 0.03443664967730748,
+                "weight_decay": 0.07883805819794078,
+                "unlearning_epochs": 67,
+                "alpha": 0.0008804706594513051,
+                "loss_type": "both_layerwise"
+            },
+            "Cora": {
+                "unlearn_lr": 0.0003403061350483096,
+                "weight_decay": 0.0005175581059356257,
+                "unlearning_epochs": 132,
+                "alpha": 0.0016307472054686587,
+                "loss_type": "both_layerwise"
+            },
+            "Amazon": {
+                "unlearn_lr": 0.09781611345397667,
+                "weight_decay": 0.0038315226128998263,
+                "unlearning_epochs": 122,
+                "alpha": 0.0009088740931520274,
+                "loss_type": "both_layerwise"
+            },
+            "Computers": {
+                "unlearn_lr": 0.008842996022729172,
+                "weight_decay": 0.018891633209321388,
+                "unlearning_epochs": 122,
+                "alpha": 0.0031969817598802505,
+                "loss_type": "both_layerwise"
             }
         }
     },
@@ -100,6 +180,38 @@
                 "iteration": 937,
                 "scale": 1036630937.1180391,
                 "damp": 0.47884269469918034
+            },
+            "Amazon": {
+                "iteration": 425,
+                "scale": 2220965519.2504854,
+                "damp": 0.5919470649791709
+            },
+            "Cora": {
+                "iteration": 330,
+                "scale": 3427065137.5485477,
+                "damp": 0.2397278217220075
+            }
+        },
+        "edge": {
+            "CS": {
+                "iteration": 602,
+                "scale": 89955642.15601061,
+                "damp": 0.14068317526753077
+            },
+            "Cora": {
+                "iteration": 565,
+                "scale": 496601263.1545921,
+                "damp": 0.8552911006547071
+            },
+            "Amazon": {
+                "iteration": 946,
+                "scale": 6302314035.822043,
+                "damp": 0.319971455555518
+            },
+            "Computers": {
+                "iteration": 191,
+                "scale": 749584979.7769716,
+                "damp": 0.9524779430781272
             }
         }
     },
@@ -118,6 +230,50 @@
                 "kappa": 0.01760434411056529,
                 "alpha1": 0.47133606689518726,
                 "alpha2": 0.5927122957887847
+            },
+            "Amazon": {
+                "unlearn_lr": 1.3493931635474633e-05,
+                "unlearning_epochs": 197,
+                "kappa": 0.007035011083864385,
+                "alpha1": 0.897092386930343,
+                "alpha2": 0.6928081308742233
+            },
+            "Cora": {
+                "unlearn_lr": 4.902740153994734e-05,
+                "unlearning_epochs": 379,
+                "kappa": 0.004706562156385754,
+                "alpha1": 0.7055260297008595,
+                "alpha2": 0.7811244795590156
+            }
+        },
+        "edge": {
+            "CS": {
+                "unlearn_lr": 2.1691480074974073e-06,
+                "unlearning_epochs": 461,
+                "kappa": 0.6462535709599021,
+                "alpha1": 0.09802109845638489,
+                "alpha2": 0.0738896823321091
+            },
+            "Cora": {
+                "unlearn_lr": 2.3861811985093848e-06,
+                "unlearning_epochs": 134,
+                "kappa": 0.06405333088532784,
+                "alpha1": 0.13322821489567527,
+                "alpha2": 0.1449206222878346
+            },
+            "Amazon": {
+                "unlearn_lr": 1.7959174899124506e-05,
+                "unlearning_epochs": 943,
+                "kappa": 0.0614870020020982,
+                "alpha1": 0.6439790355909927,
+                "alpha2": 0.1156711750906638
+            },
+            "Computers": {
+                "unlearn_lr": 8.735822653267055e-05,
+                "unlearning_epochs": 238,
+                "kappa": 0.1264074224823952,
+                "alpha1": 0.46403457640877577,
+                "alpha2": 0.042561511251116665
             }
         }
     },
@@ -151,6 +307,36 @@
                 "weight_decay": 7.93412494336878e-05,
                 "unlearning_epochs": 961
             }
+        },
+        "edge": {
+            "CS": {
+                "unlearn_lr": 0.09639757903159524,
+                "weight_decay": 5.889362374977654e-05,
+                "unlearning_epochs": 958
+            },
+            "Cora": {
+                "unlearn_lr": 0.04475534485837588,
+                "weight_decay": 1.1273349212989521e-05,
+                "unlearning_epochs": 614
+            },
+            "Amazon": {
+                "unlearn_lr": 0.012814352475525675,
+                "weight_decay": 1.1053995939291374e-05,
+                "unlearning_epochs": 994
+            },
+            "Computers": {
+                "unlearn_lr": 0.005088923469935962,
+                "weight_decay": 1.3810662429564386e-05,
+                "unlearning_epochs": 863
+            }
+        }
+    },
+    "utu": {
+        "edge": {
+            "CS": {},
+            "Cora": {},
+            "Amazon": {},
+            "Computers": {}
         }
     }
 }

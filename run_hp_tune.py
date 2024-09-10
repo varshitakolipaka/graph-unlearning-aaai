@@ -4,14 +4,29 @@ import os
 def run_hp_tuning(unlearning_models, df_size, random_seed, dataset, attack_type, data_dir, db_name, gnn):
     
     for model in unlearning_models:
-        cmd = f"python hp_tune.py --unlearning_model {model} --dataset {dataset} --df_size {df_size} --random_seed {random_seed} --data_dir {data_dir} --attack_type {attack_type} --db_name {db_name} --gnn {gnn}"
-        
-        print(f"Running command: {cmd}")
-        os.system(cmd)
-        
-        print(f"Getting best HPs for {model}")
-        cmd = f"python get_best_hps.py --unlearning_model {model} --dataset {dataset} --df_size {df_size} --random_seed {random_seed} --data_dir {data_dir} --attack_type {attack_type} --db_name {db_name} --gnn {gnn}"
-        
+        if attack_type == "label":
+            cmd = f"python hp_tune.py --unlearning_model {model} --dataset {dataset} --df_size {df_size} --random_seed {random_seed} --data_dir {data_dir} --attack_type {attack_type} --db_name {db_name} --gnn {gnn}"
+            
+            print(f"Running command: {cmd}")
+            os.system(cmd)
+            
+            print(f"Getting best HPs for {model}")
+            cmd = f"python get_best_hps.py --unlearning_model {model} --dataset {dataset} --df_size {df_size} --random_seed {random_seed} --data_dir {data_dir} --attack_type {attack_type} --db_name {db_name} --gnn {gnn}"
+            
+            os.system(cmd)
+            
+        elif attack_type == "edge":
+            cmd = f"python hp_tune.py --unlearning_model {model} --dataset {dataset} --df_size {df_size} --random_seed {random_seed} --data_dir {data_dir} --attack_type {attack_type} --request edge --db_name {db_name} --gnn {gnn}"
+            
+            print(f"Running command: {cmd}")
+            os.system(cmd)
+            
+            print(f"Getting best HPs for {model}")
+            
+            cmd = f"python get_best_hps.py --unlearning_model {model} --dataset {dataset} --df_size {df_size} --random_seed {random_seed} --data_dir {data_dir} --attack_type {attack_type} --request edge --db_name {db_name} --gnn {gnn}"
+            
+            os.system(cmd)
+            
     print("HP tuning completed")
 
 if __name__ == "__main__":
@@ -25,6 +40,7 @@ if __name__ == "__main__":
     parser.add_argument('--db_name', type=str, default=None, help='Database name (only for contra_2 model)')
     
     parser.add_argument('--contra_2', action='store_true', help='Run HP tuning for contra_2 model')
+    parser.add_argument('--contrastive', action='store_true', help='Run HP tuning for contra_2 model')
     parser.add_argument('--retrain', action='store_true', help='Run HP tuning for retrain model')
     parser.add_argument('--scrub', action='store_true', help='Run HP tuning for scrub model')
     parser.add_argument('--megu', action='store_true', help='Run HP tuning for megu model')
@@ -36,7 +52,7 @@ if __name__ == "__main__":
     args = parser.parse_args()
     
     # check if the model is specified
-    if not any([args.contra_2, args.retrain, args.scrub, args.megu, args.gnndelete, args.utu, args.gif, args.ssd]):
+    if not any([args.contra_2, args.retrain, args.scrub, args.megu, args.gnndelete, args.utu, args.gif, args.ssd, args.contrastive]):
         print("Please specify the model to run HP tuning for")
         exit(1)
     
@@ -49,6 +65,8 @@ if __name__ == "__main__":
         unlearning_models.append('scrub')
     if args.contra_2:
         unlearning_models.append('contra_2')
+    if args.contrastive:
+        unlearning_models.append('contrastive')
     if args.megu:
         unlearning_models.append('megu')
     if args.gnndelete:

@@ -24,6 +24,7 @@ from trainers.ssd import SSDTrainer
 from trainers.utu import UtUTrainer
 from trainers.retrain import RetrainTrainer
 from trainers.megu import MeguTrainer
+from trainers.grub import GrubTrainer
 
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
@@ -150,7 +151,7 @@ def find_masks(data, poisoned_indices, args, attack_type="label"):
 
     if attack_type == "label" or attack_type == "random"  or attack_type == "trigger":
 
-        if "scrub" in args.unlearning_model or "ssd" in args.unlearning_model or ("megu" in args.unlearning_model and "node" in args.request):
+        if "scrub" in args.unlearning_model or "grub" in args.unlearning_model or "ssd" in args.unlearning_model or ("megu" in args.unlearning_model and "node" in args.request):
             data.node_df_mask = torch.zeros(data.num_nodes, dtype=torch.bool)  # of size num nodes
             data.node_dr_mask = data.train_mask
             data.node_df_mask[poisoned_indices] = True
@@ -191,7 +192,8 @@ def get_trainer(args, poisoned_model, poisoned_data, optimizer_unlearn) -> Train
         "retrain": RetrainTrainer,
         "scrub": ScrubTrainer,
         "megu": MeguTrainer,
-        "ssd": SSDTrainer
+        "ssd": SSDTrainer,
+        "grub": GrubTrainer
     }
 
     if args.unlearning_model in trainer_map:

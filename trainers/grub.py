@@ -12,8 +12,8 @@ device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
 class_dataset_dict = {
     "Cora": {
-        "class1": 57,
-        "class2": 33,
+        "class1": 5,
+        "class2": 63,
     },
     "PubMed": {
         "class1": 2,
@@ -74,24 +74,36 @@ class LinearLR(_LRScheduler):
     def _get_closed_form_lr(self):
         return self.get_lr()
 
-class ScrubTrainer(Trainer):
+class GrubTrainer(Trainer):
+
     def __init__(self, model, poisoned_dataset, optimizer, opt):
         super().__init__(model, poisoned_dataset, optimizer)
         self.opt = opt
         self.opt.unlearn_iters = opt.unlearn_iters
         self.best_model = None
-        self.best_val_acc = 0
+        self.best_combined_score = -float('inf')
         self.curr_step = 0
         self.set_model(model)
         self.poisoned_dataset = poisoned_dataset
-        self.get_masks()
-        self.scheduler = LinearLR(self.optimizer, T=self.opt.unlearn_iters*1.25, warmup_epochs=self.opt.unlearn_iters//100) # Spend 1% time in warmup, and stop 66% of the way through training
+        full_edge_index = self.poisoned_dataset.edge_index
+        dr_mask = self.poisoned_dataset.dr_mask
+
+        self.edge_index = full_edge_index[:, dr_mask]
+        
+        self.forget_mask = self.poisoned_dataset.node_df_mask
+        self.retain_mask = self.poisoned_dataset.node_dr_mask
+        
+        # Separate optimizers for ascent and descent
+        self.ascent_optimizer = torch.optim.Adam(self.model.parameters(), lr=opt.ascent_lr)
+        self.descent_optimizer = torch.optim.Adam(self.model.parameters(), lr=opt.descent_lr)
+        
+        # Separate schedulers
+        self.ascent_scheduler = LinearLR(self.ascent_optimizer, T=self.opt.unlearn_iters*1.25, warmup_epochs=self.opt.unlearn_iters//100)
+        self.descent_scheduler = LinearLR(self.descent_optimizer, T=self.opt.unlearn_iters*1.25, warmup_epochs=self.opt.unlearn_iters//100)
+        
         self.og_model = copy.deepcopy(model)
         self.og_model.eval()
-        opt.unlearn_iters = opt.unlearn_iters
-        self.opt.unlearn_iters = opt.unlearn_iters
 
-        # set to device
         self.model.to(device)
         self.og_model.to(device)
         self.poisoned_dataset.to(device)
@@ -99,104 +111,76 @@ class ScrubTrainer(Trainer):
     def set_model(self, model):
         self.model = model
 
-    def get_masks(self):
-
-        if self.opt.attack_type == "edge":
-            df_nodes = torch.unique(self.poisoned_dataset.edge_index[:, self.poisoned_dataset.df_mask])
-            node_mask = torch.zeros(self.poisoned_dataset.num_nodes, dtype=torch.bool)
-            node_mask[df_nodes] = True
-            node_mask = node_mask.to(device)
-            self.poisoned_dataset.node_df_mask = node_mask
-            print(f"FORGETTING {node_mask.sum()} NODES....")
-            self.poisoned_dataset.node_dr_mask = self.poisoned_dataset.train_mask & ~node_mask
-            print(f"REMEMBERING {self.poisoned_dataset.node_dr_mask.sum()} NODES....")
-
-        if not hasattr(self.poisoned_dataset, 'val_mask'):
-            print("interesting it doesnt have a val mask")
-            # If val_mask doesn't exist, create it from train_mask
-            train_mask = self.poisoned_dataset.train_mask
-            test_mask = self.poisoned_dataset.test_mask
-
-            # Determine the number of nodes to move to val_mask
-            # val_size = int(train_mask.sum() * self.opt.val_ratio)
-            val_size = int(train_mask.sum() * self.opt.val_ratio)
-
-            # Randomly select nodes from train_mask to create val_mask
-            val_indices = torch.where(train_mask)[0][torch.randperm(train_mask.sum())[:val_size]]
-            val_mask = torch.zeros_like(train_mask)
-            val_mask[val_indices] = True
-
-            # Remove val nodes from train_mask
-            train_mask[val_indices] = False
-
-            # Assign the new masks to the dataset
-            self.poisoned_dataset.val_mask = val_mask
-            self.poisoned_dataset.train_mask = train_mask
-
-
-    def train_one_epoch(self, data, mask):
-        self.model.train()
-        if self.curr_step <= self.opt.unlearn_iters:
-            self.optimizer.zero_grad()
-            loss = self.forward_pass(data, mask)
-            val_acc, _, _ = self.evaluate(use_val=True)
-            # print(val_acc, self.best_val_acc)
-            if val_acc > self.best_val_acc:
-                # print("updating best model...")
-                self.best_val_acc = val_acc
-                # write state_dict to file
-                with open(self.opt.unlearning_model + '_best_model.pth', 'wb') as f:
-                    torch.save(self.model.state_dict(), f)
-            loss.backward()
-            self.optimizer.step()
-            self.scheduler.step()
-            # print(self.scheduler.get_lr())
-            self.curr_step += 1
-
-        return
-
     def forward_pass(self, data, mask):
 
-        if self.opt.attack_type == "edge":
-            output = self.model(data.x, data.edge_index[:, data.dr_mask])
-        else:
-            output = self.model(data.x, data.edge_index)
-
-        with torch.no_grad():
-            logit_t = self.og_model(data.x, data.edge_index)
-
+        output = self.model(data.x, self.edge_index)
         loss = F.cross_entropy(output[mask], data.y[mask])
-        if self.opt.attack_type != "edge":
-            loss += self.opt.scrubAlpha * distill_kl_loss(output[mask], logit_t[mask], self.opt.kd_T)
 
         if self.maximize:
             loss = -loss
 
         return loss
 
-    # scrub for label flipping
+    def train_one_epoch(self, data, mask):
+        self.model.train()
+        if self.curr_step <= self.opt.unlearn_iters:
+            optimizer = self.ascent_optimizer if self.maximize else self.descent_optimizer
+            scheduler = self.ascent_scheduler if self.maximize else self.descent_scheduler
+            
+            optimizer.zero_grad()
+            loss = self.forward_pass(data, mask)
+            loss.backward()
+            optimizer.step()
+            scheduler.step()
+            
+            # Evaluate and update best model
+            train_acc, msc_rate, f1 = self.evaluate(use_val=True)
+            forg, util = self.get_score(self.opt.attack_type, 
+                                        class1=class_dataset_dict[self.opt.dataset]["class1"], 
+                                        class2=class_dataset_dict[self.opt.dataset]["class2"])
+            
+            combined_score = 0.5 * forg + 0.5 * util
+            if combined_score > self.best_combined_score:
+                print(f"New best model found! Combined Score: {combined_score:.4f}")
+                self.best_combined_score = combined_score
+                with open(self.opt.unlearning_model + '_best_model.pth', 'wb') as f:
+                    torch.save(self.model.state_dict(), f)
+            else:
+                print(f"Not updating... Combined Score: {combined_score:.4f}")
+            
+            self.curr_step += 1
+
     def unlearn_nc_lf(self):
-        forget_mask = self.poisoned_dataset.node_df_mask
-        print("MEOW MEH: ", forget_mask.shape)
+        train_acc, msc_rate, f1 = self.evaluate(use_val=True)
+        forg, util = self.get_score(self.opt.attack_type, class1=class_dataset_dict[self.opt.dataset]["class1"], class2=class_dataset_dict[self.opt.dataset]["class2"])
+        print("SCORES AT THE STARTTT:", forg, util)
         self.maximize=False
         start_time = time.time()
         while self.curr_step < self.opt.unlearn_iters:
             print("UNLEARNING STEP: ", self.curr_step, end='\r')
+            print("yo wtf")
             if self.curr_step < self.opt.msteps:
                 self.maximize=True
-                self.train_one_epoch(data=self.poisoned_dataset, mask=forget_mask)
+                print("Gradient Ascent Step: ", self.curr_step)
+                self.train_one_epoch(data=self.poisoned_dataset, mask=self.forget_mask)
+                print("meow")
+                print("SCORESSS:", forg, util)
+
 
             self.maximize=False
-            self.train_one_epoch(data=self.poisoned_dataset, mask=self.poisoned_dataset.node_dr_mask)
-            train_acc, msc_rate, f1 = self.evaluate()
-            # print(f'Test Acc: {train_acc}, Misclassification: {msc_rate},  F1 Score: {f1}')
-            # print(f"==Unlearned Model==\nForget Ability: {forg}, Utility: {util}")
+            print("Gradient Descent Step: ", self.curr_step)
+            self.train_one_epoch(data=self.poisoned_dataset, mask=self.retain_mask)
+            train_acc, msc_rate, f1 = self.evaluate(use_val=True)
+            forg, util = self.get_score(self.opt.attack_type, class1=class_dataset_dict[self.opt.dataset]["class1"], class2=class_dataset_dict[self.opt.dataset]["class2"])
+            print("SCORESSS:", forg, util)
+            print("-"*50)
         end_time = time.time()
         # load best model
         with open(self.opt.unlearning_model + '_best_model.pth', 'rb') as f:
             self.model.load_state_dict(torch.load(f))
-        train_acc, msc_rate, f1 = self.evaluate()
+        train_acc, msc_rate, f1 = self.evaluate(use_val=True)
         return train_acc, msc_rate, end_time - start_time
+    
 
     def train(self):
         return self.unlearn_nc_lf()

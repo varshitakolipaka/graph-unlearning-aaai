@@ -104,7 +104,10 @@ def poison(clean_data=None):
             f"{args.data_dir}/{args.gnn}_{args.dataset}_{args.attack_type}_{args.df_size}_{args.random_seed}_poisoned_model.pt"
         )
 
-        poisoned_indices = poisoned_data.poisoned_nodes
+        if args.attack_type == "edge":
+            poisoned_indices = poisoned_data.poisoned_edge_indices
+        else:
+            poisoned_indices = poisoned_data.poisoned_nodes
 
         optimizer = torch.optim.Adam(
             poisoned_model.parameters(),
@@ -227,7 +230,10 @@ def unlearn(poisoned_data, poisoned_indices, poisoned_model):
 
     _, _, time_taken = unlearn_trainer.train()
     if args.unlearning_model == "scrub":
-        unlearn_trainer.evaluate()
+        if args.attack_type == "edge":
+            unlearn_trainer.evaluate(is_dr=True)
+        else:
+            unlearn_trainer.evaluate()
     else:
         unlearn_trainer.evaluate(is_dr=True)
     forg, util = unlearn_trainer.get_score(

@@ -107,4 +107,7 @@ def edge_attack_specific_nodes(data, epsilon, seed, class1=None, class2=None):
     augmented_edge = torch.cat([data.edge_index.to(device), edge_index_to_add], dim=1)
     data.edge_index = augmented_edge
     nums= list(range(len(data.edge_index[0])-2*len(poisoned_edges), len(data.edge_index[0])))
+    
+    data.poisoned_edge_indices = torch.tensor(nums, dtype=torch.long)
+    
     return data, torch.tensor(nums, dtype=torch.long)
