@@ -301,9 +301,11 @@ class MeguTrainer(Trainer):
             loss = self.args.kappa * loss_u + loss_r
             loss.backward()
             optimizer.step()
+            
+            self.save_best()
 
-        unlearn_time = time.time() - start_time
-
+        unlearn_time = self.best_model_time - start_time
+        self.load_best()
         train_acc, msc_rate, f1 = self.evaluate(is_dr=True, use_val=True)
         # print(f'Train Acc: {train_acc}, Misclassification: {msc_rate},  F1 Score: {f1}')
 

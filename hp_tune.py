@@ -209,7 +209,7 @@ hp_tuning_params_dict = {
     "gnndelete": {
         "unlearn_lr": (1e-5, 1e-1, "log"),
         "weight_decay": (1e-5, 1e-1, "log"),
-        "unlearning_epochs": (10, 200, "int"),
+        # "unlearning_epochs": (10, 200, "int"),
         "alpha": (0, 1, "float"),
         "loss_type": (
             [
@@ -247,7 +247,7 @@ hp_tuning_params_dict = {
         "damp": (0.0, 1.0, "float"),
     },
     "gradient_ascent": {
-        "unlearning_epochs": (10, 2000, "int"),
+        # "unlearning_epochs": (10, 2000, "int"),
         "unlearn_lr": (1e-5, 1e-1, "log"),
         "weight_decay": (1e-5, 1e-1, "log"),
     },
@@ -274,6 +274,20 @@ hp_tuning_params_dict = {
         "contrastive_frac": (0.01, 0.1, "float"),
         "k_hop": (1, 2, "int"),
     },
+    "contrascent": {
+        "contrastive_epochs_1": (1, 5, "int"),
+        "contrastive_epochs_2": (1, 5, "int"),
+        "steps": (1, 15, "int"),
+        # "maximise_epochs": (5, 30, "int"),
+        "unlearn_lr": (1e-5, 1e-1, "log"),
+        "contrastive_margin": (1, 10, "log"),
+        # "contrastive_lambda": (0.0, 1.0, "float"),
+        "contrastive_frac": (0.01, 0.2, "float"),
+        # "k_hop": (1, 2, "int"),
+        "ascent_lr": (1e-5, 1e-3, "log"),
+        "descent_lr": (1e-5, 1e-1, "log"),
+        "scrubAlpha": (1e-6, 10, "log"),
+    },
     "utu": {},
     "scrub": {
         "unlearn_iters": (110, 200, "int"),
@@ -283,9 +297,17 @@ hp_tuning_params_dict = {
         "msteps": (10, 100, "int"),
         # 'weight_decay': (1e-5, 1e-1, "log"),
     },
+    "yaum": {
+        "unlearn_iters": (110, 200, "int"),
+        # 'kd_T': (1, 10, "float"),
+        "ascent_lr": (1e-5, 1e-3, "log"),
+        "descent_lr": (1e-5, 1e-1, "log"),
+        "scrubAlpha": (1e-6, 10, "log"),
+        # "msteps": (10, 100, "int"),
+    },
     "megu": {
         "unlearn_lr": (1e-6, 1e-3, "log"),
-        "unlearning_epochs": (10, 1000, "int"),
+        # "unlearning_epochs": (10, 1000, "int"),
         "kappa": (1e-3, 1, "log"),
         "alpha1": (0, 1, "float"),
         "alpha2": (0, 1, "float"),
@@ -325,21 +347,15 @@ def objective(trial, model, data):
     trainer = utils.get_trainer(args, model_internal, data, optimizer)
 
     _, _, time_taken = trainer.train()
-
-    forg, util = trainer.get_score(
-        args.attack_type,
-        class1=class_dataset_dict[args.dataset]["class1"],
-        class2=class_dataset_dict[args.dataset]["class2"],
-    )
-    if args.attack_type == "trigger":
-        forg = 1 - forg
-
+    
+    if args.unlearning_model == 'scrub' or args.unlearning_model == 'yaum':
+        is_dr = True
+    else:
+        is_dr = False    
+    
+    obj = trainer.validate(is_dr=is_dr)
+    
     trial.set_user_attr("time_taken", time_taken)
-    trial.set_user_attr("forget_ability", forg)
-    trial.set_user_attr("utility", util)
-
-    # combine forget and utility to get a single objective
-    obj = 0.5 * forg + 0.5 * util
 
     # We want to minimize misclassification rate and maximize accuracy
     return obj

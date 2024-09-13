@@ -15,11 +15,11 @@ def parse_args():
     parser.add_argument('--train_ratio', type=float, default=0.7, help='train ratio')
     parser.add_argument('--val_ratio', type=float, default=0.1, help='train ratio')
     parser.add_argument('--attack_type', type=str, default='label', help='attack type', choices=["label", "edge", "random", "trigger"])
-    parser.add_argument('--unlearning_model', type=str, default='scrub', help='unlearning method', choices=["original", "gradient_ascent", "gnndelete", "gnndelete_ni", "gif", "utu", "contrastive", "retrain", "scrub", "megu", "contra_2", "ssd", "grub"])
+    parser.add_argument('--unlearning_model', type=str, default='scrub', help='unlearning method', choices=["original", "gradient_ascent", "gnndelete", "gnndelete_ni", "gif", "utu", "contrastive", "retrain", "scrub", "megu", "contra_2", "ssd", "grub", "yaum", 'contrascent'])
     parser.add_argument('--gnn', type=str, default='gcn', help='GNN architecture', choices=['gcn', 'gat', 'gin'])
     # parser.add_argument('--in_dim', type=int, default=128, help='input dimension')
     parser.add_argument('--hidden_dim', type=int, default=64, help='hidden dimension')
-    parser.add_argument('--unlearning_epochs', type=int, default=50, help='number of epochs to unlearn for')
+    parser.add_argument('--unlearning_epochs', type=int, default=200, help='number of epochs to unlearn for')
     # parser.add_argument('--out_dim', type=int, default=64, help='output dimension')
     parser.add_argument('--request', type=str, default='node', help='unlearning request', choices=['node', 'edge'])
     parser.add_argument('--edge_attack_type', type=str, default='specific', help='edge attack type', choices=['random', 'specific'])
@@ -86,16 +86,16 @@ def parse_args():
     parser.add_argument('--damp', type=float, default=0.1)
 
     # Scrub
-    parser.add_argument('--unlearn_iters', type=int, default=50, help='number of epochs to train (default: 31)')
+    parser.add_argument('--unlearn_iters', type=int, default=150, help='number of epochs to train (default: 31)')
     parser.add_argument('--kd_T', type=float, default=4, help='Knowledge distilation temperature for SCRUB')
-    parser.add_argument('--scrubAlpha', type=float, default=0, help='KL from og_model constant for SCRUB, higher incentivizes closeness to ogmodel')
-    parser.add_argument('--msteps', type=int, default=10, help='Maximization steps on forget set for SCRUB')
-    parser.add_argument('--ascent_lr', type=float, default=0.005, help='Learning rate for gradient ascent steps')
-    parser.add_argument('--descent_lr', type=float, default=0.01, help='Learning rate for gradient descent steps')  
+    parser.add_argument('--scrubAlpha', type=float, default=10, help='KL from og_model constant for SCRUB, higher incentivizes closeness to ogmodel')
+    parser.add_argument('--msteps', type=int, default=25, help='Maximization steps on forget set for SCRUB')
+    parser.add_argument('--ascent_lr', type=float, default=0.0025, help='Learning rate for gradient ascent steps')
+    parser.add_argument('--descent_lr', type=float, default=0.015, help='Learning rate for gradient descent steps')  
 
 
     # contrastive
-    parser.add_argument('--contrastive_epochs_1', type=int, default=30, help="epochs for contrastive unlearning")
+    parser.add_argument('--contrastive_epochs_1', type=int, default=0, help="epochs for contrastive unlearning")
     parser.add_argument('--contrastive_epochs_2', type=int, default=10, help="epochs for contrastive unlearning")
     parser.add_argument('--maximise_epochs', type=int, default=0, help="epochs for grad asc in contrastive unlearning")
     parser.add_argument('--contrastive_margin', type=float, default=500, help="margin for the contrastive loss")

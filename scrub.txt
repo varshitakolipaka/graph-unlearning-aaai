@@ -1,0 +1,1063 @@
+
+
+
+
+Amazon label
+Number of nodes:  7650
+Number of edges:  238162
+Number of features:  745
+Number of classes:  8
+Number of training nodes:  5355
+Number of testing nodes:  1531
+Number of nodes in class 0: 369
+Number of nodes in class 1: 1686
+Number of nodes in class 2: 703
+Number of nodes in class 3: 915
+Number of nodes in class 4: 882
+Number of nodes in class 5: 823
+Number of nodes in class 6: 1941
+Number of nodes in class 7: 331
+Poisoned classes: [3, 4]
+Poisoned class: 3 -> 4
+==OG Model==
+Forget Ability: 0.9187609402350587, Utility: 0.9270387058213864
+Poisoned classes: [3, 4]
+Poisoned class: 3 -> 4
+==Poisoned Model==
+Forget Ability: 0.5582645661415354, Utility: 0.9345140692531783
+==UNLEARNING==
+Namespace(train_ratio=0.7, val_ratio=0.1, attack_type='label', unlearning_model='scrub', gnn='gcn', hidden_dim=64, unlearning_epochs=50, request='node', edge_attack_type='specific', data_dir='/scratch/akshit.sinha/data', db_name='hp_tuning', df_size=0.5, test_poison_fraction=0.2, poison_tensor_size=100, dataset='Amazon', random_seed=3, train_lr=0.005191475570177285, unlearn_lr=0.005415894185681528, weight_decay=0.5, optimizer='Adam', training_epochs=1208, valid_freq=30, checkpoint_dir='./checkpoint', alpha=0.5, neg_sample_random='non_connected', loss_fct='mse_mean', loss_type='both_layerwise', num_clusters=10, kmeans_max_iters=1, shard_size_delta=0.005, terminate_delta=0, eval_steps=1, runs=1, num_remove_links=11, parallel_unlearning=4, lam=0, regen_feats=False, regen_neighbors=False, regen_links=False, regen_subgraphs=False, hop_neighbors=20, topk=500, eval_on_cpu=False, num_edge_type=None, iteration=100, scale=100000, damp=0.1, unlearn_iters=168, kd_T=4, scrubAlpha=3.5637209812607313, msteps=46, ascent_lr=0.0025, descent_lr=0.015, contrastive_epochs_1=30, contrastive_epochs_2=10, maximise_epochs=0, contrastive_margin=500, contrastive_lambda=0.8, k_hop=2, contrastive_frac=0.1, steps=10, kappa=0.01, alpha1=0.8, alpha2=0.5, SSDdampening=10, SSDselectwt=1, embs_all=False, embs_unlearn=False, corrective_frac=1)
+parameters_to_optimize ['conv1.bias', 'conv1.lin.weight', 'conv2.bias', 'conv2.lin.weight', 'conv3.bias', 'conv3.lin.weight']
+summmmmmm: tensor(764, device='cuda:0')
+MEOW MEH:  torch.Size([7650])
+UNLEARNING STEP:  0Poisoned classes: [3, 4]
+Poisoned class: 3 -> 4
+
+Step 1: Train Acc: 0.5186152841280209, Misclassification: 0.388268156424581, F1 Score: 0.5186152841280209
+Forget Ability: 0.596305326331583, Utility: 0.3735523219331473
+Forget Loss: 0.9025785326957703, Remember Loss: 0.30386850237846375, KD Loss: 0.8817295432090759
+best model so far!
+UNLEARNING STEP:  1Poisoned classes: [3, 4]
+Poisoned class: 3 -> 4
+
+Step 2: Train Acc: 0.6773350751143044, Misclassification: 0.12569832402234637, F1 Score: 0.6773350751143044
+Forget Ability: 0.2571892973243311, Utility: 0.8294813535282392
+Forget Loss: 0.7668025493621826, Remember Loss: 1.0828957557678223, KD Loss: 15.422914505004883
+best model so far!
+UNLEARNING STEP:  2Poisoned classes: [3, 4]
+Poisoned class: 3 -> 4
+
+Step 3: Train Acc: 0.5911169170476812, Misclassification: 0.2849162011173184, F1 Score: 0.5911169170476812
+Forget Ability: 0.05057514378594649, Utility: 0.7267853011777806
+Forget Loss: 2.5768818855285645, Remember Loss: 1.5145143270492554, KD Loss: 17.447895050048828
+UNLEARNING STEP:  3Poisoned classes: [3, 4]
+Poisoned class: 3 -> 4
+
+Step 4: Train Acc: 0.83736120182887, Misclassification: 0.3407821229050279, F1 Score: 0.83736120182887
+Forget Ability: 0.5519192298074518, Utility: 0.8684548643337506
+Forget Loss: 2.915139675140381, Remember Loss: 1.7196096181869507, KD Loss: 17.264503479003906
+best model so far!
+UNLEARNING STEP:  4Poisoned classes: [3, 4]
+Poisoned class: 3 -> 4
+
+Step 5: Train Acc: 0.6649248856956238, Misclassification: 0.35195530726256985, F1 Score: 0.6649248856956238
+Forget Ability: 0.5933358339584897, Utility: 0.5689394361401288
+Forget Loss: 0.8945266604423523, Remember Loss: 0.3466968238353729, KD Loss: 1.9332057237625122
+UNLEARNING STEP:  5Poisoned classes: [3, 4]
+Poisoned class: 3 -> 4
+
+Step 6: Train Acc: 0.5591116917047682, Misclassification: 0.4273743016759777, F1 Score: 0.5591116917047682
+Forget Ability: 0.5301325331332833, Utility: 0.4318009501662423
+Forget Loss: 0.8543186187744141, Remember Loss: 0.7455293536186218, KD Loss: 9.591888427734375
+UNLEARNING STEP:  6Poisoned classes: [3, 4]
+Poisoned class: 3 -> 4
+
+Step 7: Train Acc: 0.8105813193990856, Misclassification: 0.25977653631284914, F1 Score: 0.8105813193990856
+Forget Ability: 0.7105213803450863, Utility: 0.7841641024753181
+Forget Loss: 0.8218780159950256, Remember Loss: 0.9884905219078064, KD Loss: 12.758879661560059
+best model so far!
+UNLEARNING STEP:  7Poisoned classes: [3, 4]
+Poisoned class: 3 -> 4
+
+Step 8: Train Acc: 0.8399738732854344, Misclassification: 0.31564245810055863, F1 Score: 0.8399738732854344
+Forget Ability: 0.5218492123030758, Utility: 0.9084731129494305
+Forget Loss: 0.7826360464096069, Remember Loss: 0.44314488768577576, KD Loss: 3.4285202026367188
+best model so far!
+UNLEARNING STEP:  8Poisoned classes: [3, 4]
+Poisoned class: 3 -> 4
+
+Step 9: Train Acc: 0.6766819072501633, Misclassification: 0.3324022346368715, F1 Score: 0.6766819072501633
+Forget Ability: 0.15260065016254062, Utility: 0.8229629881576145
+Forget Loss: 0.9155122637748718, Remember Loss: 0.32684552669525146, KD Loss: 1.2074013948440552
+UNLEARNING STEP:  9Poisoned classes: [3, 4]
+Poisoned class: 3 -> 4
+
+Step 10: Train Acc: 0.6721097322011756, Misclassification: 0.3240223463687151, F1 Score: 0.6721097322011756
+Forget Ability: 0.15572643160790198, Utility: 0.8324387136836305
+Forget Loss: 1.8891807794570923, Remember Loss: 0.988356351852417, KD Loss: 9.400025367736816
+UNLEARNING STEP:  10Poisoned classes: [3, 4]
+Poisoned class: 3 -> 4
+
+Step 11: Train Acc: 0.8184193337687786, Misclassification: 0.2681564245810056, F1 Score: 0.8184193337687786
+Forget Ability: 0.4080082520630157, Utility: 0.9343141808448937
+Forget Loss: 2.003345489501953, Remember Loss: 1.121656060218811, KD Loss: 11.1950044631958
+UNLEARNING STEP:  11Poisoned classes: [3, 4]
+Poisoned class: 3 -> 4
+
+Step 12: Train Acc: 0.8706727629000653, Misclassification: 0.2206703910614525, F1 Score: 0.8706727629000653
+Forget Ability: 0.7327456864216054, Utility: 0.8850326133608432
+Forget Loss: 1.1328831911087036, Remember Loss: 0.5241124033927917, KD Loss: 4.346391677856445
+best model so far!
+UNLEARNING STEP:  12Poisoned classes: [3, 4]
+Poisoned class: 3 -> 4
+
+Step 13: Train Acc: 0.7838014369693012, Misclassification: 0.276536312849162, F1 Score: 0.7838014369693012
+Forget Ability: 0.6938922230557639, Utility: 0.7527736724969426
+Forget Loss: 0.8126132488250732, Remember Loss: 0.27409330010414124, KD Loss: 0.40650275349617004
+UNLEARNING STEP:  13Poisoned classes: [3, 4]
+Poisoned class: 3 -> 4
+
+Step 14: Train Acc: 0.7563683866753755, Misclassification: 0.25977653631284914, F1 Score: 0.7563683866753755
+Forget Ability: 0.7127094273568392, Utility: 0.7111597908492295
+Forget Loss: 0.7867317795753479, Remember Loss: 0.48853111267089844, KD Loss: 4.004258632659912
+UNLEARNING STEP:  14Poisoned classes: [3, 4]
+Poisoned class: 3 -> 4
+
+Step 15: Train Acc: 0.806662312214239, Misclassification: 0.22346368715083798, F1 Score: 0.806662312214239
+Forget Ability: 0.7443735933983496, Utility: 0.774195016134569
+Forget Loss: 0.7816125154495239, Remember Loss: 0.6448988318443298, KD Loss: 7.008409023284912
+UNLEARNING STEP:  15Poisoned classes: [3, 4]
+Poisoned class: 3 -> 4
+
+Step 16: Train Acc: 0.8491182233834096, Misclassification: 0.26256983240223464, F1 Score: 0.8491182233834096
+Forget Ability: 0.6861402850712679, Utility: 0.8456456507592557
+Forget Loss: 0.7917620539665222, Remember Loss: 0.51284259557724, KD Loss: 4.74547815322876
+UNLEARNING STEP:  16Poisoned classes: [3, 4]
+Poisoned class: 3 -> 4
+
+Step 17: Train Acc: 0.8471587197909863, Misclassification: 0.3016759776536313, F1 Score: 0.8471587197909863
+Forget Ability: 0.5220680170042511, Utility: 0.9184372848859615
+Forget Loss: 0.8221710324287415, Remember Loss: 0.3207451403141022, KD Loss: 1.280774712562561
+UNLEARNING STEP:  17Poisoned classes: [3, 4]
+Poisoned class: 3 -> 4
+
+Step 18: Train Acc: 0.782495101241019, Misclassification: 0.3100558659217877, F1 Score: 0.782495101241019
+Forget Ability: 0.2907289322330583, Utility: 0.9271883751920639
+Forget Loss: 0.984473705291748, Remember Loss: 0.3175279200077057, KD Loss: 1.2679075002670288
+UNLEARNING STEP:  18Poisoned classes: [3, 4]
+Poisoned class: 3 -> 4
+
+Step 19: Train Acc: 0.75898105813194, Misclassification: 0.3100558659217877, F1 Score: 0.75898105813194
+Forget Ability: 0.2884783695923981, Utility: 0.9090464226254366
+Forget Loss: 1.377990961074829, Remember Loss: 0.5463404059410095, KD Loss: 4.3957200050354
+UNLEARNING STEP:  19Poisoned classes: [3, 4]
+Poisoned class: 3 -> 4
+
+Step 20: Train Acc: 0.8177661659046375, Misclassification: 0.29608938547486036, F1 Score: 0.8177661659046375
+Forget Ability: 0.46671042760690173, Utility: 0.9207354952109221
+Forget Loss: 1.4092998504638672, Remember Loss: 0.6818631291389465, KD Loss: 5.928398609161377
+UNLEARNING STEP:  20Poisoned classes: [3, 4]
+Poisoned class: 3 -> 4
+
+Step 21: Train Acc: 0.8765512736773351, Misclassification: 0.24022346368715083, F1 Score: 0.8765512736773351
+Forget Ability: 0.7133970992748186, Utility: 0.9153413466684239
+Forget Loss: 1.0286659002304077, Remember Loss: 0.48449867963790894, KD Loss: 3.454606056213379
+best model so far!
+UNLEARNING STEP:  21Poisoned classes: [3, 4]
+Poisoned class: 3 -> 4
+
+Step 22: Train Acc: 0.8576094056172436, Misclassification: 0.18156424581005587, F1 Score: 0.8576094056172436
+Forget Ability: 0.784196049012253, Utility: 0.852046658082513
+Forget Loss: 0.8131965398788452, Remember Loss: 0.2819036543369293, KD Loss: 0.599408745765686
+UNLEARNING STEP:  22Poisoned classes: [3, 4]
+Poisoned class: 3 -> 4
+
+Step 23: Train Acc: 0.8262573481384716, Misclassification: 0.21508379888268156, F1 Score: 0.8262573481384716
+Forget Ability: 0.751219054763691, Utility: 0.8039366985523079
+Forget Loss: 0.7889836430549622, Remember Loss: 0.3281601071357727, KD Loss: 1.0695887804031372
+UNLEARNING STEP:  23Poisoned classes: [3, 4]
+Poisoned class: 3 -> 4
+
+Step 24: Train Acc: 0.8308295231874592, Misclassification: 0.19273743016759776, F1 Score: 0.8308295231874592
+Forget Ability: 0.7557201800450113, Utility: 0.7960318140568455
+Forget Loss: 0.80681973695755, Remember Loss: 0.43062347173690796, KD Loss: 3.0175375938415527
+UNLEARNING STEP:  24Poisoned classes: [3, 4]
+Poisoned class: 3 -> 4
+
+Step 25: Train Acc: 0.8634879163945134, Misclassification: 0.164804469273743, F1 Score: 0.8634879163945134
+Forget Ability: 0.774818704676169, Utility: 0.8337197912860431
+Forget Loss: 0.8399162292480469, Remember Loss: 0.4425741136074066, KD Loss: 3.467752456665039
+UNLEARNING STEP:  25Poisoned classes: [3, 4]
+Poisoned class: 3 -> 4
+
+Step 26: Train Acc: 0.8758981058131939, Misclassification: 0.21787709497206703, F1 Score: 0.8758981058131939
+Forget Ability: 0.6990810202550638, Utility: 0.8969443116256679
+Forget Loss: 0.8651026487350464, Remember Loss: 0.35958510637283325, KD Loss: 2.112196207046509
+UNLEARNING STEP:  26Poisoned classes: [3, 4]
+Poisoned class: 3 -> 4
+
+Step 27: Train Acc: 0.8432397126061397, Misclassification: 0.2877094972067039, F1 Score: 0.8432397126061397
+Forget Ability: 0.4964991247811953, Utility: 0.9261853998145654
+Forget Loss: 0.89415442943573, Remember Loss: 0.28261733055114746, KD Loss: 0.7183031439781189
+UNLEARNING STEP:  27Poisoned classes: [3, 4]
+Poisoned class: 3 -> 4
+
+Step 28: Train Acc: 0.8007838014369693, Misclassification: 0.2905027932960894, F1 Score: 0.8007838014369693
+Forget Ability: 0.3789384846211553, Utility: 0.9192629257009983
+Forget Loss: 1.019541621208191, Remember Loss: 0.31329625844955444, KD Loss: 0.9735278487205505
+UNLEARNING STEP:  28Poisoned classes: [3, 4]
+Poisoned class: 3 -> 4
+
+Step 29: Train Acc: 0.8014369693011104, Misclassification: 0.27932960893854747, F1 Score: 0.8014369693011104
+Forget Ability: 0.4154163540885221, Utility: 0.9146837244359691
+Forget Loss: 1.159304141998291, Remember Loss: 0.43368494510650635, KD Loss: 2.5398924350738525
+UNLEARNING STEP:  29Poisoned classes: [3, 4]
+Poisoned class: 3 -> 4
+
+Step 30: Train Acc: 0.8654474199869366, Misclassification: 0.2206703910614525, F1 Score: 0.8654474199869366
+Forget Ability: 0.6432858214553638, Utility: 0.9271149253014195
+Forget Loss: 1.1125128269195557, Remember Loss: 0.4708070456981659, KD Loss: 3.0573983192443848
+UNLEARNING STEP:  30Poisoned classes: [3, 4]
+Poisoned class: 3 -> 4
+
+Step 31: Train Acc: 0.9046374918354017, Misclassification: 0.15363128491620112, F1 Score: 0.9046374918354017
+Forget Ability: 0.8001062765691422, Utility: 0.9250301846234105
+Forget Loss: 0.9469432234764099, Remember Loss: 0.35176774859428406, KD Loss: 1.6594630479812622
+best model so far!
+UNLEARNING STEP:  31Poisoned classes: [3, 4]
+Poisoned class: 3 -> 4
+
+Step 32: Train Acc: 0.8843892880470281, Misclassification: 0.16201117318435754, F1 Score: 0.8843892880470281
+Forget Ability: 0.7964803700925231, Utility: 0.8869224516691926
+Forget Loss: 0.8506639003753662, Remember Loss: 0.26701819896698, KD Loss: 0.33289670944213867
+UNLEARNING STEP:  32Poisoned classes: [3, 4]
+Poisoned class: 3 -> 4
+
+Step 33: Train Acc: 0.8595689092096669, Misclassification: 0.16201117318435754, F1 Score: 0.8595689092096669
+Forget Ability: 0.7911040260065016, Utility: 0.8377882929672825
+Forget Loss: 0.8369078040122986, Remember Loss: 0.2976699769496918, KD Loss: 0.6960033774375916
+UNLEARNING STEP:  33Poisoned classes: [3, 4]
+Poisoned class: 3 -> 4
+
+Step 34: Train Acc: 0.8674069235793599, Misclassification: 0.1452513966480447, F1 Score: 0.8674069235793599
+Forget Ability: 0.8005438859714928, Utility: 0.8399039367536404
+Forget Loss: 0.8463824391365051, Remember Loss: 0.35139429569244385, KD Loss: 1.7452013492584229
+UNLEARNING STEP:  34Poisoned classes: [3, 4]
+Poisoned class: 3 -> 4
+
+Step 35: Train Acc: 0.8824297844546048, Misclassification: 0.15363128491620112, F1 Score: 0.8824297844546048
+Forget Ability: 0.7954488622155539, Utility: 0.8651369419406878
+Forget Loss: 0.8577477335929871, Remember Loss: 0.3543931543827057, KD Loss: 1.9507100582122803
+UNLEARNING STEP:  35Poisoned classes: [3, 4]
+Poisoned class: 3 -> 4
+
+Step 36: Train Acc: 0.8876551273677336, Misclassification: 0.18994413407821228, F1 Score: 0.8876551273677336
+Forget Ability: 0.7285883970992748, Utility: 0.9065155669883884
+Forget Loss: 0.8707114458084106, Remember Loss: 0.30825990438461304, KD Loss: 1.1383334398269653
+UNLEARNING STEP:  36Poisoned classes: [3, 4]
+Poisoned class: 3 -> 4
+
+Step 37: Train Acc: 0.8641410842586544, Misclassification: 0.2346368715083799, F1 Score: 0.8641410842586544
+Forget Ability: 0.5900225056264066, Utility: 0.9308557658739555
+Forget Loss: 0.9082378149032593, Remember Loss: 0.27014586329460144, KD Loss: 0.34720563888549805
+UNLEARNING STEP:  37Poisoned classes: [3, 4]
+Poisoned class: 3 -> 4
+
+Step 38: Train Acc: 0.8386675375571522, Misclassification: 0.23184357541899442, F1 Score: 0.8386675375571522
+Forget Ability: 0.5170042510627657, Utility: 0.9335258973028462
+Forget Loss: 1.0015352964401245, Remember Loss: 0.28999263048171997, KD Loss: 0.5877977013587952
+UNLEARNING STEP:  38Poisoned classes: [3, 4]
+Poisoned class: 3 -> 4
+
+Step 39: Train Acc: 0.8432397126061397, Misclassification: 0.21787709497206703, F1 Score: 0.8432397126061397
+Forget Ability: 0.5588584646161541, Utility: 0.9279163316518172
+Forget Loss: 1.0870864391326904, Remember Loss: 0.35420292615890503, KD Loss: 1.5601545572280884
+UNLEARNING STEP:  39Poisoned classes: [3, 4]
+Poisoned class: 3 -> 4
+
+Step 40: Train Acc: 0.8856956237753103, Misclassification: 0.18435754189944134, F1 Score: 0.8856956237753103
+Forget Ability: 0.7023630907726932, Utility: 0.9352603308349624
+Forget Loss: 1.0548428297042847, Remember Loss: 0.3697882890701294, KD Loss: 1.8093472719192505
+UNLEARNING STEP:  40Poisoned classes: [3, 4]
+Poisoned class: 3 -> 4
+
+Step 41: Train Acc: 0.9033311561071196, Misclassification: 0.13687150837988826, F1 Score: 0.9033311561071196
+Forget Ability: 0.8017004251062765, Utility: 0.9210329846017881
+Forget Loss: 0.9404245018959045, Remember Loss: 0.3056909441947937, KD Loss: 0.8965547680854797
+UNLEARNING STEP:  41Poisoned classes: [3, 4]
+Poisoned class: 3 -> 4
+
+Step 42: Train Acc: 0.8948399738732854, Misclassification: 0.13128491620111732, F1 Score: 0.8948399738732854
+Forget Ability: 0.8280820205051262, Utility: 0.8855199364250065
+Forget Loss: 0.8678103685379028, Remember Loss: 0.2632825970649719, KD Loss: 0.1438920944929123
+UNLEARNING STEP:  42Poisoned classes: [3, 4]
+Poisoned class: 3 -> 4
+
+Step 43: Train Acc: 0.883736120182887, Misclassification: 0.13687150837988826, F1 Score: 0.883736120182887
+Forget Ability: 0.8177669417354338, Utility: 0.8624390671566676
+Forget Loss: 0.8541902899742126, Remember Loss: 0.2816486656665802, KD Loss: 0.41602015495300293
+UNLEARNING STEP:  43Poisoned classes: [3, 4]
+Poisoned class: 3 -> 4
+
+Step 44: Train Acc: 0.8850424559111691, Misclassification: 0.1340782122905028, F1 Score: 0.8850424559111691
+Forget Ability: 0.8061390347586896, Utility: 0.8706640843789519
+Forget Loss: 0.8675817251205444, Remember Loss: 0.3120511770248413, KD Loss: 1.0495597124099731
+UNLEARNING STEP:  44Poisoned classes: [3, 4]
+Poisoned class: 3 -> 4
+
+Step 45: Train Acc: 0.8981058131939909, Misclassification: 0.12569832402234637, F1 Score: 0.8981058131939909
+Forget Ability: 0.813547136784196, Utility: 0.8990129251124456
+Forget Loss: 0.8864526152610779, Remember Loss: 0.3136330544948578, KD Loss: 1.1517921686172485
+best model so far!
+UNLEARNING STEP:  45Poisoned classes: [3, 4]
+Poisoned class: 3 -> 4
+
+Step 46: Train Acc: 0.9065969954278249, Misclassification: 0.12290502793296089, F1 Score: 0.9065969954278249
+Forget Ability: 0.7967616904226056, Utility: 0.9160851458634555
+Forget Loss: 0.9003991484642029, Remember Loss: 0.2854330241680145, KD Loss: 0.6287472248077393
+best model so far!
+UNLEARNING STEP:  46Poisoned classes: [3, 4]
+Poisoned class: 3 -> 4
+
+Step 47: Train Acc: 0.8843892880470281, Misclassification: 0.17597765363128492, F1 Score: 0.8843892880470281
+Forget Ability: 0.6866716679169793, Utility: 0.9301938092070032
+Forget Loss: 0.9240365028381348, Remember Loss: 0.26298952102661133, KD Loss: 0.16427722573280334
+UNLEARNING STEP:  47Poisoned classes: [3, 4]
+Poisoned class: 3 -> 4
+
+Step 48: Train Acc: 0.8628347485303723, Misclassification: 0.19832402234636873, F1 Score: 0.8628347485303723
+Forget Ability: 0.6228744686171543, Utility: 0.9302758859837308
+Forget Loss: 0.9733559489250183, Remember Loss: 0.2782820463180542, KD Loss: 0.3835577666759491
+UNLEARNING STEP:  48Poisoned classes: [3, 4]
+Poisoned class: 3 -> 4
+
+Step 49: Train Acc: 0.8700195950359242, Misclassification: 0.18435754189944134, F1 Score: 0.8700195950359242
+Forget Ability: 0.6591335333833458, Utility: 0.9273462371456928
+Forget Loss: 1.0135939121246338, Remember Loss: 0.31644779443740845, KD Loss: 0.9590988755226135
+UNLEARNING STEP:  49Poisoned classes: [3, 4]
+Poisoned class: 3 -> 4
+
+Step 50: Train Acc: 0.9026779882429784, Misclassification: 0.12290502793296089, F1 Score: 0.9026779882429784
+Forget Ability: 0.7698799699924981, Utility: 0.9314193442353552
+Forget Loss: 1.0000709295272827, Remember Loss: 0.31884342432022095, KD Loss: 1.0166195631027222
+UNLEARNING STEP:  50Poisoned classes: [3, 4]
+Poisoned class: 3 -> 4
+
+Step 51: Train Acc: 0.9118223383409536, Misclassification: 0.11173184357541899, F1 Score: 0.9118223383409536
+Forget Ability: 0.82292448112028, Utility: 0.9223957366810884
+Forget Loss: 0.9482832551002502, Remember Loss: 0.28116750717163086, KD Loss: 0.47833091020584106
+best model so far!
+UNLEARNING STEP:  51Poisoned classes: [3, 4]
+Poisoned class: 3 -> 4
+
+Step 52: Train Acc: 0.8994121489222731, Misclassification: 0.12849162011173185, F1 Score: 0.8994121489222731
+Forget Ability: 0.8177669417354338, Utility: 0.9008543672523951
+Forget Loss: 0.9079055786132812, Remember Loss: 0.2602558434009552, KD Loss: 0.1064436137676239
+UNLEARNING STEP:  52Poisoned classes: [3, 4]
+Poisoned class: 3 -> 4
+
+Step 53: Train Acc: 0.8948399738732854, Misclassification: 0.12849162011173185, F1 Score: 0.8948399738732854
+Forget Ability: 0.8182045511377845, Utility: 0.8893885523991947
+Forget Loss: 0.8944999575614929, Remember Loss: 0.27253982424736023, KD Loss: 0.298174649477005
+UNLEARNING STEP:  53Poisoned classes: [3, 4]
+Poisoned class: 3 -> 4
+
+Step 54: Train Acc: 0.8967994774657086, Misclassification: 0.12290502793296089, F1 Score: 0.8967994774657086
+Forget Ability: 0.8293948487121781, Utility: 0.8889464657502115
+Forget Loss: 0.8925772309303284, Remember Loss: 0.29061582684516907, KD Loss: 0.6402250528335571
+UNLEARNING STEP:  54Poisoned classes: [3, 4]
+Poisoned class: 3 -> 4
+
+Step 55: Train Acc: 0.9039843239712606, Misclassification: 0.11452513966480447, F1 Score: 0.9039843239712606
+Forget Ability: 0.8258314578644661, Utility: 0.9027323015246956
+Forget Loss: 0.8935747742652893, Remember Loss: 0.2898188829421997, KD Loss: 0.6364125609397888
+best model so far!
+UNLEARNING STEP:  55Poisoned classes: [3, 4]
+Poisoned class: 3 -> 4
+
+Step 56: Train Acc: 0.9098628347485304, Misclassification: 0.11173184357541899, F1 Score: 0.9098628347485304
+Forget Ability: 0.8032320580145036, Utility: 0.922578652356962
+Forget Loss: 0.9029597640037537, Remember Loss: 0.27286338806152344, KD Loss: 0.3109685480594635
+best model so far!
+UNLEARNING STEP:  56Poisoned classes: [3, 4]
+Poisoned class: 3 -> 4
+
+Step 57: Train Acc: 0.9039843239712606, Misclassification: 0.11731843575418995, F1 Score: 0.9039843239712606
+Forget Ability: 0.7595648912228057, Utility: 0.9323768455328273
+Forget Loss: 0.9323118925094604, Remember Loss: 0.26170846819877625, KD Loss: 0.10206564515829086
+UNLEARNING STEP:  57Poisoned classes: [3, 4]
+Poisoned class: 3 -> 4
+
+Step 58: Train Acc: 0.8935336381450033, Misclassification: 0.11731843575418995, F1 Score: 0.8935336381450033
+Forget Ability: 0.7326831707926982, Utility: 0.9308098347935415
+Forget Loss: 0.9815956354141235, Remember Loss: 0.2718786895275116, KD Loss: 0.29955512285232544
+UNLEARNING STEP:  58Poisoned classes: [3, 4]
+Poisoned class: 3 -> 4
+
+Step 59: Train Acc: 0.8981058131939909, Misclassification: 0.11452513966480447, F1 Score: 0.8981058131939909
+Forget Ability: 0.7438734683670918, Utility: 0.9345502104550995
+Forget Loss: 1.0177123546600342, Remember Loss: 0.2908938229084015, KD Loss: 0.6341545581817627
+UNLEARNING STEP:  59Poisoned classes: [3, 4]
+Poisoned class: 3 -> 4
+
+Step 60: Train Acc: 0.9098628347485304, Misclassification: 0.10614525139664804, F1 Score: 0.9098628347485304
+Forget Ability: 0.7929169792448112, Utility: 0.9309683948286019
+Forget Loss: 1.004149079322815, Remember Loss: 0.28987839818000793, KD Loss: 0.6223110556602478
+UNLEARNING STEP:  60Poisoned classes: [3, 4]
+Poisoned class: 3 -> 4
+
+Step 61: Train Acc: 0.9118223383409536, Misclassification: 0.11173184357541899, F1 Score: 0.9118223383409536
+Forget Ability: 0.8204551137784446, Utility: 0.9228652202491636
+Forget Loss: 0.9568855166435242, Remember Loss: 0.27033209800720215, KD Loss: 0.2859117090702057
+UNLEARNING STEP:  61Poisoned classes: [3, 4]
+Poisoned class: 3 -> 4
+
+Step 62: Train Acc: 0.9046374918354017, Misclassification: 0.12290502793296089, F1 Score: 0.9046374918354017
+Forget Ability: 0.8293948487121781, Utility: 0.9044273201211226
+Forget Loss: 0.9191729426383972, Remember Loss: 0.26050543785095215, KD Loss: 0.08303455263376236
+UNLEARNING STEP:  62Poisoned classes: [3, 4]
+Poisoned class: 3 -> 4
+
+Step 63: Train Acc: 0.9007184846505552, Misclassification: 0.12011173184357542, F1 Score: 0.9007184846505552
+Forget Ability: 0.8325206301575394, Utility: 0.8943608607588888
+Forget Loss: 0.9060583710670471, Remember Loss: 0.26796555519104004, KD Loss: 0.20304372906684875
+UNLEARNING STEP:  63Poisoned classes: [3, 4]
+Poisoned class: 3 -> 4
+
+Step 64: Train Acc: 0.9000653167864141, Misclassification: 0.12011173184357542, F1 Score: 0.9000653167864141
+Forget Ability: 0.8237996999249813, Utility: 0.896994846491466
+Forget Loss: 0.909676194190979, Remember Loss: 0.2777109146118164, KD Loss: 0.39503681659698486
+UNLEARNING STEP:  64Poisoned classes: [3, 4]
+Poisoned class: 3 -> 4
+
+Step 65: Train Acc: 0.9039843239712606, Misclassification: 0.11452513966480447, F1 Score: 0.9039843239712606
+Forget Ability: 0.8099212303075769, Utility: 0.9106342587224274
+Forget Loss: 0.9201960563659668, Remember Loss: 0.2760894000530243, KD Loss: 0.3850778341293335
+UNLEARNING STEP:  65Poisoned classes: [3, 4]
+Poisoned class: 3 -> 4
+
+Step 66: Train Acc: 0.9131286740692358, Misclassification: 0.10335195530726257, F1 Score: 0.9131286740692358
+Forget Ability: 0.8070142535633908, Utility: 0.9295416424185435
+Forget Loss: 0.9345429539680481, Remember Loss: 0.2655046284198761, KD Loss: 0.20034722983837128
+UNLEARNING STEP:  66Poisoned classes: [3, 4]
+Poisoned class: 3 -> 4
+
+Step 67: Train Acc: 0.9072501632919661, Misclassification: 0.10614525139664804, F1 Score: 0.9072501632919661
+Forget Ability: 0.7794761190297574, Utility: 0.931465275315769
+Forget Loss: 0.9572667479515076, Remember Loss: 0.2603299021720886, KD Loss: 0.10272373259067535
+UNLEARNING STEP:  67Poisoned classes: [3, 4]
+Poisoned class: 3 -> 4
+
+Step 68: Train Acc: 0.9020248203788374, Misclassification: 0.10614525139664804, F1 Score: 0.9020248203788374
+Forget Ability: 0.7631282820705176, Utility: 0.9306358958559864
+Forget Loss: 0.9863777160644531, Remember Loss: 0.2685893177986145, KD Loss: 0.2361767590045929
+UNLEARNING STEP:  68Poisoned classes: [3, 4]
+Poisoned class: 3 -> 4
+
+Step 69: Train Acc: 0.9052906596995428, Misclassification: 0.10614525139664804, F1 Score: 0.9052906596995428
+Forget Ability: 0.7767879469867467, Utility: 0.9306084989368945
+Forget Loss: 1.003217339515686, Remember Loss: 0.27964577078819275, KD Loss: 0.4134623110294342
+UNLEARNING STEP:  69Poisoned classes: [3, 4]
+Poisoned class: 3 -> 4
+
+Step 70: Train Acc: 0.9131286740692358, Misclassification: 0.1005586592178771, F1 Score: 0.9131286740692358
+Forget Ability: 0.8041072768192048, Utility: 0.9314104814775851
+Forget Loss: 0.9935585856437683, Remember Loss: 0.2769797444343567, KD Loss: 0.38290929794311523
+UNLEARNING STEP:  70Poisoned classes: [3, 4]
+Poisoned class: 3 -> 4
+
+Step 71: Train Acc: 0.914435009797518, Misclassification: 0.11173184357541899, F1 Score: 0.914435009797518
+Forget Ability: 0.8213303325831458, Utility: 0.9281331917143182
+Forget Loss: 0.967494785785675, Remember Loss: 0.2645711302757263, KD Loss: 0.1936003714799881
+UNLEARNING STEP:  71Poisoned classes: [3, 4]
+Poisoned class: 3 -> 4
+
+Step 72: Train Acc: 0.9039843239712606, Misclassification: 0.12011173184357542, F1 Score: 0.9039843239712606
+Forget Ability: 0.8132658164541136, Utility: 0.9101647751543523
+Forget Loss: 0.9450947046279907, Remember Loss: 0.2590489983558655, KD Loss: 0.09387960284948349
+UNLEARNING STEP:  72Poisoned classes: [3, 4]
+Poisoned class: 3 -> 4
+
+Step 73: Train Acc: 0.9026779882429784, Misclassification: 0.12290502793296089, F1 Score: 0.9026779882429784
+Forget Ability: 0.8213303325831458, Utility: 0.9044273201211226
+Forget Loss: 0.9338779449462891, Remember Loss: 0.2638351023197174, KD Loss: 0.16760008037090302
+UNLEARNING STEP:  73Poisoned classes: [3, 4]
+Poisoned class: 3 -> 4
+
+Step 74: Train Acc: 0.9052906596995428, Misclassification: 0.11452513966480447, F1 Score: 0.9052906596995428
+Forget Ability: 0.8240185046261566, Utility: 0.905835770825348
+Forget Loss: 0.9309554100036621, Remember Loss: 0.26929983496665955, KD Loss: 0.2646154761314392
+UNLEARNING STEP:  74Poisoned classes: [3, 4]
+Poisoned class: 3 -> 4
+
+Step 75: Train Acc: 0.9124755062050947, Misclassification: 0.10335195530726257, F1 Score: 0.9124755062050947
+Forget Ability: 0.8291760440110028, Utility: 0.9151461787273053
+Forget Loss: 0.9351500272750854, Remember Loss: 0.26775267720222473, KD Loss: 0.2417803853750229
+UNLEARNING STEP:  75Poisoned classes: [3, 4]
+Poisoned class: 3 -> 4
+
+Step 76: Train Acc: 0.914435009797518, Misclassification: 0.09497206703910614, F1 Score: 0.914435009797518
+Forget Ability: 0.8126094023505877, Utility: 0.9278466238221165
+Forget Loss: 0.949183464050293, Remember Loss: 0.2618964612483978, KD Loss: 0.1385554075241089
+UNLEARNING STEP:  76Poisoned classes: [3, 4]
+Poisoned class: 3 -> 4
+
+Step 77: Train Acc: 0.9111691704768126, Misclassification: 0.09776536312849161, F1 Score: 0.9111691704768126
+Forget Ability: 0.790666416604151, Utility: 0.9323494486137354
+Forget Loss: 0.9743393659591675, Remember Loss: 0.26004546880722046, KD Loss: 0.10695977509021759
+UNLEARNING STEP:  77Poisoned classes: [3, 4]
+Poisoned class: 3 -> 4
+
+Step 78: Train Acc: 0.9085564990202482, Misclassification: 0.09776536312849161, F1 Score: 0.9085564990202482
+Forget Ability: 0.7826019004751188, Utility: 0.933657174399363
+Forget Loss: 1.0019806623458862, Remember Loss: 0.26520416140556335, KD Loss: 0.20347847044467926
+UNLEARNING STEP:  78Poisoned classes: [3, 4]
+Poisoned class: 3 -> 4
+
+Step 79: Train Acc: 0.9098628347485304, Misclassification: 0.09497206703910614, F1 Score: 0.9098628347485304
+Forget Ability: 0.7935733933483371, Utility: 0.9310231886667858
+Forget Loss: 1.0138264894485474, Remember Loss: 0.2705988883972168, KD Loss: 0.30302029848098755
+UNLEARNING STEP:  79Poisoned classes: [3, 4]
+Poisoned class: 3 -> 4
+
+Step 80: Train Acc: 0.9150881776616591, Misclassification: 0.09497206703910614, F1 Score: 0.9150881776616591
+Forget Ability: 0.8155163790947737, Utility: 0.929245979313083
+Forget Loss: 1.000600814819336, Remember Loss: 0.268419474363327, KD Loss: 0.26979726552963257
+UNLEARNING STEP:  80Poisoned classes: [3, 4]
+Poisoned class: 3 -> 4
+
+Step 81: Train Acc: 0.9150881776616591, Misclassification: 0.10335195530726257, F1 Score: 0.9150881776616591
+Forget Ability: 0.8269254813703426, Utility: 0.925968689549816
+Forget Loss: 0.9746858477592468, Remember Loss: 0.2616284191608429, KD Loss: 0.149450421333313
+UNLEARNING STEP:  81Poisoned classes: [3, 4]
+Poisoned class: 3 -> 4
+
+Step 82: Train Acc: 0.9079033311561071, Misclassification: 0.10893854748603352, F1 Score: 0.9079033311561071
+Forget Ability: 0.8242373093273319, Utility: 0.9144937794833568
+Forget Loss: 0.9546714425086975, Remember Loss: 0.2587527632713318, KD Loss: 0.08973906189203262
+UNLEARNING STEP:  82Poisoned classes: [3, 4]
+Poisoned class: 3 -> 4
+
+Step 83: Train Acc: 0.9059438275636839, Misclassification: 0.11173184357541899, F1 Score: 0.9059438275636839
+Forget Ability: 0.8213303325831458, Utility: 0.9101647751543523
+Forget Loss: 0.9478921890258789, Remember Loss: 0.26131004095077515, KD Loss: 0.1329551339149475
+UNLEARNING STEP:  83Poisoned classes: [3, 4]
+Poisoned class: 3 -> 4
+
+Step 84: Train Acc: 0.9046374918354017, Misclassification: 0.11173184357541899, F1 Score: 0.9046374918354017
+Forget Ability: 0.8101400350087522, Utility: 0.9111037422905026
+Forget Loss: 0.9520307183265686, Remember Loss: 0.26410427689552307, KD Loss: 0.19220520555973053
+UNLEARNING STEP:  84Poisoned classes: [3, 4]
+Poisoned class: 3 -> 4
+
+Step 85: Train Acc: 0.9111691704768126, Misclassification: 0.10335195530726257, F1 Score: 0.9111691704768126
+Forget Ability: 0.8182045511377845, Utility: 0.9177801644598825
+Forget Loss: 0.9624916911125183, Remember Loss: 0.26310211420059204, KD Loss: 0.18654093146324158
+UNLEARNING STEP:  85Poisoned classes: [3, 4]
+Poisoned class: 3 -> 4
+
+Step 86: Train Acc: 0.914435009797518, Misclassification: 0.09497206703910614, F1 Score: 0.914435009797518
+Forget Ability: 0.8099212303075769, Utility: 0.9300111259866187
+Forget Loss: 0.9764227271080017, Remember Loss: 0.2599613666534424, KD Loss: 0.13444851338863373
+UNLEARNING STEP:  86Poisoned classes: [3, 4]
+Poisoned class: 3 -> 4
+
+Step 87: Train Acc: 0.9111691704768126, Misclassification: 0.09217877094972067, F1 Score: 0.9111691704768126
+Forget Ability: 0.7935733933483371, Utility: 0.9301849464492332
+Forget Loss: 0.9921678900718689, Remember Loss: 0.2593931555747986, KD Loss: 0.11763101816177368
+best model so far!
+UNLEARNING STEP:  87Poisoned classes: [3, 4]
+Poisoned class: 3 -> 4
+
+Step 88: Train Acc: 0.9124755062050947, Misclassification: 0.0893854748603352, F1 Score: 0.9124755062050947
+Forget Ability: 0.7991685421355339, Utility: 0.9319073619647522
+Forget Loss: 1.0052169561386108, Remember Loss: 0.2627154588699341, KD Loss: 0.1676081418991089
+UNLEARNING STEP:  88Poisoned classes: [3, 4]
+Poisoned class: 3 -> 4
+
+Step 89: Train Acc: 0.9111691704768126, Misclassification: 0.09217877094972067, F1 Score: 0.9111691704768126
+Forget Ability: 0.8018567141785446, Utility: 0.9288038926640998
+Forget Loss: 1.0088011026382446, Remember Loss: 0.26567432284355164, KD Loss: 0.21906837821006775
+UNLEARNING STEP:  89Poisoned classes: [3, 4]
+Poisoned class: 3 -> 4
+
+Step 90: Train Acc: 0.914435009797518, Misclassification: 0.09217877094972067, F1 Score: 0.914435009797518
+Forget Ability: 0.815735183795949, Utility: 0.9270814771485808
+Forget Loss: 1.0011510848999023, Remember Loss: 0.26407018303871155, KD Loss: 0.2021578997373581
+UNLEARNING STEP:  90Poisoned classes: [3, 4]
+Poisoned class: 3 -> 4
+
+Step 91: Train Acc: 0.9150881776616591, Misclassification: 0.10335195530726257, F1 Score: 0.9150881776616591
+Forget Ability: 0.8240185046261566, Utility: 0.9281331917143182
+Forget Loss: 0.9882315397262573, Remember Loss: 0.25988492369651794, KD Loss: 0.13954222202301025
+UNLEARNING STEP:  91Poisoned classes: [3, 4]
+Poisoned class: 3 -> 4
+
+Step 92: Train Acc: 0.9105160026126714, Misclassification: 0.10335195530726257, F1 Score: 0.9105160026126714
+Forget Ability: 0.8211115278819705, Utility: 0.9168411973237323
+Forget Loss: 0.9774702787399292, Remember Loss: 0.2579341232776642, KD Loss: 0.10497701168060303
+UNLEARNING STEP:  92Poisoned classes: [3, 4]
+Poisoned class: 3 -> 4
+
+Step 93: Train Acc: 0.9079033311561071, Misclassification: 0.10335195530726257, F1 Score: 0.9079033311561071
+Forget Ability: 0.8211115278819705, Utility: 0.9115732258585777
+Forget Loss: 0.9721164703369141, Remember Loss: 0.2592222988605499, KD Loss: 0.12287471443414688
+UNLEARNING STEP:  93Poisoned classes: [3, 4]
+Poisoned class: 3 -> 4
+
+Step 94: Train Acc: 0.9111691704768126, Misclassification: 0.1005586592178771, F1 Score: 0.9111691704768126
+Forget Ability: 0.8267066766691673, Utility: 0.912981676562803
+Forget Loss: 0.9721686840057373, Remember Loss: 0.260962575674057, KD Loss: 0.15282972157001495
+UNLEARNING STEP:  94Poisoned classes: [3, 4]
+Poisoned class: 3 -> 4
+
+Step 95: Train Acc: 0.9137818419333769, Misclassification: 0.09217877094972067, F1 Score: 0.9137818419333769
+Forget Ability: 0.8293948487121781, Utility: 0.9160851458634555
+Forget Loss: 0.9774719476699829, Remember Loss: 0.260808527469635, KD Loss: 0.15262125432491302
+UNLEARNING STEP:  95Poisoned classes: [3, 4]
+Poisoned class: 3 -> 4
+
+Step 96: Train Acc: 0.9150881776616591, Misclassification: 0.0893854748603352, F1 Score: 0.9150881776616591
+Forget Ability: 0.815735183795949, Utility: 0.9278466238221165
+Forget Loss: 0.9879767894744873, Remember Loss: 0.259359747171402, KD Loss: 0.12807303667068481
+UNLEARNING STEP:  96Poisoned classes: [3, 4]
+Poisoned class: 3 -> 4
+
+Step 97: Train Acc: 0.9124755062050947, Misclassification: 0.0893854748603352, F1 Score: 0.9124755062050947
+Forget Ability: 0.8072330582645662, Utility: 0.9270814771485808
+Forget Loss: 1.001813292503357, Remember Loss: 0.25882813334465027, KD Loss: 0.11942186951637268
+UNLEARNING STEP:  97Poisoned classes: [3, 4]
+Poisoned class: 3 -> 4
+
+Step 98: Train Acc: 0.9118223383409536, Misclassification: 0.0893854748603352, F1 Score: 0.9118223383409536
+Forget Ability: 0.8018567141785446, Utility: 0.929245979313083
+Forget Loss: 1.0139108896255493, Remember Loss: 0.26006627082824707, KD Loss: 0.14603590965270996
+UNLEARNING STEP:  98Poisoned classes: [3, 4]
+Poisoned class: 3 -> 4
+
+Step 99: Train Acc: 0.9131286740692358, Misclassification: 0.0893854748603352, F1 Score: 0.9131286740692358
+Forget Ability: 0.8072330582645662, Utility: 0.929245979313083
+Forget Loss: 1.0181024074554443, Remember Loss: 0.2614631652832031, KD Loss: 0.1780487298965454
+UNLEARNING STEP:  99Poisoned classes: [3, 4]
+Poisoned class: 3 -> 4
+
+Step 100: Train Acc: 0.9150881776616591, Misclassification: 0.0893854748603352, F1 Score: 0.9150881776616591
+Forget Ability: 0.818642160540135, Utility: 0.9270814771485808
+Forget Loss: 1.0123761892318726, Remember Loss: 0.2610325217247009, KD Loss: 0.1747879683971405
+UNLEARNING STEP:  100Poisoned classes: [3, 4]
+Poisoned class: 3 -> 4
+
+Step 101: Train Acc: 0.9163945133899413, Misclassification: 0.09217877094972067, F1 Score: 0.9163945133899413
+Forget Ability: 0.8267066766691673, Utility: 0.9265845966614137
+Forget Loss: 1.001287817955017, Remember Loss: 0.25911930203437805, KD Loss: 0.13903304934501648
+UNLEARNING STEP:  101Poisoned classes: [3, 4]
+Poisoned class: 3 -> 4
+
+Step 102: Train Acc: 0.914435009797518, Misclassification: 0.1005586592178771, F1 Score: 0.914435009797518
+Forget Ability: 0.8269254813703426, Utility: 0.923804187385314
+Forget Loss: 0.9918980598449707, Remember Loss: 0.2577955722808838, KD Loss: 0.10994905978441238
+UNLEARNING STEP:  102Poisoned classes: [3, 4]
+Poisoned class: 3 -> 4
+
+Step 103: Train Acc: 0.9105160026126714, Misclassification: 0.1005586592178771, F1 Score: 0.9105160026126714
+Forget Ability: 0.8182045511377845, Utility: 0.9173106808918075
+Forget Loss: 0.9885082840919495, Remember Loss: 0.25804632902145386, KD Loss: 0.11166660487651825
+UNLEARNING STEP:  103Poisoned classes: [3, 4]
+Poisoned class: 3 -> 4
+
+Step 104: Train Acc: 0.9105160026126714, Misclassification: 0.1005586592178771, F1 Score: 0.9105160026126714
+Forget Ability: 0.8182045511377845, Utility: 0.9173106808918075
+Forget Loss: 0.9913520216941833, Remember Loss: 0.2589699327945709, KD Loss: 0.13141325116157532
+UNLEARNING STEP:  104Poisoned classes: [3, 4]
+Poisoned class: 3 -> 4
+
+Step 105: Train Acc: 0.9105160026126714, Misclassification: 0.09217877094972067, F1 Score: 0.9105160026126714
+Forget Ability: 0.8155163790947737, Utility: 0.9160851458634555
+Forget Loss: 0.9982244372367859, Remember Loss: 0.2592518925666809, KD Loss: 0.14270776510238647
+UNLEARNING STEP:  105Poisoned classes: [3, 4]
+Poisoned class: 3 -> 4
+
+Step 106: Train Acc: 0.9137818419333769, Misclassification: 0.0893854748603352, F1 Score: 0.9137818419333769
+Forget Ability: 0.8099212303075769, Utility: 0.9278466238221165
+Forget Loss: 1.006446123123169, Remember Loss: 0.25866860151290894, KD Loss: 0.13613174855709076
+UNLEARNING STEP:  106Poisoned classes: [3, 4]
+Poisoned class: 3 -> 4
+
+Step 107: Train Acc: 0.9157413455258001, Misclassification: 0.08379888268156424, F1 Score: 0.9157413455258001
+Forget Ability: 0.8184233558389598, Utility: 0.927523563797564
+Forget Loss: 1.0139394998550415, Remember Loss: 0.25814709067344666, KD Loss: 0.12634368240833282
+UNLEARNING STEP:  107Poisoned classes: [3, 4]
+Poisoned class: 3 -> 4
+
+Step 108: Train Acc: 0.9137818419333769, Misclassification: 0.08379888268156424, F1 Score: 0.9137818419333769
+Forget Ability: 0.812828207051763, Utility: 0.9270814771485808
+Forget Loss: 1.01927649974823, Remember Loss: 0.25849372148513794, KD Loss: 0.13088370859622955
+UNLEARNING STEP:  108Poisoned classes: [3, 4]
+Poisoned class: 3 -> 4
+
+Step 109: Train Acc: 0.914435009797518, Misclassification: 0.08379888268156424, F1 Score: 0.914435009797518
+Forget Ability: 0.8155163790947737, Utility: 0.9270814771485808
+Forget Loss: 1.0215187072753906, Remember Loss: 0.25930628180503845, KD Loss: 0.14648059010505676
+UNLEARNING STEP:  109Poisoned classes: [3, 4]
+Poisoned class: 3 -> 4
+
+Step 110: Train Acc: 0.9137818419333769, Misclassification: 0.0893854748603352, F1 Score: 0.9137818419333769
+Forget Ability: 0.8130470117529383, Utility: 0.9270814771485808
+Forget Loss: 1.020560622215271, Remember Loss: 0.2594640254974365, KD Loss: 0.1537400633096695
+UNLEARNING STEP:  110Poisoned classes: [3, 4]
+Poisoned class: 3 -> 4
+
+Step 111: Train Acc: 0.914435009797518, Misclassification: 0.0893854748603352, F1 Score: 0.914435009797518
+Forget Ability: 0.8184233558389598, Utility: 0.9266119935805056
+Forget Loss: 1.0175853967666626, Remember Loss: 0.2586067020893097, KD Loss: 0.14344635605812073
+UNLEARNING STEP:  111Poisoned classes: [3, 4]
+Poisoned class: 3 -> 4
+
+Step 112: Train Acc: 0.9137818419333769, Misclassification: 0.09217877094972067, F1 Score: 0.9137818419333769
+Forget Ability: 0.812828207051763, Utility: 0.9290721588504685
+Forget Loss: 1.01438570022583, Remember Loss: 0.2575675845146179, KD Loss: 0.12711814045906067
+UNLEARNING STEP:  112Poisoned classes: [3, 4]
+Poisoned class: 3 -> 4
+
+Step 113: Train Acc: 0.9137818419333769, Misclassification: 0.09217877094972067, F1 Score: 0.9137818419333769
+Forget Ability: 0.8182045511377845, Utility: 0.924743154521464
+Forget Loss: 1.0123244524002075, Remember Loss: 0.2572503983974457, KD Loss: 0.12047630548477173
+UNLEARNING STEP:  113Poisoned classes: [3, 4]
+Poisoned class: 3 -> 4
+
+Step 114: Train Acc: 0.9111691704768126, Misclassification: 0.09217877094972067, F1 Score: 0.9111691704768126
+Forget Ability: 0.8182045511377845, Utility: 0.9160851458634555
+Forget Loss: 1.0119585990905762, Remember Loss: 0.2576524317264557, KD Loss: 0.12585340440273285
+UNLEARNING STEP:  114Poisoned classes: [3, 4]
+Poisoned class: 3 -> 4
+
+Step 115: Train Acc: 0.9111691704768126, Misclassification: 0.0893854748603352, F1 Score: 0.9111691704768126
+Forget Ability: 0.8155163790947737, Utility: 0.9182496480279577
+Forget Loss: 1.0134600400924683, Remember Loss: 0.2581159472465515, KD Loss: 0.13337299227714539
+UNLEARNING STEP:  115Poisoned classes: [3, 4]
+Poisoned class: 3 -> 4
+
+Step 116: Train Acc: 0.9137818419333769, Misclassification: 0.08659217877094973, F1 Score: 0.9137818419333769
+Forget Ability: 0.8155163790947737, Utility: 0.9252126380895392
+Forget Loss: 1.0168750286102295, Remember Loss: 0.2581426203250885, KD Loss: 0.13408951461315155
+best model so far!
+UNLEARNING STEP:  116Poisoned classes: [3, 4]
+Poisoned class: 3 -> 4
+
+Step 117: Train Acc: 0.9124755062050947, Misclassification: 0.0893854748603352, F1 Score: 0.9124755062050947
+Forget Ability: 0.8043260815203801, Utility: 0.9278466238221165
+Forget Loss: 1.0219086408615112, Remember Loss: 0.25782689452171326, KD Loss: 0.1294737458229065
+UNLEARNING STEP:  117Poisoned classes: [3, 4]
+Poisoned class: 3 -> 4
+
+Step 118: Train Acc: 0.9137818419333769, Misclassification: 0.08379888268156424, F1 Score: 0.9137818419333769
+Forget Ability: 0.8097024256064016, Utility: 0.927523563797564
+Forget Loss: 1.0276131629943848, Remember Loss: 0.25761520862579346, KD Loss: 0.12844690680503845
+UNLEARNING STEP:  118Poisoned classes: [3, 4]
+Poisoned class: 3 -> 4
+
+Step 119: Train Acc: 0.9131286740692358, Misclassification: 0.08100558659217877, F1 Score: 0.9131286740692358
+Forget Ability: 0.8097024256064016, Utility: 0.9270814771485808
+Forget Loss: 1.032423973083496, Remember Loss: 0.2577419579029083, KD Loss: 0.13550066947937012
+UNLEARNING STEP:  119Poisoned classes: [3, 4]
+Poisoned class: 3 -> 4
+
+Step 120: Train Acc: 0.9131286740692358, Misclassification: 0.08100558659217877, F1 Score: 0.9131286740692358
+Forget Ability: 0.8097024256064016, Utility: 0.9270814771485808
+Forget Loss: 1.0348140001296997, Remember Loss: 0.25797465443611145, KD Loss: 0.1444355845451355
+UNLEARNING STEP:  120Poisoned classes: [3, 4]
+Poisoned class: 3 -> 4
+
+Step 121: Train Acc: 0.9124755062050947, Misclassification: 0.08659217877094973, F1 Score: 0.9124755062050947
+Forget Ability: 0.8070142535633908, Utility: 0.9270814771485808
+Forget Loss: 1.0342953205108643, Remember Loss: 0.2579312324523926, KD Loss: 0.1457880139350891
+UNLEARNING STEP:  121Poisoned classes: [3, 4]
+Poisoned class: 3 -> 4
+
+Step 122: Train Acc: 0.914435009797518, Misclassification: 0.08379888268156424, F1 Score: 0.914435009797518
+Forget Ability: 0.8101400350087522, Utility: 0.9300111259866187
+Forget Loss: 1.0318609476089478, Remember Loss: 0.2575623691082001, KD Loss: 0.13819262385368347
+UNLEARNING STEP:  122Poisoned classes: [3, 4]
+Poisoned class: 3 -> 4
+
+Step 123: Train Acc: 0.9150881776616591, Misclassification: 0.08659217877094973, F1 Score: 0.9150881776616591
+Forget Ability: 0.8155163790947737, Utility: 0.9295416424185435
+Forget Loss: 1.0293551683425903, Remember Loss: 0.25718221068382263, KD Loss: 0.1291271597146988
+UNLEARNING STEP:  123Poisoned classes: [3, 4]
+Poisoned class: 3 -> 4
+
+Step 124: Train Acc: 0.9137818419333769, Misclassification: 0.08659217877094973, F1 Score: 0.9137818419333769
+Forget Ability: 0.8155163790947737, Utility: 0.9252126380895392
+Forget Loss: 1.0283312797546387, Remember Loss: 0.25707221031188965, KD Loss: 0.12594667077064514
+UNLEARNING STEP:  124Poisoned classes: [3, 4]
+Poisoned class: 3 -> 4
+
+Step 125: Train Acc: 0.9124755062050947, Misclassification: 0.08659217877094973, F1 Score: 0.9124755062050947
+Forget Ability: 0.8126094023505877, Utility: 0.9230481359250371
+Forget Loss: 1.0293292999267578, Remember Loss: 0.2572069764137268, KD Loss: 0.1291685700416565
+UNLEARNING STEP:  125Poisoned classes: [3, 4]
+Poisoned class: 3 -> 4
+
+Step 126: Train Acc: 0.9124755062050947, Misclassification: 0.08659217877094973, F1 Score: 0.9124755062050947
+Forget Ability: 0.8126094023505877, Utility: 0.9230481359250371
+Forget Loss: 1.031933307647705, Remember Loss: 0.25734469294548035, KD Loss: 0.13385076820850372
+UNLEARNING STEP:  126Poisoned classes: [3, 4]
+Poisoned class: 3 -> 4
+
+Step 127: Train Acc: 0.9131286740692358, Misclassification: 0.08379888268156424, F1 Score: 0.9131286740692358
+Forget Ability: 0.8099212303075769, Utility: 0.9256821216576144
+Forget Loss: 1.0352517366409302, Remember Loss: 0.2573034167289734, KD Loss: 0.13540948927402496
+UNLEARNING STEP:  127Poisoned classes: [3, 4]
+Poisoned class: 3 -> 4
+
+Step 128: Train Acc: 0.9137818419333769, Misclassification: 0.08659217877094973, F1 Score: 0.9137818419333769
+Forget Ability: 0.8072330582645662, Utility: 0.9300111259866187
+Forget Loss: 1.038504719734192, Remember Loss: 0.25713682174682617, KD Loss: 0.13388575613498688
+UNLEARNING STEP:  128Poisoned classes: [3, 4]
+Poisoned class: 3 -> 4
+
+Step 129: Train Acc: 0.9157413455258001, Misclassification: 0.0782122905027933, F1 Score: 0.9157413455258001
+Forget Ability: 0.8152975743935984, Utility: 0.9300111259866187
+Forget Loss: 1.0413103103637695, Remember Loss: 0.25704631209373474, KD Loss: 0.13300229609012604
+UNLEARNING STEP:  129Poisoned classes: [3, 4]
+Poisoned class: 3 -> 4
+
+Step 130: Train Acc: 0.9137818419333769, Misclassification: 0.0782122905027933, F1 Score: 0.9137818419333769
+Forget Ability: 0.8126094023505877, Utility: 0.9270814771485808
+Forget Loss: 1.0436004400253296, Remember Loss: 0.25713810324668884, KD Loss: 0.13539262115955353
+UNLEARNING STEP:  130Poisoned classes: [3, 4]
+Poisoned class: 3 -> 4
+
+Step 131: Train Acc: 0.9131286740692358, Misclassification: 0.0782122905027933, F1 Score: 0.9131286740692358
+Forget Ability: 0.8099212303075769, Utility: 0.9270814771485808
+Forget Loss: 1.0454012155532837, Remember Loss: 0.2572946846485138, KD Loss: 0.13945169746875763
+UNLEARNING STEP:  131Poisoned classes: [3, 4]
+Poisoned class: 3 -> 4
+
+Step 132: Train Acc: 0.914435009797518, Misclassification: 0.0782122905027933, F1 Score: 0.914435009797518
+Forget Ability: 0.8126094023505877, Utility: 0.927523563797564
+Forget Loss: 1.0467069149017334, Remember Loss: 0.25731414556503296, KD Loss: 0.1415424644947052
+UNLEARNING STEP:  132Poisoned classes: [3, 4]
+Poisoned class: 3 -> 4
+
+Step 133: Train Acc: 0.914435009797518, Misclassification: 0.08379888268156424, F1 Score: 0.914435009797518
+Forget Ability: 0.8099212303075769, Utility: 0.9300111259866187
+Forget Loss: 1.0475023984909058, Remember Loss: 0.2571401596069336, KD Loss: 0.1402200609445572
+UNLEARNING STEP:  133Poisoned classes: [3, 4]
+Poisoned class: 3 -> 4
+
+Step 134: Train Acc: 0.9137818419333769, Misclassification: 0.08379888268156424, F1 Score: 0.9137818419333769
+Forget Ability: 0.8072330582645662, Utility: 0.9300111259866187
+Forget Loss: 1.047822117805481, Remember Loss: 0.2569032907485962, KD Loss: 0.13725845515727997
+UNLEARNING STEP:  134Poisoned classes: [3, 4]
+Poisoned class: 3 -> 4
+
+Step 135: Train Acc: 0.9137818419333769, Misclassification: 0.08379888268156424, F1 Score: 0.9137818419333769
+Forget Ability: 0.8072330582645662, Utility: 0.9300111259866187
+Forget Loss: 1.0477910041809082, Remember Loss: 0.2567625045776367, KD Loss: 0.1351872682571411
+UNLEARNING STEP:  135Poisoned classes: [3, 4]
+Poisoned class: 3 -> 4
+
+Step 136: Train Acc: 0.9124755062050947, Misclassification: 0.08379888268156424, F1 Score: 0.9124755062050947
+Forget Ability: 0.8072330582645662, Utility: 0.9256821216576144
+Forget Loss: 1.047676920890808, Remember Loss: 0.25676003098487854, KD Loss: 0.13487443327903748
+best model so far!
+UNLEARNING STEP:  136Poisoned classes: [3, 4]
+Poisoned class: 3 -> 4
+
+Step 137: Train Acc: 0.9124755062050947, Misclassification: 0.08379888268156424, F1 Score: 0.9124755062050947
+Forget Ability: 0.8072330582645662, Utility: 0.9256821216576144
+Forget Loss: 1.0478664636611938, Remember Loss: 0.2568187117576599, KD Loss: 0.1354101151227951
+UNLEARNING STEP:  137Poisoned classes: [3, 4]
+Poisoned class: 3 -> 4
+
+Step 138: Train Acc: 0.9131286740692358, Misclassification: 0.08100558659217877, F1 Score: 0.9131286740692358
+Forget Ability: 0.8099212303075769, Utility: 0.9256821216576144
+Forget Loss: 1.0487871170043945, Remember Loss: 0.2568412721157074, KD Loss: 0.13561591506004333
+UNLEARNING STEP:  138Poisoned classes: [3, 4]
+Poisoned class: 3 -> 4
+
+Step 139: Train Acc: 0.914435009797518, Misclassification: 0.0782122905027933, F1 Score: 0.914435009797518
+Forget Ability: 0.8123905976494123, Utility: 0.9278466238221165
+Forget Loss: 1.050696611404419, Remember Loss: 0.25679731369018555, KD Loss: 0.1353701502084732
+UNLEARNING STEP:  139Poisoned classes: [3, 4]
+Poisoned class: 3 -> 4
+
+Step 140: Train Acc: 0.9131286740692358, Misclassification: 0.0782122905027933, F1 Score: 0.9131286740692358
+Forget Ability: 0.8070142535633908, Utility: 0.9278466238221165
+Forget Loss: 1.053529977798462, Remember Loss: 0.25673601031303406, KD Loss: 0.13570727407932281
+UNLEARNING STEP:  140Poisoned classes: [3, 4]
+Poisoned class: 3 -> 4
+
+Step 141: Train Acc: 0.9131286740692358, Misclassification: 0.0782122905027933, F1 Score: 0.9131286740692358
+Forget Ability: 0.8043260815203801, Utility: 0.9300111259866187
+Forget Loss: 1.0568598508834839, Remember Loss: 0.2567228674888611, KD Loss: 0.1376122683286667
+UNLEARNING STEP:  141Poisoned classes: [3, 4]
+Poisoned class: 3 -> 4
+
+Step 142: Train Acc: 0.9131286740692358, Misclassification: 0.0782122905027933, F1 Score: 0.9131286740692358
+Forget Ability: 0.8043260815203801, Utility: 0.9300111259866187
+Forget Loss: 1.0600277185440063, Remember Loss: 0.25677090883255005, KD Loss: 0.14071045815944672
+UNLEARNING STEP:  142Poisoned classes: [3, 4]
+Poisoned class: 3 -> 4
+
+Step 143: Train Acc: 0.9131286740692358, Misclassification: 0.0782122905027933, F1 Score: 0.9131286740692358
+Forget Ability: 0.8043260815203801, Utility: 0.9300111259866187
+Forget Loss: 1.0624048709869385, Remember Loss: 0.2568294405937195, KD Loss: 0.14337047934532166
+UNLEARNING STEP:  143Poisoned classes: [3, 4]
+Poisoned class: 3 -> 4
+
+Step 144: Train Acc: 0.9131286740692358, Misclassification: 0.0782122905027933, F1 Score: 0.9131286740692358
+Forget Ability: 0.8043260815203801, Utility: 0.9300111259866187
+Forget Loss: 1.0636776685714722, Remember Loss: 0.25683754682540894, KD Loss: 0.1441219449043274
+UNLEARNING STEP:  144Poisoned classes: [3, 4]
+Poisoned class: 3 -> 4
+
+Step 145: Train Acc: 0.9124755062050947, Misclassification: 0.0782122905027933, F1 Score: 0.9124755062050947
+Forget Ability: 0.8043260815203801, Utility: 0.9278466238221165
+Forget Loss: 1.0639684200286865, Remember Loss: 0.25677886605262756, KD Loss: 0.14288589358329773
+UNLEARNING STEP:  145Poisoned classes: [3, 4]
+Poisoned class: 3 -> 4
+
+Step 146: Train Acc: 0.9131286740692358, Misclassification: 0.0782122905027933, F1 Score: 0.9131286740692358
+Forget Ability: 0.8070142535633908, Utility: 0.9278466238221165
+Forget Loss: 1.0637394189834595, Remember Loss: 0.25668588280677795, KD Loss: 0.14081767201423645
+UNLEARNING STEP:  146Poisoned classes: [3, 4]
+Poisoned class: 3 -> 4
+
+Step 147: Train Acc: 0.9131286740692358, Misclassification: 0.0782122905027933, F1 Score: 0.9131286740692358
+Forget Ability: 0.8070142535633908, Utility: 0.9278466238221165
+Forget Loss: 1.0635522603988647, Remember Loss: 0.25660210847854614, KD Loss: 0.1392231285572052
+UNLEARNING STEP:  147Poisoned classes: [3, 4]
+Poisoned class: 3 -> 4
+
+Step 148: Train Acc: 0.9124755062050947, Misclassification: 0.0782122905027933, F1 Score: 0.9124755062050947
+Forget Ability: 0.8070142535633908, Utility: 0.9256821216576144
+Forget Loss: 1.0638431310653687, Remember Loss: 0.25654837489128113, KD Loss: 0.13871370255947113
+best model so far!
+UNLEARNING STEP:  148Poisoned classes: [3, 4]
+Poisoned class: 3 -> 4
+
+Step 149: Train Acc: 0.9124755062050947, Misclassification: 0.0782122905027933, F1 Score: 0.9124755062050947
+Forget Ability: 0.8070142535633908, Utility: 0.9256821216576144
+Forget Loss: 1.0648006200790405, Remember Loss: 0.2565177381038666, KD Loss: 0.1390981823205948
+UNLEARNING STEP:  149Poisoned classes: [3, 4]
+Poisoned class: 3 -> 4
+
+Step 150: Train Acc: 0.9124755062050947, Misclassification: 0.0782122905027933, F1 Score: 0.9124755062050947
+Forget Ability: 0.8070142535633908, Utility: 0.9256821216576144
+Forget Loss: 1.0663824081420898, Remember Loss: 0.25649428367614746, KD Loss: 0.13981740176677704
+UNLEARNING STEP:  150Poisoned classes: [3, 4]
+Poisoned class: 3 -> 4
+
+Step 151: Train Acc: 0.9124755062050947, Misclassification: 0.0782122905027933, F1 Score: 0.9124755062050947
+Forget Ability: 0.8043260815203801, Utility: 0.9278466238221165
+Forget Loss: 1.0684149265289307, Remember Loss: 0.25647401809692383, KD Loss: 0.14048337936401367
+UNLEARNING STEP:  151Poisoned classes: [3, 4]
+Poisoned class: 3 -> 4
+
+Step 152: Train Acc: 0.9124755062050947, Misclassification: 0.0782122905027933, F1 Score: 0.9124755062050947
+Forget Ability: 0.8043260815203801, Utility: 0.9278466238221165
+Forget Loss: 1.0706936120986938, Remember Loss: 0.2564701735973358, KD Loss: 0.14113043248653412
+UNLEARNING STEP:  152Poisoned classes: [3, 4]
+Poisoned class: 3 -> 4
+
+Step 153: Train Acc: 0.9118223383409536, Misclassification: 0.0782122905027933, F1 Score: 0.9118223383409536
+Forget Ability: 0.8016379094773693, Utility: 0.9278466238221165
+Forget Loss: 1.0730431079864502, Remember Loss: 0.25649866461753845, KD Loss: 0.14204390347003937
+UNLEARNING STEP:  153Poisoned classes: [3, 4]
+Poisoned class: 3 -> 4
+
+Step 154: Train Acc: 0.9111691704768126, Misclassification: 0.0782122905027933, F1 Score: 0.9111691704768126
+Forget Ability: 0.7989497374343586, Utility: 0.9278466238221165
+Forget Loss: 1.0753157138824463, Remember Loss: 0.2565567195415497, KD Loss: 0.14334511756896973
+UNLEARNING STEP:  154Poisoned classes: [3, 4]
+Poisoned class: 3 -> 4
+
+Step 155: Train Acc: 0.9118223383409536, Misclassification: 0.0782122905027933, F1 Score: 0.9118223383409536
+Forget Ability: 0.7989497374343586, Utility: 0.9283161073901915
+Forget Loss: 1.0773869752883911, Remember Loss: 0.25661778450012207, KD Loss: 0.14477647840976715
+UNLEARNING STEP:  155Poisoned classes: [3, 4]
+Poisoned class: 3 -> 4
+
+Step 156: Train Acc: 0.9118223383409536, Misclassification: 0.0782122905027933, F1 Score: 0.9118223383409536
+Forget Ability: 0.7989497374343586, Utility: 0.9283161073901915
+Forget Loss: 1.0791586637496948, Remember Loss: 0.25664713978767395, KD Loss: 0.14586737751960754
+UNLEARNING STEP:  156Poisoned classes: [3, 4]
+Poisoned class: 3 -> 4
+
+Step 157: Train Acc: 0.9118223383409536, Misclassification: 0.0782122905027933, F1 Score: 0.9118223383409536
+Forget Ability: 0.7989497374343586, Utility: 0.9283161073901915
+Forget Loss: 1.0805644989013672, Remember Loss: 0.25662684440612793, KD Loss: 0.1462947428226471
+UNLEARNING STEP:  157Poisoned classes: [3, 4]
+Poisoned class: 3 -> 4
+
+Step 158: Train Acc: 0.9118223383409536, Misclassification: 0.0782122905027933, F1 Score: 0.9118223383409536
+Forget Ability: 0.7989497374343586, Utility: 0.9283161073901915
+Forget Loss: 1.0815917253494263, Remember Loss: 0.25656577944755554, KD Loss: 0.14608149230480194
+UNLEARNING STEP:  158Poisoned classes: [3, 4]
+Poisoned class: 3 -> 4
+
+Step 159: Train Acc: 0.9111691704768126, Misclassification: 0.0782122905027933, F1 Score: 0.9111691704768126
+Forget Ability: 0.7989497374343586, Utility: 0.9278466238221165
+Forget Loss: 1.0823158025741577, Remember Loss: 0.2564898729324341, KD Loss: 0.14549818634986877
+UNLEARNING STEP:  159Poisoned classes: [3, 4]
+Poisoned class: 3 -> 4
+
+Step 160: Train Acc: 0.9111691704768126, Misclassification: 0.0782122905027933, F1 Score: 0.9111691704768126
+Forget Ability: 0.7989497374343586, Utility: 0.9278466238221165
+Forget Loss: 1.082869529724121, Remember Loss: 0.25642478466033936, KD Loss: 0.14485174417495728
+UNLEARNING STEP:  160Poisoned classes: [3, 4]
+Poisoned class: 3 -> 4
+
+Step 161: Train Acc: 0.9111691704768126, Misclassification: 0.0782122905027933, F1 Score: 0.9111691704768126
+Forget Ability: 0.7989497374343586, Utility: 0.9278466238221165
+Forget Loss: 1.0834379196166992, Remember Loss: 0.25638410449028015, KD Loss: 0.14434917271137238
+UNLEARNING STEP:  161Poisoned classes: [3, 4]
+Poisoned class: 3 -> 4
+
+Step 162: Train Acc: 0.9111691704768126, Misclassification: 0.0782122905027933, F1 Score: 0.9111691704768126
+Forget Ability: 0.7989497374343586, Utility: 0.9278466238221165
+Forget Loss: 1.0842173099517822, Remember Loss: 0.25636786222457886, KD Loss: 0.14408881962299347
+UNLEARNING STEP:  162Poisoned classes: [3, 4]
+Poisoned class: 3 -> 4
+
+Step 163: Train Acc: 0.9118223383409536, Misclassification: 0.0782122905027933, F1 Score: 0.9118223383409536
+Forget Ability: 0.7989497374343586, Utility: 0.9283161073901915
+Forget Loss: 1.0853650569915771, Remember Loss: 0.256369024515152, KD Loss: 0.14410291612148285
+UNLEARNING STEP:  163Poisoned classes: [3, 4]
+Poisoned class: 3 -> 4
+
+Step 164: Train Acc: 0.9118223383409536, Misclassification: 0.0782122905027933, F1 Score: 0.9118223383409536
+Forget Ability: 0.7962615653913478, Utility: 0.9287855909582667
+Forget Loss: 1.0869652032852173, Remember Loss: 0.2563805878162384, KD Loss: 0.14441271126270294
+UNLEARNING STEP:  164Poisoned classes: [3, 4]
+Poisoned class: 3 -> 4
+
+Step 165: Train Acc: 0.9111691704768126, Misclassification: 0.0782122905027933, F1 Score: 0.9111691704768126
+Forget Ability: 0.7935733933483371, Utility: 0.9287855909582667
+Forget Loss: 1.0889919996261597, Remember Loss: 0.2563993036746979, KD Loss: 0.14503762125968933
+UNLEARNING STEP:  165Poisoned classes: [3, 4]
+Poisoned class: 3 -> 4
+
+Step 166: Train Acc: 0.9111691704768126, Misclassification: 0.0782122905027933, F1 Score: 0.9111691704768126
+Forget Ability: 0.7935733933483371, Utility: 0.9287855909582667
+Forget Loss: 1.0913145542144775, Remember Loss: 0.2564238905906677, KD Loss: 0.14596392214298248
+UNLEARNING STEP:  166Poisoned classes: [3, 4]
+Poisoned class: 3 -> 4
+
+Step 167: Train Acc: 0.9111691704768126, Misclassification: 0.0782122905027933, F1 Score: 0.9111691704768126
+Forget Ability: 0.7935733933483371, Utility: 0.9287855909582667
+Forget Loss: 1.093735933303833, Remember Loss: 0.25645262002944946, KD Loss: 0.1470983922481537
+UNLEARNING STEP:  167Poisoned classes: [3, 4]
+Poisoned class: 3 -> 4
+
+Step 168: Train Acc: 0.9111691704768126, Misclassification: 0.0782122905027933, F1 Score: 0.9111691704768126
+Forget Ability: 0.7935733933483371, Utility: 0.9287855909582667
+Forget Loss: 1.0960415601730347, Remember Loss: 0.25648096203804016, KD Loss: 0.14825209975242615
+Namespace(train_ratio=0.7, val_ratio=0.1, attack_type='label', unlearning_model='scrub', gnn='gcn', hidden_dim=64, unlearning_epochs=50, request='node', edge_attack_type='specific', data_dir='/scratch/akshit.sinha/data', db_name='hp_tuning', df_size=0.5, test_poison_fraction=0.2, poison_tensor_size=100, dataset='Amazon', random_seed=3, train_lr=0.005191475570177285, unlearn_lr=0.005415894185681528, weight_decay=0.5, optimizer='Adam', training_epochs=1208, valid_freq=30, checkpoint_dir='./checkpoint', alpha=0.5, neg_sample_random='non_connected', loss_fct='mse_mean', loss_type='both_layerwise', num_clusters=10, kmeans_max_iters=1, shard_size_delta=0.005, terminate_delta=0, eval_steps=1, runs=1, num_remove_links=11, parallel_unlearning=4, lam=0, regen_feats=False, regen_neighbors=False, regen_links=False, regen_subgraphs=False, hop_neighbors=20, topk=500, eval_on_cpu=False, num_edge_type=None, iteration=100, scale=100000, damp=0.1, unlearn_iters=168, kd_T=4, scrubAlpha=3.5637209812607313, msteps=46, ascent_lr=0.0025, descent_lr=0.015, contrastive_epochs_1=30, contrastive_epochs_2=10, maximise_epochs=0, contrastive_margin=500, contrastive_lambda=0.8, k_hop=2, contrastive_frac=0.1, steps=10, kappa=0.01, alpha1=0.8, alpha2=0.5, SSDdampening=10, SSDselectwt=1, embs_all=False, embs_unlearn=False, corrective_frac=1)
+Poisoned classes: [3, 4]
+Poisoned class: 3 -> 4
+==Unlearned Model==
+Forget Ability: 0.8070142535633908, Utility: 0.9256821216576144, Time Taken: 4.491471529006958
+==UNLEARNING DONE==

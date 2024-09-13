@@ -352,6 +352,7 @@ class ContrastiveUnlearnTrainer(Trainer):
             optimizer.zero_grad()
             loss.backward()
             optimizer.step()
+        self.save_best()
         return
 
     def train(self):

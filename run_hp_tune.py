@@ -48,13 +48,10 @@ if __name__ == "__main__":
     parser.add_argument('--utu', action='store_true', help='Run HP tuning for utu model')
     parser.add_argument('--gif', action='store_true', help='Run HP tuning for gif model')
     parser.add_argument('--ssd', action='store_true', help='Run HP tuning for ssd model')
+    parser.add_argument('--yaum', action='store_true', help='Run HP tuning for yaum model')
+    parser.add_argument('--contrascent', action='store_true', help='Run HP tuning for yaum model')
 
     args = parser.parse_args()
-    
-    # check if the model is specified
-    if not any([args.contra_2, args.retrain, args.scrub, args.megu, args.gnndelete, args.utu, args.gif, args.ssd, args.contrastive]):
-        print("Please specify the model to run HP tuning for")
-        exit(1)
     
     unlearning_models = []
     if args.utu:
@@ -75,5 +72,9 @@ if __name__ == "__main__":
         unlearning_models.append('gif')
     if args.ssd:
         unlearning_models.append('ssd')
+    if args.yaum:
+        unlearning_models.append('yaum')
+    if args.contrascent:
+        unlearning_models.append('contrascent')
     
     run_hp_tuning(unlearning_models, args.df_size, args.random_seed, args.dataset, args.attack_type, args.data_dir, args.db_name, args.gnn)

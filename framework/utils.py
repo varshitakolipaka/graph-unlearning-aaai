@@ -12,6 +12,7 @@ import seaborn as sns
 from sklearn.manifold import TSNE
 
 
+from trainers.contrascent import ContrastiveAscentTrainer
 from trainers.contrast import ContrastiveUnlearnTrainer
 from trainers.contrast_another import ContrastiveUnlearnTrainer_NEW
 from trainers.gnndelete import GNNDeleteNodeembTrainer
@@ -25,6 +26,7 @@ from trainers.utu import UtUTrainer
 from trainers.retrain import RetrainTrainer
 from trainers.megu import MeguTrainer
 from trainers.grub import GrubTrainer
+from trainers.yaum import YAUMTrainer
 
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
@@ -151,7 +153,7 @@ def find_masks(data, poisoned_indices, args, attack_type="label"):
 
     if attack_type == "label" or attack_type == "random"  or attack_type == "trigger":
 
-        if "scrub" in args.unlearning_model or "grub" in args.unlearning_model or "ssd" in args.unlearning_model or ("megu" in args.unlearning_model and "node" in args.request):
+        if "scrub" in args.unlearning_model or "grub" in args.unlearning_model or "yaum" in args.unlearning_model or "ssd" in args.unlearning_model or ("megu" in args.unlearning_model and "node" in args.request):
             data.node_df_mask = torch.zeros(data.num_nodes, dtype=torch.bool)  # of size num nodes
             data.node_dr_mask = data.train_mask
             data.node_df_mask[poisoned_indices] = True
@@ -193,7 +195,9 @@ def get_trainer(args, poisoned_model, poisoned_data, optimizer_unlearn) -> Train
         "scrub": ScrubTrainer,
         "megu": MeguTrainer,
         "ssd": SSDTrainer,
-        "grub": GrubTrainer
+        "grub": GrubTrainer,
+        "yaum": YAUMTrainer,
+        "contrascent": ContrastiveAscentTrainer
     }
 
     if args.unlearning_model in trainer_map:
@@ -221,7 +225,7 @@ def get_optimizer(args, poisoned_model):
             {'params': [p for n, p in poisoned_model.named_parameters()]}
         ]
         print('parameters_to_optimize', [n for n, p in poisoned_model.named_parameters()])
-        optimizer_unlearn = torch.optim.Adam(parameters_to_optimize, lr=args.unlearn_lr, weight_decay=args.weight_decay)
+        optimizer_unlearn = torch.optim.Adam(parameters_to_optimize, lr=args.unlearn_lr)
     return optimizer_unlearn
 
 def prints_stats(data):
@@ -272,12 +276,26 @@ def plot_embeddings(args, model, data, class1, class2, is_dr=False, mask="test",
     # Create masks for class1, class2, and other classes
     class1_mask = (labels == class1)
     class2_mask = (labels == class2)
-    other_mask = ~(class1_mask | class2_mask)
 
     # convert masks to numpy
     class1_mask = class1_mask.cpu().numpy()
     class2_mask = class2_mask.cpu().numpy()
-    other_mask = other_mask.cpu().numpy()
+
+    # give a color map to the other classes
+    class_masks = {}
+    for i in range(data.num_classes):
+        if i != class1 and i != class2:
+            class_masks[i] = (labels == i).cpu().numpy()
+
+    colors = sns.color_palette("dark", data.num_classes)
+    color_map = {}
+    for i in range(data.num_classes):
+        if i == class1:
+            color_map[i] = 'blue'
+        elif i == class2:
+            color_map[i] = 'red'
+        else:
+            color_map[i] = colors[i]
 
     # Prepare the plot
     plt.figure(figsize=(10, 8))
@@ -292,11 +310,12 @@ def plot_embeddings(args, model, data, class1, class2, is_dr=False, mask="test",
     # Plot class2
     plt.scatter(embeddings[class2_mask, 0], embeddings[class2_mask, 1], label=f'Class {class2}', color='red', alpha=0.6)
     # Plot other classes
-    plt.scatter(embeddings[other_mask, 0], embeddings[other_mask, 1], label='Other Classes', color='gray', alpha=0.3)
-
-    # Add legend and labels
-    plt.legend()
-    plt.title("Embeddings Visualization")
+    for i in class_masks:
+        plt.scatter(embeddings[class_masks[i], 0], embeddings[class_masks[i], 1], label=f'Class {i}', color=color_map[i], alpha=0.3) 
+    
+    # Add legend to top right
+    plt.legend(loc='upper right')
+    plt.title(f"{args.dataset}-{name}")
     plt.xlabel("Embedding Dimension 1")
     plt.ylabel("Embedding Dimension 2")
 

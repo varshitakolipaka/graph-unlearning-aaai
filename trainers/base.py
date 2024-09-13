@@ -9,6 +9,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 
+
 def plot_loss_vs_epochs(loss_values):
     """
     Plots a line graph of loss vs. epochs using Seaborn.
@@ -18,23 +19,23 @@ def plot_loss_vs_epochs(loss_values):
     """
     # Create an array of epoch numbers
     loss_values = torch.stack(loss_values)
-    loss_values= loss_values.cpu().detach().numpy()
+    loss_values = loss_values.cpu().detach().numpy()
     epochs = np.arange(1, len(loss_values) + 1)
 
     # Create a DataFrame for easier plotting with Seaborn
-    data = pd.DataFrame({'Epoch': epochs, 'Loss': loss_values})
+    data = pd.DataFrame({"Epoch": epochs, "Loss": loss_values})
 
     # Set the style of the plot
     sns.set(style="whitegrid")
 
     # Create the line plot
     plt.figure(figsize=(12, 6))
-    line_plot = sns.lineplot(x='Epoch', y='Loss', data=data, marker='o', color='b')
+    line_plot = sns.lineplot(x="Epoch", y="Loss", data=data, marker="o", color="b")
 
     # Add title and labels
-    line_plot.set_title('Loss vs. Epochs', fontsize=16)
-    line_plot.set_xlabel('Epoch', fontsize=14)
-    line_plot.set_ylabel('Loss', fontsize=14)
+    line_plot.set_title("Loss vs. Epochs", fontsize=16)
+    line_plot.set_xlabel("Epoch", fontsize=14)
+    line_plot.set_ylabel("Loss", fontsize=14)
 
     # Customize the tick parameters
     line_plot.tick_params(labelsize=12)
@@ -42,28 +43,40 @@ def plot_loss_vs_epochs(loss_values):
     # Show the plot
     plt.show()
 
-device = torch.device('cuda') if torch.cuda.is_available() else torch.device('cpu')
+
+device = torch.device("cuda") if torch.cuda.is_available() else torch.device("cpu")
+
+
 class Trainer:
     def __init__(self, model, data, optimizer, num_epochs=50):
         self.model = model.to(device)
         self.data = data.to(device)
         self.optimizer = optimizer
-        self.num_epochs= num_epochs
-        if hasattr(data, 'class1') and hasattr(data, 'class2'):
+        self.num_epochs = num_epochs
+
+        self.best_state_dict = None
+        self.best_val_score = 0
+
+        if hasattr(data, "class1") and hasattr(data, "class2"):
             self.class1 = data.class1
             self.class2 = data.class2
         else:
             self.class1 = None
             self.class2 = None
 
+        if hasattr(data, "poisoned_nodes"):    
+            self.og_preds = self.get_df_outputs()
+
     def train(self):
         losses = []
         self.data = self.data.to(device)
         st = time.time()
-        for epoch in trange(self.num_epochs, desc='Epoch'):
+        for epoch in trange(self.num_epochs, desc="Epoch"):
             self.model.train()
             z = F.log_softmax(self.model(self.data.x, self.data.edge_index), dim=1)
-            loss = F.nll_loss(z[self.data.train_mask], self.data.y[self.data.train_mask])
+            loss = F.nll_loss(
+                z[self.data.train_mask], self.data.y[self.data.train_mask]
+            )
             loss.backward()
             losses.append(loss)
             self.optimizer.step()
@@ -81,11 +94,15 @@ class Trainer:
         accs_clean = []
 
         for clean_class in classes:
-            clean_indices = (true_labels == clean_class)
-            accs_clean.append(accuracy_score(true_labels[clean_indices].cpu(), pred_labels[clean_indices].cpu()))
-        print(f'Class Accuracies: {accs_clean}')
+            clean_indices = true_labels == clean_class
+            accs_clean.append(
+                accuracy_score(
+                    true_labels[clean_indices].cpu(), pred_labels[clean_indices].cpu()
+                )
+            )
+        print(f"Class Accuracies: {accs_clean}")
         accs_clean = sum(accs_clean) / len(accs_clean)
-        print(f'Overall Accuracy: {accs_clean}')
+        print(f"Overall Accuracy: {accs_clean}")
 
     def subset_acc(self, class1=None, class2=None):
         if class1 is None or class2 is None:
@@ -93,8 +110,8 @@ class Trainer:
             class2 = self.class2
 
         poisoned_classes = [class1, class2]
-        
-        print(f'Poisoned classes: {poisoned_classes}')
+
+        print(f"Poisoned classes: {poisoned_classes}")
 
         true_labels = self.true.to(device)
         pred_labels = self.pred.to(device)
@@ -107,23 +124,32 @@ class Trainer:
         # calculate acc separately on poisoned and non-poisoned classes
         accs_poisoned = []
         accs_clean = []
-        roc_aucs_poisoned=[]
-        roc_aucs_clean= []
+        roc_aucs_poisoned = []
+        roc_aucs_clean = []
 
         # z = F.log_softmax(self.model(self.data.x, self.data.edge_index[:, self.data.dr_mask]), dim=1)
 
         for poisoned_class in poisoned_classes:
-            poisoned_indices = (true_labels == poisoned_class)
-            accs_poisoned.append(accuracy_score(true_labels[poisoned_indices].cpu(), pred_labels[poisoned_indices].cpu()))
+            poisoned_indices = true_labels == poisoned_class
+            accs_poisoned.append(
+                accuracy_score(
+                    true_labels[poisoned_indices].cpu(),
+                    pred_labels[poisoned_indices].cpu(),
+                )
+            )
 
         for clean_class in clean_classes:
-            clean_indices = (true_labels == clean_class)
+            clean_indices = true_labels == clean_class
             if clean_indices.sum() == 0:
                 continue
-            accs_clean.append(accuracy_score(true_labels[clean_indices].cpu(), pred_labels[clean_indices].cpu()))
+            accs_clean.append(
+                accuracy_score(
+                    true_labels[clean_indices].cpu(), pred_labels[clean_indices].cpu()
+                )
+            )
 
-        print(f'Poisoned class: {class1} -> {class2}')
-        
+        print(f"Poisoned class: {class1} -> {class2}")
+
         # take average of the accs
         accs_poisoned = sum(accs_poisoned) / len(accs_poisoned)
         accs_clean = sum(accs_clean) / len(accs_clean)
@@ -133,19 +159,23 @@ class Trainer:
 
         return accs_poisoned, accs_clean
 
-
-
     def misclassification_rate(self, true_labels, pred_labels):
         if self.class1 is None or self.class2 is None:
             return 0
 
         true_labels = true_labels.to(device)
         pred_labels = pred_labels.to(device)
-        class1_to_class2 = ((true_labels == self.class1) & (pred_labels == self.class2)).sum().item()
-        class2_to_class1 = ((true_labels == self.class2) & (pred_labels == self.class1)).sum().item()
+        class1_to_class2 = (
+            ((true_labels == self.class1) & (pred_labels == self.class2)).sum().item()
+        )
+        class2_to_class1 = (
+            ((true_labels == self.class2) & (pred_labels == self.class1)).sum().item()
+        )
         total_class1 = (true_labels == self.class1).sum().item()
         total_class2 = (true_labels == self.class2).sum().item()
-        misclassification_rate = (class1_to_class2 + class2_to_class1) / (total_class1 + total_class2)
+        misclassification_rate = (class1_to_class2 + class2_to_class1) / (
+            total_class1 + total_class2
+        )
         return misclassification_rate
 
     # def evaluate(self, is_dr=False):
@@ -175,42 +205,76 @@ class Trainer:
 
         with torch.no_grad():
             if is_dr:
-                z = F.log_softmax(self.model(self.data.x, self.data.edge_index[:, self.data.dr_mask]), dim=1)
+                z = F.log_softmax(
+                    self.model(self.data.x, self.data.edge_index[:, self.data.dr_mask]),
+                    dim=1,
+                )
             else:
                 z = F.log_softmax(self.model(self.data.x, self.data.edge_index), dim=1)
-                
+
             if use_val:
                 mask = self.data.val_mask
             else:
                 mask = self.data.test_mask
-                
+
             loss = F.nll_loss(z[mask], self.data.y[mask]).cpu().item()
             pred = torch.argmax(z[mask], dim=1).cpu()
             acc = accuracy_score(self.data.y[mask].cpu(), pred)
-            f1 = f1_score(self.data.y[mask].cpu(), pred, average='micro')
+            f1 = f1_score(self.data.y[mask].cpu(), pred, average="micro")
             msc_rate = self.misclassification_rate(self.data.y[mask].cpu(), pred)
 
         self.true = self.data.y[mask].cpu()
         self.pred = pred
-    
 
         return acc, msc_rate, f1
 
     def calculate_PSR(self):
         z = self.model(self.data.x, self.data.edge_index)
         pred = torch.argmax(z[self.data.poison_test_mask], dim=1).cpu()
-        psr= sum(pred==self.data.target_class)/len(pred)
+        psr = sum(pred == self.data.target_class) / len(pred)
         return psr.item()
-    
+
     def get_score(self, attack_type, class1=None, class2=None):
         forget_ability = None
         utility = None
-        if attack_type=="label" or attack_type=="edge":
+        if attack_type == "label" or attack_type == "edge":
             forget_ability, utility = self.subset_acc(class1, class2)
-        elif attack_type=="trigger":
+        elif attack_type == "trigger":
             utility, _, _ = self.evaluate()
             forget_ability = self.calculate_PSR()
-        elif attack_type=="random":
+        elif attack_type == "random":
             utility, _, f1 = self.evaluate()
         return forget_ability, utility
-        
+
+    def get_df_outputs(self):
+        self.model.eval()
+        with torch.no_grad():
+            out = F.log_softmax(self.model(self.data.x, self.data.edge_index), dim=1)
+        out = out[self.data.poisoned_nodes]  # changed from nodes to indices by varshita
+        pred = torch.argmax(out, dim=1)
+        # get outputs of poisoned nodes
+        return pred
+
+    def get_label_change(self):
+        return sum(self.og_preds != self.get_df_outputs()).item() / len(self.og_preds)
+
+    def validate(self, is_dr=True):
+        val_acc, _, _ = self.evaluate(use_val=True, is_dr=is_dr)
+        # label_change_rate = self.get_label_change()
+
+        return val_acc
+
+    def save_best(self, is_dr=True):
+        score = self.validate(is_dr)
+        if score > self.best_val_score:
+            # record  the time
+            self.best_model_time = time.time()
+
+            self.best_val_score = score
+            print(f"Saving best model with score: {self.best_val_score}")
+            self.best_state_dict = self.model.state_dict()
+            return True
+
+    def load_best(self):
+        self.model.load_state_dict(self.best_state_dict)
+        return self.best_val_score

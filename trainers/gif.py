@@ -77,7 +77,6 @@ class GIFTrainer(Trainer):
                 h_estimate    = [ v1 + (1-damp)*h_estimate1 - hv1/scale
                             for v1, h_estimate1, hv1 in zip(v, h_estimate, hv)]
 
-
         # breakpoint()
         params_change = [h_est / scale for h_est in h_estimate]
         params_esti   = [p1 + p2 for p1, p2 in zip(params_change, model_params)]

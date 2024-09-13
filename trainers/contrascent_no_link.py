@@ -3,19 +3,42 @@ import copy
 from pprint import pprint
 import time
 import scipy.sparse as sp
+
 # import wandb
 import numpy as np
 from tqdm import tqdm, trange
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-from torch_geometric.utils import negative_sampling, k_hop_subgraph, to_scipy_sparse_matrix
+from torch_geometric.utils import (
+    negative_sampling,
+    k_hop_subgraph,
+    to_scipy_sparse_matrix,
+)
 from torch_geometric.loader import GraphSAINTRandomWalkSampler
-
+from torch.optim.lr_scheduler import _LRScheduler
 from .base import Trainer
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
+class_dataset_dict = {
+    "Cora": {
+        "class1": 5,
+        "class2": 63,
+    },
+    "PubMed": {
+        "class1": 2,
+        "class2": 1,
+    },
+    "Amazon": {
+        "class1": 3,
+        "class2": 4,
+    },
+    "CS": {
+        "class1": 3,
+        "class2": 12,
+    },
+}
 
 def time_it(func):
     def wrapper(*args, **kwargs):
@@ -23,29 +46,81 @@ def time_it(func):
         result = func(*args, **kwargs)
         end_time = time.time()
         elapsed_time = end_time - start_time
-        #print(f"Function '{func.__name__}' took {elapsed_time:.4f} seconds to execute.")
+        # print(f"Function '{func.__name__}' took {elapsed_time:.4f} seconds to execute.")
         return result
 
     return wrapper
 
 
-class ContrastiveUnlearnTrainer_NEW(Trainer):
+class LinearLR(_LRScheduler):
+    r"""Set the learning rate of each parameter group with a linear
+    schedule: :math:`\eta_{t} = \eta_0*(1 - t/T)`, where :math:`\eta_0` is the
+    initial lr, :math:`t` is the current epoch or iteration (zero-based) and
+    :math:`T` is the total training epochs or iterations. It is recommended to
+    use the iteration based calculation if the total number of epochs is small.
+    When last_epoch=-1, sets initial lr as lr.
+    It is studied in
+    `Budgeted Training: Rethinking Deep Neural Network Training Under Resource
+     Constraints`_.
+
+    Args:
+        optimizer (Optimizer): Wrapped optimizer.
+        T (int): Total number of training epochs or iterations.
+        last_epoch (int): The index of last epoch or iteration. Default: -1.
+
+    .. _Budgeted Training\: Rethinking Deep Neural Network Training Under
+    Resource Constraints:
+        https://arxiv.org/abs/1905.04753
+    """
+
+    def __init__(self, optimizer, T, warmup_epochs=100, last_epoch=-1):
+        self.T = float(T)
+        self.warm_ep = warmup_epochs
+        super(LinearLR, self).__init__(optimizer, last_epoch)
+
+    def get_lr(self):
+        if self.last_epoch - self.warm_ep >= 0:
+            rate = 1 - ((self.last_epoch - self.warm_ep) / self.T)
+        else:
+            rate = (self.last_epoch + 1) / (self.warm_ep + 1)
+        return [rate * base_lr for base_lr in self.base_lrs]
+
+    def _get_closed_form_lr(self):
+        return self.get_lr()
+
+
+def distill_kl_loss(y_s, y_t, T, reduction="sum"):
+    p_s = torch.nn.functional.log_softmax(y_s / T, dim=1)
+    p_t = torch.nn.functional.softmax(y_t / T, dim=1)
+    loss = torch.nn.functional.kl_div(p_s, p_t, reduction=reduction)
+    if reduction == "none":
+        loss = torch.sum(loss, dim=1)
+    loss = loss * (T**2) / y_s.shape[0]
+    return loss
+
+
+class ContrastiveAscentNoLinkTrainer(Trainer):
     def __init__(self, model, data, optimizer, args):
         super().__init__(model, data, optimizer)
         self.args = args
         self.attacked_idx = data.attacked_idx
         self.embeddings = None
         self.criterion = torch.nn.CrossEntropyLoss()
+        self.data.poison_mask = torch.zeros(data.num_nodes, dtype=torch.bool)
+        self.data.poison_mask[self.data.poisoned_nodes] = True
+        self.og_model = copy.deepcopy(model)
+        self.og_model.eval()
+        self.og_model.to(device)
 
     def reverse_features(self, features):
         reverse_features = features.clone()
-        if self.args.request== "edge":
+        if self.args.request == "edge":
             for idx in self.data.poisoned_nodes:
-                reverse_features[idx] = 1-reverse_features[idx]
+                reverse_features[idx] = 1 - reverse_features[idx]
             return reverse_features
 
         for idx in self.attacked_idx:
-            reverse_features[idx] = 1-reverse_features[idx]
+            reverse_features[idx] = 1 - reverse_features[idx]
         return reverse_features
 
     def get_sample_points(self):
@@ -53,23 +128,27 @@ class ContrastiveUnlearnTrainer_NEW(Trainer):
             og_logits = F.softmax(self.model(self.data.x, self.data.edge_index), dim=1)
             temp_features = self.data.x.clone()
             reverse_feature = self.reverse_features(temp_features)
-            final_logits = F.softmax(self.model(reverse_feature, self.data.edge_index), dim=1)
+            final_logits = F.softmax(
+                self.model(reverse_feature, self.data.edge_index), dim=1
+            )
             diff = torch.abs(og_logits - final_logits)
             diff = torch.mean(diff, dim=1)
             diff = diff[self.data.poisoned_nodes]
             frac = self.args.contrastive_frac
-            _, indices = torch.topk(diff, int(frac * len(self.data.poisoned_nodes)), largest=True)
+            _, indices = torch.topk(
+                diff, int(frac * len(self.data.poisoned_nodes)), largest=True
+            )
             influence_nodes_with_unlearning_nodes = self.data.poisoned_nodes[indices]
             print(f"Nodes influenced: {len(influence_nodes_with_unlearning_nodes)}")
             self.data.sample_mask = torch.zeros(self.data.num_nodes, dtype=torch.bool)
             self.data.sample_mask[influence_nodes_with_unlearning_nodes] = True
 
             poisoned_edges = self.data.edge_index[:, self.data.df_mask]
-            negative_sample_dict= {int: set()}
+            negative_sample_dict = {int: set()}
 
             for i in range(len(poisoned_edges[0])):
-                toNode= poisoned_edges[0][i].item()
-                fromNode= poisoned_edges[1][i].item()
+                toNode = poisoned_edges[0][i].item()
+                fromNode = poisoned_edges[1][i].item()
 
                 if toNode not in negative_sample_dict:
                     negative_sample_dict[toNode] = set()
@@ -78,7 +157,7 @@ class ContrastiveUnlearnTrainer_NEW(Trainer):
                 if fromNode not in negative_sample_dict:
                     negative_sample_dict[fromNode] = set()
                 negative_sample_dict[fromNode].add(toNode)
-            self.negative_sample_dict= negative_sample_dict
+            self.negative_sample_dict = negative_sample_dict
             return
 
         subset, _, _, _ = k_hop_subgraph(
@@ -91,7 +170,9 @@ class ContrastiveUnlearnTrainer_NEW(Trainer):
         og_logits = F.softmax(self.model(self.data.x, self.data.edge_index), dim=1)
         temp_features = self.data.x.clone()
         reverse_feature = self.reverse_features(temp_features)
-        final_logits = F.softmax(self.model(reverse_feature, self.data.edge_index), dim=1)
+        final_logits = F.softmax(
+            self.model(reverse_feature, self.data.edge_index), dim=1
+        )
 
         diff = torch.abs(og_logits - final_logits)
 
@@ -112,50 +193,63 @@ class ContrastiveUnlearnTrainer_NEW(Trainer):
         self.data.sample_mask = torch.zeros(self.data.num_nodes, dtype=torch.bool)
         self.data.sample_mask[influence_nodes_with_unlearning_nodes] = True
 
+    def ascent_loss(self, mask):
+        return -F.cross_entropy(self.embeddings[mask], self.data.y[mask])
+
     @time_it
-    def task_loss(self, mask=None, ascent=False):        
+    def task_loss(self, mask=None, ascent=False):
         # use the retain mask to calculate the loss
         if self.args.request == "edge":
-            self.embeddings = self.model(self.data.x, self.data.edge_index[:, self.data.dr_mask])
-        
-        if mask is None:    
+            self.embeddings = self.model(
+                self.data.x, self.data.edge_index[:, self.data.dr_mask]
+            )
+
+        if mask is None:
             try:
                 mask = self.data.retain_mask
             except:
                 mask = self.data.train_mask
-        
+
         if ascent:
             mask = self.data.poison_mask
+            return self.ascent_loss(mask)
 
         loss = self.criterion(self.embeddings[mask], self.data.y[mask])
-        
-        if ascent:
-            return -loss
-        
+
         return loss
 
     @time_it
     def contrastive_loss(self, pos_dist, neg_dist, margin):
         pos_loss = torch.mean(pos_dist)
-        neg_loss = torch.mean(F.relu(margin - neg_dist))
+        neg_loss = F.relu(torch.mean((margin - neg_dist)))
         loss = pos_loss + neg_loss
         return loss
+
+    def kd_loss(self):
+        with torch.no_grad():
+            self.og_embeddings = self.og_model(self.data.x, self.data.edge_index)
+        kd_loss = self.args.scrubAlpha * distill_kl_loss(
+            self.embeddings[self.data.retain_mask],
+            self.og_embeddings[self.data.retain_mask],
+            self.args.kd_T,
+        )
+        return kd_loss
 
     @time_it
     def unlearn_loss(self, pos_dist, neg_dist, margin=1.0, lmda=0.8, ascent=False):
         if lmda == 1:
             return self.task_loss()
-        
+
         if lmda == 0:
             return self.contrastive_loss(pos_dist, neg_dist, margin)
-        
-        return lmda * self.task_loss(ascent=ascent) + (1 - lmda) * self.contrastive_loss(
-            pos_dist, neg_dist, margin
-        )
+
+        return lmda * self.task_loss(ascent=ascent) + (
+            1 - lmda
+        ) * self.contrastive_loss(pos_dist, neg_dist, margin)
 
     def calc_distances(self, nodes, positive_samples, negative_samples):
         # Vectorized contrastive loss calculation
-        
+
         anchors = self.embeddings[nodes].unsqueeze(1)  # Shape: (N, 1, D)
         positives = self.embeddings[positive_samples] * self.mask_pos  # Shape: (N, P, D)
         negatives = self.embeddings[negative_samples] * self.mask_neg # Shape: (N, Q, D)
@@ -185,7 +279,9 @@ class ContrastiveUnlearnTrainer_NEW(Trainer):
         edge_index_for_poison_dict = {}
         for idx in range(len(data.train_mask)):
             if data.retain_mask[idx]:
-                _, edge_index_for_poison, _, _ = k_hop_subgraph(idx, hop, data.edge_index)
+                _, edge_index_for_poison, _, _ = k_hop_subgraph(
+                    idx, hop, data.edge_index
+                )
                 edge_index_for_poison_dict[idx] = edge_index_for_poison
         self.edge_index_for_poison_dict = edge_index_for_poison_dict
 
@@ -193,7 +289,7 @@ class ContrastiveUnlearnTrainer_NEW(Trainer):
     def get_distances_batch(self, batch_size=64):
         st = time.time()
         self.embeddings = self.model(self.data.x, self.data.edge_index)
-        #print(f"Time taken to get embeddings: {time.time() - st}")
+        # print(f"Time taken to get embeddings: {time.time() - st}")
 
         num_masks = len(self.data.train_mask)
         pos_dist = torch.zeros(num_masks)
@@ -205,7 +301,7 @@ class ContrastiveUnlearnTrainer_NEW(Trainer):
         sample_indices = torch.where(self.data.sample_mask)[0]
         num_samples = len(sample_indices)
 
-        #print(f"Number of samples: {num_samples}")
+        # print(f"Number of samples: {num_samples}")
 
         attacked_set = set(self.attacked_idx.tolist())
 
@@ -228,17 +324,17 @@ class ContrastiveUnlearnTrainer_NEW(Trainer):
 
             batch_pos = torch.stack(
                 [
-                    torch.tensor(s + [0] * (max_pos - len(s)))
+                    torch.tensor(s + [self.embeddings.shape[0]] * (max_pos - len(s)))
                     for s in batch_positive_samples
                 ]
             )
             batch_neg = torch.stack(
                 [
-                    torch.tensor(s + [0] * (max_neg - len(s)))
+                    torch.tensor(s + [self.embeddings.shape[0]] * (max_neg - len(s)))
                     for s in batch_negative_samples
                 ]
             )
-            
+                
             self.mask_pos = (batch_pos != 0).float().unsqueeze(-1).to(device)
             self.mask_neg = (batch_neg != 0).float().unsqueeze(-1).to(device)
 
@@ -254,8 +350,8 @@ class ContrastiveUnlearnTrainer_NEW(Trainer):
             pos_dist[batch_indices] = batch_pos_dist.to(pos_dist.device)
             neg_dist[batch_indices] = batch_neg_dist.to(neg_dist.device)
 
-        #print(f"Average time taken to calculate distances: {calc_time/num_samples}")
-        #print(f"Average time taken to get distances: {(time.time() - st)/num_samples}")
+        # print(f"Average time taken to calculate distances: {calc_time/num_samples}")
+        # print(f"Average time taken to get distances: {(time.time() - st)/num_samples}")
 
         return pos_dist, neg_dist
 
@@ -268,16 +364,20 @@ class ContrastiveUnlearnTrainer_NEW(Trainer):
         sample_indices = torch.where(self.data.sample_mask)[0]
         num_samples = len(sample_indices)
 
-        #Batchwise positive and negative samples created
+        # Batchwise positive and negative samples created
         for i in range(0, num_samples, batch_size):
             batch_indices = sample_indices[i : i + batch_size]
             batch_size = len(batch_indices)
-            
+
             batch_positive_samples = [
-                list(self.subset_dict[idx.item()] - self.negative_sample_dict[idx.item()])
+                list(
+                    self.subset_dict[idx.item()] - self.negative_sample_dict[idx.item()]
+                )
                 for idx in batch_indices
             ]
-            batch_negative_samples = [list(self.negative_sample_dict[idx.item()]) for idx in batch_indices]
+            batch_negative_samples = [
+                list(self.negative_sample_dict[idx.item()]) for idx in batch_indices
+            ]
             # Pad and create dense batches
             max_pos = max(len(s) for s in batch_positive_samples)
             max_neg = max(len(s) for s in batch_negative_samples)
@@ -315,34 +415,63 @@ class ContrastiveUnlearnTrainer_NEW(Trainer):
         self.data = self.data.to(device)
         args = self.args
         optimizer = self.optimizer
-        best_val_acc = 0
+
+        ascent_optimizer = torch.optim.Adam(self.model.parameters(), lr=args.ascent_lr)
+
+        descent_optimizer = torch.optim.Adam(
+            self.model.parameters(), lr=args.descent_lr
+        )
+
+        best_score = 0
         # attacked idx must be a list of nodes
-        for epoch in trange(
-            args.steps, desc="Unlearning"
-        ):
+        for epoch in trange(args.steps, desc="Unlearning"):
             for i in range(args.contrastive_epochs_1 + args.contrastive_epochs_2):
+
                 self.model.train()
-                
-                self.embeddings = self.model(self.data.x, self.data.edge_index[:, self.data.dr_mask])
+
+                self.embeddings = self.model(
+                    self.data.x, self.data.edge_index
+                )
                 if i < args.contrastive_epochs_1:
                     pos_dist, neg_dist = self.get_distances_batch()
-                    lmda = 0
-                    loss = self.unlearn_loss(
-                        pos_dist, neg_dist, margin=args.contrastive_margin, lmda=lmda
+                    loss = self.contrastive_loss(
+                        pos_dist, neg_dist, margin=args.contrastive_margin
                     )
+
+                    optimizer.zero_grad()
+                    loss.backward()
+                    optimizer.step()
+
                 else:
-                    pos_dist = None
-                    neg_dist = None
-                    lmda = 1
-                    loss = self.unlearn_loss(
-                        pos_dist, neg_dist, margin=args.contrastive_margin, lmda=lmda
+                    ascent_optimizer.zero_grad()
+
+                    ascent_loss = self.ascent_loss(self.data.poison_mask)
+
+                    ascent_loss.backward()
+                    ascent_optimizer.step()
+                    # ascent_scheduler.step()
+
+                    descent_optimizer.zero_grad()
+
+                    self.embeddings = self.model(
+                        self.data.x, self.data.edge_index
                     )
+
+                    finetune_loss = F.cross_entropy(
+                        self.embeddings[self.data.retain_mask],
+                        self.data.y[self.data.retain_mask],
+                    )
+                    kd_loss = self.kd_loss()
+                    descent_loss = finetune_loss + kd_loss
+
+                    descent_loss.backward()
+                    descent_optimizer.step()
+                    # descent_scheduler.step()
                     
-                optimizer.zero_grad()
-                loss.backward()
-                optimizer.step()
-                
+                # save best model
                 self.save_best()
+        
+        # load best model
         self.load_best()
 
     def train_edge(self):
@@ -350,31 +479,60 @@ class ContrastiveUnlearnTrainer_NEW(Trainer):
         args = self.args
         optimizer = self.optimizer
         
-        for epoch in trange(
-            args.steps, desc="Unlearning"
-        ):
+        ascent_optimizer = torch.optim.Adam(self.model.parameters(), lr=args.ascent_lr)
+
+        descent_optimizer = torch.optim.Adam(
+            self.model.parameters(), lr=args.descent_lr
+        )
+
+        for epoch in trange(args.steps, desc="Unlearning"):
             for i in range(args.contrastive_epochs_1 + args.contrastive_epochs_2):
                 self.model.train()
                 optimizer.zero_grad()
-                
-                self.embeddings = self.model(self.data.x, self.data.edge_index[:, self.data.dr_mask])
+
+                self.embeddings = self.model(
+                    self.data.x, self.data.edge_index[:, self.data.dr_mask]
+                )
                 if i < args.contrastive_epochs_1:
                     pos_dist, neg_dist = self.get_distances_edge()
                     lmda = 0
                     loss = self.unlearn_loss(
                         pos_dist, neg_dist, margin=args.contrastive_margin, lmda=lmda
                     )
+                    
+                    optimizer.zero_grad()
+                    loss.backward()
+                    optimizer.step()
                 else:
-                    pos_dist = None
-                    neg_dist = None
-                    lmda = 1
-                    loss = self.unlearn_loss(
-                        pos_dist, neg_dist, margin=args.contrastive_margin, lmda=lmda
+                    ascent_optimizer.zero_grad()
+
+                    ascent_loss = self.ascent_loss(self.data.poison_mask)
+
+                    ascent_loss.backward()
+                    ascent_optimizer.step()
+                    # ascent_scheduler.step()
+
+                    descent_optimizer.zero_grad()
+
+                    self.embeddings = self.model(
+                        self.data.x, self.data.edge_index[:, self.data.dr_mask]
                     )
 
-                loss.backward()
-                optimizer.step()
+                    finetune_loss = F.cross_entropy(
+                        self.embeddings[self.data.retain_mask],
+                        self.data.y[self.data.retain_mask],
+                    )
+                    kd_loss = self.kd_loss()
+                    descent_loss = finetune_loss + kd_loss
+
+                    descent_loss.backward()
+                    descent_optimizer.step()
+                    # descent_scheduler.step()
+                    
+                # save best model
                 self.save_best()
+        
+        # load best model
         self.load_best()
 
     def train(self):
@@ -390,8 +548,7 @@ class ContrastiveUnlearnTrainer_NEW(Trainer):
         elif self.args.request == "edge":
             self.train_edge()
         end_time = time.time()
-        train_acc, msc_rate, f1 = self.evaluate(is_dr=True, use_val=True)
-        print(f"Train Acc: {train_acc}, Misclassification: {msc_rate},  F1 Score: {f1}")
+        train_acc, msc_rate, f1 = self.evaluate(is_dr=False, use_val=True)
 
         print(f"Training time: {self.best_model_time - start_time}")
 

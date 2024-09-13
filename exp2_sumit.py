@@ -15,8 +15,13 @@ import optuna
 from optuna.samplers import TPESampler
 from functools import partial
 from logger import Logger
+import torch.nn.functional as F
+import pandas as pd
 
 args = parse_args()
+
+logger = Logger(args, f"run_logs_{args.attack_type}.json")
+logger.log_arguments(args)
 
 utils.seed_everything(args.random_seed)
 device = torch.device("cuda") if torch.cuda.is_available() else torch.device("cpu")
@@ -53,16 +58,8 @@ def train(load=False):
             )
 
             print(f"==OG Model==\nForget Ability: {forg}, Utility: {util}")
-            
-        if args.embs_all:
-            utils.plot_embeddings(
-                args,
-                clean_model,
-                clean_data,
-                class1=class_dataset_dict[args.dataset]["class1"],
-                class2=class_dataset_dict[args.dataset]["class2"],
-                is_dr=False,
-                name=f"og",
+            logger.log_result(
+                args.random_seed, "original", {"forget": forg, "utility": util}
             )
 
         return clean_data
@@ -92,6 +89,9 @@ def train(load=False):
         )
 
         print(f"==OG Model==\nForget Ability: {forg}, Utility: {util}")
+        logger.log_result(
+            args.random_seed, "original", {"forget": forg, "utility": util}
+        )
 
     return clean_data
 
@@ -127,17 +127,9 @@ def poison(clean_data=None):
             class2=class_dataset_dict[args.dataset]["class2"],
         )
         print(f"==Poisoned Model==\nForget Ability: {forg}, Utility: {util}")
-        
-        if args.embs_all:
-            utils.plot_embeddings(
-                args,
-                poisoned_model,
-                poisoned_data,
-                class1=class_dataset_dict[args.dataset]["class1"],
-                class2=class_dataset_dict[args.dataset]["class2"],
-                is_dr=False,
-                name=f"poisoned",
-            )   
+        logger.log_result(
+            args.random_seed, "poisoned", {"forget": forg, "utility": util}
+        )
 
         # print(poisoned_trainer.calculate_PSR())
         return poisoned_data, poisoned_indices, poisoned_model
@@ -178,6 +170,7 @@ def poison(clean_data=None):
         class2=class_dataset_dict[args.dataset]["class2"],
     )
     print(f"==Poisoned Model==\nForget Ability: {forg}, Utility: {util}")
+    logger.log_result(args.random_seed, "poisoned", {"forget": forg, "utility": util})
     # print(f"PSR: {poisoned_trainer.calculate_PSR()}")
     return poisoned_data, poisoned_indices, poisoned_model
 
@@ -253,6 +246,11 @@ def unlearn(poisoned_data, poisoned_indices, poisoned_model):
     print(
         f"==Unlearned Model==\nForget Ability: {forg}, Utility: {util}, Time Taken: {time_taken}"
     )
+    logger.log_result(
+        args.random_seed,
+        args.unlearning_model,
+        {"forget": forg, "utility": util, "time_taken": time_taken},
+    )
     print("==UNLEARNING DONE==")
     return unlearn_model
 
@@ -282,15 +280,110 @@ if __name__ == "__main__":
     for key, value in params.items():
         setattr(args, key, value)
 
-    unlearnt_model = unlearn(poisoned_data, poisoned_indices, poisoned_model)
+    models = ["gradient_ascent", "gnndelete", "gif", "utu", "contrastive", "retrain", "scrub", "megu", "contra_2", "ssd", "grub", "yaum", 'contrascent']
+    
+    test_poisoned = []
+    for nodes in range(0, poisoned_data.num_nodes):
+        if(poisoned_data.test_mask[nodes] == 1 and (poisoned_data.y[nodes] == 5 or poisoned_data.y[nodes] == 63)):
+            test_poisoned.append(nodes)
 
-    if args.embs_all or args.embs_unlearn:
-        utils.plot_embeddings(
-            args,
-            unlearnt_model,
-            poisoned_data,
-            class1=class_dataset_dict[args.dataset]["class1"],
-            class2=class_dataset_dict[args.dataset]["class2"],
-            is_dr=True,
-            name=f"unlearned_{args.unlearning_model}_2",
-        )
+    # load df_logits if available
+    if os.path.exists("df_logits.pt"):
+        df_logits = torch.load("df_logits.pt")
+        df_logits_test = torch.load("df_logits_test.pt")
+    else:
+        df_logits = []
+        df_logits_test = []
+        for i, model in enumerate(models):
+            args.unlearning_model = model
+            unlearnt_model = unlearn(poisoned_data, poisoned_indices, poisoned_model)
+            unlearnt_model.eval()
+            if(i != 6 and i != 11 and i != 12):
+                logits = unlearnt_model(poisoned_data.x, poisoned_data.edge_index[:, poisoned_data.dr_mask])
+            else:
+                logits = unlearnt_model(poisoned_data.x, poisoned_data.edge_index)
+            df_logits.append(logits[poisoned_indices])
+            df_logits_test.append(logits[test_poisoned])
+
+        # change df_logits to tensor
+        df_logits = torch.stack(df_logits)
+        df_logits_test = torch.stack(df_logits_test)
+        torch.save(df_logits, f"df_logits.pt")
+        torch.save(df_logits_test, f"df_logits_test.pt")
+
+
+    # Get the index of the retrain model
+    poisoned_model.eval()
+    temp_poisoned_logits = poisoned_model(poisoned_data.x, poisoned_data.edge_index)
+    poisoned_logits = temp_poisoned_logits[poisoned_indices]
+    poisoned_logits_test = temp_poisoned_logits[test_poisoned]
+
+    # Prepare a DataFrame to store results
+    results = []
+
+    # Compare each model's logits with the retrain logits
+    for i, model_logits in enumerate(df_logits):
+        model_name = models[i]
+
+        # KL Divergence computation (logits to probabilities)
+        poisoned_probs = F.softmax(poisoned_logits, dim=-1)
+        model_probs = F.softmax(model_logits, dim=-1)
+
+        # Compute KL Divergence
+        kl_div = F.kl_div(poisoned_probs.log(), model_probs, reduction='batchmean')
+        
+        # Compute Absolute Difference
+        abs_diff = torch.abs(poisoned_logits - model_logits)
+        abs_diff_mean = abs_diff.mean().item()
+
+        # Append the results to the list
+        results.append({
+            "Model": model_name,
+            "KL Divergence": kl_div.item(),
+            "Absolute Difference": abs_diff_mean
+        })
+
+    # Create a DataFrame from the results
+    df_results = pd.DataFrame(results)
+
+    # Display the table
+    print(df_results)
+
+    results = []
+    for i, model_logits in enumerate(df_logits_test):
+
+        model_name = models[i]
+
+        # KL Divergence computation (logits to probabilities)
+        poisoned_probs = F.softmax(poisoned_logits_test, dim=-1)
+        model_probs = F.softmax(model_logits, dim=-1)
+
+        # Compute KL Divergence
+        kl_div = F.kl_div(poisoned_probs.log(), model_probs, reduction='batchmean')
+
+        # Compute Absolute Difference
+        abs_diff = torch.abs(poisoned_logits_test - model_logits)
+        abs_diff_mean = abs_diff.mean().item()
+
+        # Append the results to the list
+        results.append({
+            "Model": model_name,
+            "KL Divergence": kl_div.item(),
+            "Absolute Difference": abs_diff_mean
+        })
+
+    # Create a DataFrame from the results
+    df_results = pd.DataFrame(results)
+
+    # Display the table
+    print(df_results)
+    
+    # utils.plot_embeddings(
+    #     args,
+    #     unlearnt_model,
+    #     poisoned_data,
+    #     class1=class_dataset_dict[args.dataset]["class1"],
+    #     class2=class_dataset_dict[args.dataset]["class2"],
+    #     is_dr=True,
+    #     name=f"unlearned_{args.unlearning_model}_2",
+    # )

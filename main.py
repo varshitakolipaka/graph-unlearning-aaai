@@ -229,7 +229,7 @@ def unlearn(poisoned_data, poisoned_indices, poisoned_model):
         )
 
     _, _, time_taken = unlearn_trainer.train()
-    if args.unlearning_model == "scrub":
+    if args.unlearning_model == "scrub" or args.unlearning_model == "yaum":
         if args.attack_type == "edge":
             unlearn_trainer.evaluate(is_dr=True)
         else:

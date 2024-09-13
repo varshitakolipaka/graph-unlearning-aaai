@@ -7,21 +7,20 @@ from framework.training_args import parse_args
 opt = parse_args()
 from .base import Trainer
 from torch.optim.lr_scheduler import _LRScheduler
-
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
 class_dataset_dict = {
     "Cora": {
-        "class1": 57,
-        "class2": 33,
+        "class1": 5,
+        "class2": 63,
     },
     "PubMed": {
         "class1": 2,
         "class2": 1,
     },
     "Amazon": {
-        "class1": 6,
-        "class2": 1,
+        "class1": 3,
+        "class2": 4,
     },
     "Cora_p": {
         "class1": 1,
@@ -139,19 +138,13 @@ class ScrubTrainer(Trainer):
         if self.curr_step <= self.opt.unlearn_iters:
             self.optimizer.zero_grad()
             loss = self.forward_pass(data, mask)
-            val_acc, _, _ = self.evaluate(use_val=True)
-            # print(val_acc, self.best_val_acc)
-            if val_acc > self.best_val_acc:
-                # print("updating best model...")
-                self.best_val_acc = val_acc
-                # write state_dict to file
-                with open(self.opt.unlearning_model + '_best_model.pth', 'wb') as f:
-                    torch.save(self.model.state_dict(), f)
             loss.backward()
             self.optimizer.step()
             self.scheduler.step()
             # print(self.scheduler.get_lr())
             self.curr_step += 1
+        
+        self.save_best(is_dr=False)
 
         return
 
@@ -174,7 +167,6 @@ class ScrubTrainer(Trainer):
 
         return loss
 
-    # scrub for label flipping
     def unlearn_nc_lf(self):
         forget_mask = self.poisoned_dataset.node_df_mask
         print("MEOW MEH: ", forget_mask.shape)
@@ -193,10 +185,9 @@ class ScrubTrainer(Trainer):
             # print(f"==Unlearned Model==\nForget Ability: {forg}, Utility: {util}")
         end_time = time.time()
         # load best model
-        with open(self.opt.unlearning_model + '_best_model.pth', 'rb') as f:
-            self.model.load_state_dict(torch.load(f))
+        self.load_best()
         train_acc, msc_rate, f1 = self.evaluate()
-        return train_acc, msc_rate, end_time - start_time
+        return train_acc, msc_rate, self.best_model_time - start_time
 
     def train(self):
         return self.unlearn_nc_lf()

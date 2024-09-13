@@ -174,6 +174,73 @@ class YAUMTrainer(Trainer):
 
         return loss
     
+
+    # def unlearn_nc_lf(self):
+    #     forget_mask = self.poisoned_dataset.node_df_mask
+    #     print("summmmmmm:", self.poisoned_dataset.val_mask.sum())
+    #     print("MEOW MEH: ", forget_mask.shape)
+    #     start_time = time.time()
+
+    #     # Create separate optimizers for ascent and descent
+    #     ascent_optimizer = torch.optim.Adam(self.model.parameters(), lr=self.opt.ascent_lr)
+    #     descent_optimizer = torch.optim.Adam(self.model.parameters(), lr=self.opt.descent_lr)
+
+    #     # Create separate schedulers if needed
+    #     ascent_scheduler = LinearLR(ascent_optimizer, T=self.opt.unlearn_iters*1.25, warmup_epochs=self.opt.unlearn_iters//100)
+    #     descent_scheduler = LinearLR(descent_optimizer, T=self.opt.unlearn_iters*1.25, warmup_epochs=self.opt.unlearn_iters//100)
+
+    #     while self.curr_step < self.opt.unlearn_iters:
+    #         print("UNLEARNING STEP: ", self.curr_step, end='\r')
+            
+    #         self.model.train()
+
+    #         # Ascent step (forgetting)
+    #         ascent_optimizer.zero_grad()
+    #         output_forget = self.model(self.poisoned_dataset.x, self.poisoned_dataset.edge_index)
+    #         forget_loss = F.cross_entropy(output_forget[forget_mask], self.poisoned_dataset.y[forget_mask])
+    #         (-forget_loss).backward()
+    #         ascent_optimizer.step()
+    #         ascent_scheduler.step()
+
+    #         # Descent step (remembering)
+    #         descent_optimizer.zero_grad()
+    #         output_remember = self.model(self.poisoned_dataset.x, self.poisoned_dataset.edge_index)
+    #         with torch.no_grad():
+    #             logit_t = self.og_model(self.poisoned_dataset.x, self.poisoned_dataset.edge_index)
+    #         remember_loss = F.cross_entropy(output_remember[self.poisoned_dataset.train_mask], self.poisoned_dataset.y[self.poisoned_dataset.train_mask])
+    #         kd_loss = self.opt.scrubAlpha * distill_kl_loss(output_remember[self.poisoned_dataset.train_mask], logit_t[self.poisoned_dataset.train_mask], self.opt.kd_T)
+    #         total_descent_loss = remember_loss + kd_loss
+    #         total_descent_loss.backward()
+    #         descent_optimizer.step()
+    #         descent_scheduler.step()
+
+    #         self.curr_step += 1
+
+    #         # Evaluation and logging
+    #         if self.curr_step % 1 == 0:
+    #             train_acc, msc_rate, f1 = self.evaluate()
+    #             forg, util = self.get_score(self.opt.attack_type, class1=class_dataset_dict[self.opt.dataset]["class1"], class2=class_dataset_dict[self.opt.dataset]["class2"])
+    #             print(f"\nStep {self.curr_step}: Train Acc: {train_acc}, Misclassification: {msc_rate}, F1 Score: {f1}")
+    #             print(f"Forget Ability: {forg}, Utility: {util}")
+    #             print(f"Forget Loss: {forget_loss.item()}, Remember Loss: {remember_loss.item()}, KD Loss: {kd_loss.item()}")
+
+    #             # Update best model if necessary
+    #             val_acc, _, _ = self.evaluate(use_val=True)
+    #             if val_acc > self.best_val_acc:
+    #                 self.best_val_acc = val_acc
+    #                 print("best model so far!")
+    #                 with open(self.opt.unlearning_model + '_best_model.pth', 'wb') as f:
+    #                     torch.save(self.model.state_dict(), f)
+
+    #     end_time = time.time()
+        
+    #     # Load best model
+    #     with open(self.opt.unlearning_model + '_best_model.pth', 'rb') as f:
+    #         self.model.load_state_dict(torch.load(f))
+        
+    #     train_acc, msc_rate, f1 = self.evaluate()
+    #     return train_acc, msc_rate, end_time - start_time
+
     def unlearn_nc_lf(self):
         forget_mask = self.poisoned_dataset.node_df_mask
         print("summmmmmm:", self.poisoned_dataset.val_mask.sum())
@@ -214,8 +281,6 @@ class YAUMTrainer(Trainer):
             descent_scheduler.step()
 
             self.curr_step += 1
-            
-            self.save_best()
 
             if self.curr_step % 1 == 0:
                 train_acc, msc_rate, f1 = self.evaluate()
@@ -228,12 +293,23 @@ class YAUMTrainer(Trainer):
                 print(f"Forget Ability: {forg}, Utility: {util}, Forgetting Score: {forgetting_score}")
                 print(f"Forget Loss: {forget_loss.item()}, Remember Loss: {remember_loss.item()}, KD Loss: {kd_loss.item()}")
 
+                # Composite score to balance val_acc and forgetting_score
+                current_score = (val_acc + forgetting_score) / 2
+
+                if current_score > self.best_score:
+                    self.best_score = current_score
+                    print("Best model so far!")
+                    print(f"New best score: {self.best_score:.4f} (Val Acc: {val_acc:.4f}, Forgetting Score: {forgetting_score:.4f})")
+                    with open(self.opt.unlearning_model + '_best_model.pth', 'wb') as f:
+                        torch.save(self.model.state_dict(), f)
+
         end_time = time.time()
         # Load best model
-        self.load_best()
+        with open(self.opt.unlearning_model + '_best_model.pth', 'rb') as f:
+            self.model.load_state_dict(torch.load(f))
         
         train_acc, msc_rate, f1 = self.evaluate()
-        return train_acc, msc_rate, self.best_model_time - start_time
+        return train_acc, msc_rate, end_time - start_time
 
     def train(self):
         return self.unlearn_nc_lf()
