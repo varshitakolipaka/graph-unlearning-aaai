@@ -288,6 +288,20 @@ hp_tuning_params_dict = {
         "descent_lr": (1e-5, 1e-1, "log"),
         "scrubAlpha": (1e-6, 10, "log"),
     },
+    "cacdc": {
+        "contrastive_epochs_1": (0, 5, "int"),
+        "contrastive_epochs_2": (0, 15, "int"),
+        "steps": (1, 15, "int"),
+        # "maximise_epochs": (5, 30, "int"),
+        "unlearn_lr": (1e-5, 1e-1, "log"),
+        # "contrastive_margin": (1, 10, "log"),
+        # "contrastive_lambda": (0.0, 1.0, "float"),
+        "contrastive_frac": (0.01, 0.2, "float"),
+        # "k_hop": (1, 2, "int"),
+        "ascent_lr": (1e-5, 1e-3, "log"),
+        "descent_lr": (1e-5, 1e-1, "log"),
+        "scrubAlpha": (1e-6, 10, "log"),
+    },
     "utu": {},
     "scrub": {
         "unlearn_iters": (110, 200, "int"),
@@ -348,7 +362,7 @@ def objective(trial, model, data):
 
     _, _, time_taken = trainer.train()
     
-    if args.unlearning_model == 'scrub' or args.unlearning_model == 'yaum':
+    if args.unlearning_model == 'scrub' or args.unlearning_model == 'yaum' or args.unlearning_model == 'retrain':
         is_dr = True
     else:
         is_dr = False    

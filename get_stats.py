@@ -38,11 +38,8 @@ def process_json_file(file_path):
         for method in methods:
             for key in keys:
                 if averages[method][key]:  # Ensure that there are values to average
-                    print(averages[method][key])
                     std_devs[method][key] = np.std(averages[method][key])
                     averages[method][key] = np.mean(averages[method][key])
-                    print(std_devs[method][key])
-                    print('\n\n\n\n')
                 else:  # Handle cases where no values are present
                     averages[method][key] = None
                     std_devs[method][key] = None

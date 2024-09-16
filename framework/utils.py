@@ -13,6 +13,7 @@ from sklearn.manifold import TSNE
 
 
 from trainers.contrascent import ContrastiveAscentTrainer
+from trainers.contrascent_no_link import ContrastiveAscentNoLinkTrainer
 from trainers.contrast import ContrastiveUnlearnTrainer
 from trainers.contrast_another import ContrastiveUnlearnTrainer_NEW
 from trainers.gnndelete import GNNDeleteNodeembTrainer
@@ -197,7 +198,8 @@ def get_trainer(args, poisoned_model, poisoned_data, optimizer_unlearn) -> Train
         "ssd": SSDTrainer,
         "grub": GrubTrainer,
         "yaum": YAUMTrainer,
-        "contrascent": ContrastiveAscentTrainer
+        "contrascent": ContrastiveAscentTrainer,
+        'cacdc': ContrastiveAscentNoLinkTrainer
     }
 
     if args.unlearning_model in trainer_map:

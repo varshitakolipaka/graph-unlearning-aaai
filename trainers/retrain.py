@@ -23,7 +23,7 @@ class RetrainTrainer(Trainer):
         start_time = time.time()
         for epoch in trange(self.args.unlearning_epochs, desc='Epoch'):
             self.model.train()
-            z = F.log_softmax(self.model(self.data.x, self.data.edge_index[:, self.data.dr_mask]), dim=1)
+            z = F.log_softmax(self.model(self.data.x, self.data.edge_index), dim=1)
             loss = F.nll_loss(z[self.data.train_mask], self.data.y[self.data.train_mask])
             loss.backward()
             self.optimizer.step()
@@ -34,7 +34,7 @@ class RetrainTrainer(Trainer):
         end_time = time.time()
         print(f'Training Time: {end_time - start_time}')
         self.load_best()
-        train_acc, msc_rate, f1 = self.evaluate(is_dr=True, use_val=True)
+        train_acc, msc_rate, f1 = self.evaluate(is_dr=False, use_val=True)
         # print(f'Train Acc: {train_acc}, Misclassification: {msc_rate},  F1 Score: {f1}')
         
         return train_acc, msc_rate, self.best_model_time - start_time

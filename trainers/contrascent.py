@@ -288,7 +288,6 @@ class ContrastiveAscentTrainer(Trainer):
     @time_it
     def get_distances_batch(self, batch_size=64):
         st = time.time()
-        self.embeddings = self.model(self.data.x, self.data.edge_index)
         # print(f"Time taken to get embeddings: {time.time() - st}")
 
         num_masks = len(self.data.train_mask)
@@ -335,8 +334,19 @@ class ContrastiveAscentTrainer(Trainer):
                 ]
             )
                 
-            self.mask_pos = (batch_pos != 0).float().unsqueeze(-1).to(device)
-            self.mask_neg = (batch_neg != 0).float().unsqueeze(-1).to(device)
+            self.mask_pos = torch.stack(
+                [
+                    torch.tensor([1] * len(s) + [0] * (max_pos - len(s)))
+                    for s in batch_positive_samples
+                ]
+            ).float().unsqueeze(-1).to(device)
+
+            self.mask_neg = torch.stack(
+                [
+                    torch.tensor([1] * len(s) + [0] * (max_neg - len(s)))
+                    for s in batch_negative_samples
+                ]
+            ).float().unsqueeze(-1).to(device)
 
             st_2 = time.time()
             try:
@@ -394,6 +404,20 @@ class ContrastiveAscentTrainer(Trainer):
                     for s in batch_negative_samples
                 ]
             )
+            
+            self.mask_pos = torch.stack(
+                [
+                    torch.tensor([1] * len(s) + [0] * (max_pos - len(s)))
+                    for s in batch_positive_samples
+                ]
+            ).float().unsqueeze(-1).to(device)
+
+            self.mask_neg = torch.stack(
+                [
+                    torch.tensor([1] * len(s) + [0] * (max_neg - len(s)))
+                    for s in batch_negative_samples
+                ]
+            )
 
             # st_2 = time.time()
             batch_pos_dist, batch_neg_dist = self.calc_distances(
@@ -443,7 +467,6 @@ class ContrastiveAscentTrainer(Trainer):
                     optimizer.step()
 
                 else:
-                    print('acdc start')
                     ascent_optimizer.zero_grad()
 
                     ascent_loss = self.ascent_loss(self.data.poison_mask)
@@ -467,7 +490,6 @@ class ContrastiveAscentTrainer(Trainer):
 
                     descent_loss.backward()
                     descent_optimizer.step()
-                    print('acdc end')
                     # descent_scheduler.step()
                     
                 # save best model

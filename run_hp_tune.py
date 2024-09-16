@@ -50,6 +50,7 @@ if __name__ == "__main__":
     parser.add_argument('--ssd', action='store_true', help='Run HP tuning for ssd model')
     parser.add_argument('--yaum', action='store_true', help='Run HP tuning for yaum model')
     parser.add_argument('--contrascent', action='store_true', help='Run HP tuning for yaum model')
+    parser.add_argument('--cacdc', action='store_true', help='Run HP tuning for yaum model')
 
     args = parser.parse_args()
     
@@ -76,5 +77,7 @@ if __name__ == "__main__":
         unlearning_models.append('yaum')
     if args.contrascent:
         unlearning_models.append('contrascent')
+    if args.cacdc:
+        unlearning_models.append('cacdc')
     
     run_hp_tuning(unlearning_models, args.df_size, args.random_seed, args.dataset, args.attack_type, args.data_dir, args.db_name, args.gnn)

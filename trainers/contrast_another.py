@@ -239,8 +239,19 @@ class ContrastiveUnlearnTrainer_NEW(Trainer):
                 ]
             )
             
-            self.mask_pos = (batch_pos != 0).float().unsqueeze(-1).to(device)
-            self.mask_neg = (batch_neg != 0).float().unsqueeze(-1).to(device)
+            self.mask_pos = torch.stack(
+                [
+                    torch.tensor([1] * len(s) + [0] * (max_pos - len(s)))
+                    for s in batch_positive_samples
+                ]
+            ).float().unsqueeze(-1).to(device)
+
+            self.mask_neg = torch.stack(
+                [
+                    torch.tensor([1] * len(s) + [0] * (max_neg - len(s)))
+                    for s in batch_negative_samples
+                ]
+            ).float().unsqueeze(-1).to(device)
 
             st_2 = time.time()
             try:

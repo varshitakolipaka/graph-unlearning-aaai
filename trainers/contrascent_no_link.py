@@ -224,6 +224,13 @@ class ContrastiveAscentNoLinkTrainer(Trainer):
         neg_loss = F.relu(torch.mean((margin - neg_dist)))
         loss = pos_loss + neg_loss
         return loss
+    
+    def sage_loss(self, anchors, pos_embs, neg_embs):
+        pos_loss = F.logsigmoid((anchors*pos_embs).sum(-1)).mean()
+        neg_loss = F.logsigmoid(-(anchors*neg_embs).sum(-1)).mean()
+        
+        return -pos_loss - neg_loss
+        
 
     def kd_loss(self):
         with torch.no_grad():
@@ -288,7 +295,6 @@ class ContrastiveAscentNoLinkTrainer(Trainer):
     @time_it
     def get_distances_batch(self, batch_size=64):
         st = time.time()
-        self.embeddings = self.model(self.data.x, self.data.edge_index)
         # print(f"Time taken to get embeddings: {time.time() - st}")
 
         num_masks = len(self.data.train_mask)
@@ -324,19 +330,30 @@ class ContrastiveAscentNoLinkTrainer(Trainer):
 
             batch_pos = torch.stack(
                 [
-                    torch.tensor(s + [self.embeddings.shape[0]] * (max_pos - len(s)))
+                    torch.tensor(s + [0] * (max_pos - len(s)))
                     for s in batch_positive_samples
                 ]
             )
             batch_neg = torch.stack(
                 [
-                    torch.tensor(s + [self.embeddings.shape[0]] * (max_neg - len(s)))
+                    torch.tensor(s + [0] * (max_neg - len(s)))
                     for s in batch_negative_samples
                 ]
             )
                 
-            self.mask_pos = (batch_pos != 0).float().unsqueeze(-1).to(device)
-            self.mask_neg = (batch_neg != 0).float().unsqueeze(-1).to(device)
+            self.mask_pos = torch.stack(
+                [
+                    torch.tensor([1] * len(s) + [0] * (max_pos - len(s)))
+                    for s in batch_positive_samples
+                ]
+            ).float().unsqueeze(-1).to(device)
+
+            self.mask_neg = torch.stack(
+                [
+                    torch.tensor([1] * len(s) + [0] * (max_neg - len(s)))
+                    for s in batch_negative_samples
+                ]
+            ).float().unsqueeze(-1).to(device)
 
             st_2 = time.time()
             try:
@@ -354,6 +371,76 @@ class ContrastiveAscentNoLinkTrainer(Trainer):
         # print(f"Average time taken to get distances: {(time.time() - st)/num_samples}")
 
         return pos_dist, neg_dist
+    
+    def run_sage_batch(self, batch_size=64):
+        st = time.time()
+        # print(f"Time taken to get embeddings: {time.time() - st}")
+
+        sample_indices = torch.where(self.data.sample_mask)[0]
+        num_samples = len(sample_indices)
+
+        # print(f"Number of samples: {num_samples}")
+
+        attacked_set = set(self.attacked_idx.tolist())
+
+        st = time.time()
+        calc_time = 0
+        
+        total_loss = 0
+        for i in range(0, num_samples, batch_size):
+            batch_indices = sample_indices[i : i + batch_size]
+            batch_size = len(batch_indices)
+
+            batch_positive_samples = [
+                list(self.subset_dict[idx.item()] - attacked_set)
+                for idx in batch_indices
+            ]
+            batch_negative_samples = [list(attacked_set) for _ in range(batch_size)]
+
+            # Pad and create dense batches
+            max_pos = max(len(s) for s in batch_positive_samples)
+            max_neg = max(len(s) for s in batch_negative_samples)
+
+            batch_pos = torch.stack(
+                [
+                    torch.tensor(s + [0] * (max_pos - len(s)))
+                    for s in batch_positive_samples
+                ]
+            )
+            batch_neg = torch.stack(
+                [
+                    torch.tensor(s + [0] * (max_neg - len(s)))
+                    for s in batch_negative_samples
+                ]
+            )
+                
+            self.mask_pos = torch.stack(
+                [
+                    torch.tensor([1] * len(s) + [0] * (max_pos - len(s)))
+                    for s in batch_positive_samples
+                ]
+            ).float().unsqueeze(-1).to(device)
+
+            self.mask_neg = torch.stack(
+                [
+                    torch.tensor([1] * len(s) + [0] * (max_neg - len(s)))
+                    for s in batch_negative_samples
+                ]
+            ).float().unsqueeze(-1).to(device)
+
+            st_2 = time.time()
+            try:
+                anchor_embs = self.embeddings[batch_indices].unsqueeze(1)
+                pos_embs = self.embeddings[batch_pos] * self.mask_pos
+                neg_embs = self.embeddings[batch_neg] * self.mask_neg
+                batch_loss = self.sage_loss(anchor_embs, pos_embs, neg_embs)
+                calc_time += time.time() - st_2
+            except:
+                continue
+            
+            total_loss += batch_loss
+        
+        return total_loss
 
     def get_distances_edge(self, batch_size=64):
         # attacked edge index contains all the edges that were maliciously added
@@ -394,6 +481,20 @@ class ContrastiveAscentNoLinkTrainer(Trainer):
                     for s in batch_negative_samples
                 ]
             )
+            
+            self.mask_pos = torch.stack(
+                [
+                    torch.tensor([1] * len(s) + [0] * (max_pos - len(s)))
+                    for s in batch_positive_samples
+                ]
+            ).float().unsqueeze(-1).to(device)
+
+            self.mask_neg = torch.stack(
+                [
+                    torch.tensor([1] * len(s) + [0] * (max_neg - len(s)))
+                    for s in batch_negative_samples
+                ]
+            ).float().unsqueeze(-1).to(device)
 
             # st_2 = time.time()
             batch_pos_dist, batch_neg_dist = self.calc_distances(
@@ -425,6 +526,7 @@ class ContrastiveAscentNoLinkTrainer(Trainer):
         best_score = 0
         # attacked idx must be a list of nodes
         for epoch in trange(args.steps, desc="Unlearning"):
+            self.save_best()
             for i in range(args.contrastive_epochs_1 + args.contrastive_epochs_2):
 
                 self.model.train()
@@ -433,10 +535,11 @@ class ContrastiveAscentNoLinkTrainer(Trainer):
                     self.data.x, self.data.edge_index
                 )
                 if i < args.contrastive_epochs_1:
-                    pos_dist, neg_dist = self.get_distances_batch()
-                    loss = self.contrastive_loss(
-                        pos_dist, neg_dist, margin=args.contrastive_margin
-                    )
+                    # pos_dist, neg_dist = self.get_distances_batch()
+                    # loss = self.contrastive_loss(
+                    #     pos_dist, neg_dist, margin=args.contrastive_margin
+                    # )
+                    loss = self.run_sage_batch()
 
                     optimizer.zero_grad()
                     loss.backward()
