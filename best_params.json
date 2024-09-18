@@ -90,10 +90,10 @@
                 "msteps": 10
             },
             "Cora": {
-                "unlearn_iters": 200,
-                "unlearn_lr": 0.00023154994199593712,
-                "scrubAlpha": 0.0005417247418146597,
-                "msteps": 10
+                "unlearn_iters": 133,
+                "unlearn_lr": 4.116001065421032e-05,
+                "scrubAlpha": 0.002975988590654616,
+                "msteps": 35
             },
             "Computers": {
                 "unlearn_iters": 146,
@@ -247,10 +247,10 @@
                 "alpha2": 0.5178173876653578
             },
             "Cora": {
-                "unlearn_lr": 1.9976864263671664e-06,
-                "kappa": 0.0023114260221008946,
-                "alpha1": 0.1177340635090536,
-                "alpha2": 0.4216410000853662
+                "unlearn_lr": 8.50404740547907e-06,
+                "kappa": 0.0205746623262706,
+                "alpha1": 0.29345043963289136,
+                "alpha2": 0.7553990119083568
             }
         },
         "edge": {
@@ -363,10 +363,10 @@
                 "scrubAlpha": 0.0003139986551166942
             },
             "Cora": {
-                "unlearn_iters": 196,
-                "ascent_lr": 6.0517043430807524e-05,
-                "descent_lr": 0.0005246972572533347,
-                "scrubAlpha": 1.3357744409416396e-06
+                "unlearn_iters": 175,
+                "ascent_lr": 0.00011198575088051069,
+                "descent_lr": 0.01132838294585604,
+                "scrubAlpha": 0.23250358344937544
             },
             "Computers": {
                 "unlearn_iters": 146,
@@ -505,24 +505,24 @@
     "cacdc": {
         "label": {
             "CS": {
-                "contrastive_epochs_1": 1,
-                "contrastive_epochs_2": 11,
-                "steps": 10,
-                "unlearn_lr": 0.004271086000282539,
-                "contrastive_frac": 0.14234760711308245,
-                "ascent_lr": 0.0001904627311853819,
-                "descent_lr": 0.06316733887178179,
-                "scrubAlpha": 0.0077932096949501544
+                "contrastive_epochs_1": 2,
+                "contrastive_epochs_2": 10,
+                "steps": 9,
+                "unlearn_lr": 0.004987153243200173,
+                "contrastive_frac": 0.010042928844525411,
+                "ascent_lr": 4.333341082428582e-05,
+                "descent_lr": 0.028672012673663934,
+                "scrubAlpha": 2.6062286250001763e-06
             },
             "Cora": {
-                "contrastive_epochs_1": 4,
-                "contrastive_epochs_2": 7,
-                "steps": 8,
-                "unlearn_lr": 8.753294844384825e-05,
-                "contrastive_frac": 0.08762328092625137,
-                "ascent_lr": 0.0004854044145724401,
-                "descent_lr": 0.006716755144411638,
-                "scrubAlpha": 0.016174928790027424
+                "contrastive_epochs_1": 2,
+                "contrastive_epochs_2": 8,
+                "steps": 14,
+                "unlearn_lr": 1.490812537293248e-05,
+                "contrastive_frac": 0.08033822679069143,
+                "ascent_lr": 1.1399547047259028e-05,
+                "descent_lr": 0.0042996997220921315,
+                "scrubAlpha": 0.06596068720846467
             },
             "Amazon": {
                 "contrastive_epochs_1": 1,

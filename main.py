@@ -18,14 +18,15 @@ from logger import Logger
 
 args = parse_args()
 
-logger = Logger(args, f"run_logs_{args.attack_type}.json")
-logger.log_arguments(args)
 
 utils.seed_everything(args.random_seed)
 device = torch.device("cuda") if torch.cuda.is_available() else torch.device("cpu")
 
-with open('classes_to_poison.json', 'r') as f:
+with open('classes_to_poison_exp.json', 'r') as f:
     class_dataset_dict = json.load(f)
+
+logger = Logger(args, f"run_logs_{args.attack_type}_{class_dataset_dict[args.dataset]['class1']}_{class_dataset_dict[args.dataset]['class2']}.json")
+logger.log_arguments(args)
 
 def train(load=False):
     if load:
@@ -231,7 +232,7 @@ def unlearn(poisoned_data, poisoned_indices, poisoned_model):
     _, _, time_taken = unlearn_trainer.train()
     if args.unlearning_model == "scrub" or args.unlearning_model == "yaum" or args.unlearning_model == "cacdc":
         if args.attack_type == "edge":
-            unlearn_trainer.evaluate(is_dr=True)
+            unlearn_trainer.evaluate(is_dr=False)
         else:
             unlearn_trainer.evaluate()
     else:
@@ -257,9 +258,10 @@ if __name__ == "__main__":
     print("\n\n\n")
 
     print(args.dataset, args.attack_type)
-    clean_data = train(load=True)
+    # clean_data = train(load=True)
+    clean_data = train()
 
-    poisoned_data, poisoned_indices, poisoned_model = poison()
+    poisoned_data, poisoned_indices, poisoned_model = poison(clean_data)
 
     # load best params file
     with open("best_params.json", "r") as f:

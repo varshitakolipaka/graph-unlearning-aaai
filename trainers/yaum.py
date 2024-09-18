@@ -217,16 +217,16 @@ class YAUMTrainer(Trainer):
             
             self.save_best()
 
-            if self.curr_step % 1 == 0:
-                train_acc, msc_rate, f1 = self.evaluate()
-                forg, util = self.get_score(self.opt.attack_type, class1=class_dataset_dict[self.opt.dataset]["class1"], class2=class_dataset_dict[self.opt.dataset]["class2"])
-                val_acc, _, _ = self.evaluate(use_val=True)
-                incorrect_labels = torch.argmax(output_forget[forget_mask], dim=1) != self.poisoned_dataset.y[forget_mask]
-                forgetting_score = incorrect_labels.float().mean().item()
+            # if self.curr_step % 1 == 0:
+            #     train_acc, msc_rate, f1 = self.evaluate()
+            #     forg, util = self.get_score(self.opt.attack_type, class1=class_dataset_dict[self.opt.dataset]["class1"], class2=class_dataset_dict[self.opt.dataset]["class2"])
+            #     val_acc, _, _ = self.evaluate(use_val=True)
+            #     incorrect_labels = torch.argmax(output_forget[forget_mask], dim=1) != self.poisoned_dataset.y[forget_mask]
+            #     forgetting_score = incorrect_labels.float().mean().item()
 
-                print(f"\nStep {self.curr_step}: Train Acc: {train_acc}, Misclassification: {msc_rate}, F1 Score: {f1}")
-                print(f"Forget Ability: {forg}, Utility: {util}, Forgetting Score: {forgetting_score}")
-                print(f"Forget Loss: {forget_loss.item()}, Remember Loss: {remember_loss.item()}, KD Loss: {kd_loss.item()}")
+            #     print(f"\nStep {self.curr_step}: Train Acc: {train_acc}, Misclassification: {msc_rate}, F1 Score: {f1}")
+            #     print(f"Forget Ability: {forg}, Utility: {util}, Forgetting Score: {forgetting_score}")
+            #     print(f"Forget Loss: {forget_loss.item()}, Remember Loss: {remember_loss.item()}, KD Loss: {kd_loss.item()}")
 
         end_time = time.time()
         # Load best model

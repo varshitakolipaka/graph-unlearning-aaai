@@ -594,7 +594,7 @@ class ContrastiveAscentNoLinkTrainer(Trainer):
                 optimizer.zero_grad()
 
                 self.embeddings = self.model(
-                    self.data.x, self.data.edge_index[:, self.data.dr_mask]
+                    self.data.x, self.data.edge_index
                 )
                 if i < args.contrastive_epochs_1:
                     pos_dist, neg_dist = self.get_distances_edge()
@@ -648,10 +648,12 @@ class ContrastiveAscentNoLinkTrainer(Trainer):
         start_time = time.time()
         if self.args.request == "node":
             self.train_node()
+            is_dr = True
         elif self.args.request == "edge":
             self.train_edge()
+            is_dr = False
         end_time = time.time()
-        train_acc, msc_rate, f1 = self.evaluate(is_dr=False, use_val=True)
+        train_acc, msc_rate, f1 = self.evaluate(is_dr=is_dr, use_val=True)
 
         print(f"Training time: {self.best_model_time - start_time}")
 

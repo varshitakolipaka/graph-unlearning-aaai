@@ -78,11 +78,11 @@ def train_test_split(data, seed, train_ratio=0.1, val_ratio=0.1):
     data.train_mask = torch.zeros(n, dtype=torch.bool)
     data.val_mask = torch.zeros(n, dtype=torch.bool)
     data.test_mask = torch.zeros(n, dtype=torch.bool)
-    
+
     data.train_mask[train_idx] = True
     data.val_mask[val_idx] = True
     data.test_mask[test_idx] = True
-    
+
     return data, train_idx, test_idx
 
 def seed_everything(seed):
@@ -238,14 +238,14 @@ def prints_stats(data):
     print("Number of classes: ", data.num_classes)
     print("Number of training nodes: ", data.train_mask.sum().item())
     print("Number of testing nodes: ", data.test_mask.sum().item())
-    
+
     # get counts of each class
     counts = [0] * data.num_classes
     for i in range(data.num_classes):
         counts[i] = (data.y == i).sum().item()
     for i in range(data.num_classes):
         print(f"Number of nodes in class {i}: {counts[i]}")
-    
+
 def plot_embeddings(args, model, data, class1, class2, is_dr=False, mask="test", name=""):
     # Set the model to evaluation mode
     model.eval()
@@ -313,8 +313,8 @@ def plot_embeddings(args, model, data, class1, class2, is_dr=False, mask="test",
     plt.scatter(embeddings[class2_mask, 0], embeddings[class2_mask, 1], label=f'Class {class2}', color='red', alpha=0.6)
     # Plot other classes
     for i in class_masks:
-        plt.scatter(embeddings[class_masks[i], 0], embeddings[class_masks[i], 1], label=f'Class {i}', color=color_map[i], alpha=0.3) 
-    
+        plt.scatter(embeddings[class_masks[i], 0], embeddings[class_masks[i], 1], label=f'Class {i}', color=color_map[i], alpha=0.3)
+
     # Add legend to top right
     plt.legend(loc='upper right')
     plt.title(f"{args.dataset}-{name}")
@@ -330,9 +330,9 @@ def sample_poison_data(data, frac):
     assert frac <= 1.0 and frac >= 0.0, "frac must be between 0 and 1"
     # randomly sample frac of the poisoned indices to be exposed to unlearning methods
     poisoned_indices = data.poisoned_nodes.cpu().numpy()
-    
+
     num_to_sample = int(frac * len(poisoned_indices))
-    
+
     return torch.tensor(np.random.choice(poisoned_indices, num_to_sample, replace=False))
 
 def get_closest_classes(classes, counts):
@@ -346,6 +346,6 @@ def get_closest_classes(classes, counts):
             pairwise_diffs.append((classes[i], classes[j], abs(counts[i] - counts[j])))
 
     pairwise_diffs = sorted(pairwise_diffs, key=lambda x: x[2])
-    
+
     return pairwise_diffs
 
