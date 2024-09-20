@@ -83,18 +83,15 @@ def train(load=False):
     if args.attack_type != "trigger":
         acc, _, _ = clean_trainer.evaluate()
         
-        # forg, util = clean_trainer.get_score(
-        #     args.attack_type,
-        #     class1=class_dataset_dict[args.dataset]["class1"],
-        #     class2=class_dataset_dict[args.dataset]["class2"],
-        # )
+        forg, util = clean_trainer.get_score(
+            args.attack_type,
+            class1=class_dataset_dict[args.dataset]["class1"],
+            class2=class_dataset_dict[args.dataset]["class2"],
+        )
 
-        # print(f"==OG Model==\nForget Ability: {forg}, Utility: {util}")
-        # logger.log_result(
-        #     args.random_seed, "original", {"forget": forg, "utility": util}
-        # )
+        print(f"==OG Model==\nForget Ability: {forg}, Utility: {util}")
         logger.log_result(
-            args.random_seed, "original", {"utility": acc}
+            args.random_seed, "original", {"forget": forg, "utility": util}
         )
 
     return clean_data
@@ -168,13 +165,13 @@ def poison(clean_data=None):
     )
     poisoned_trainer.train()
     acc, _, _ = poisoned_trainer.evaluate()
-    # forg, util = poisoned_trainer.get_score(
-    #     args.attack_type,
-    #     class1=class_dataset_dict[args.dataset]["class1"],
-    #     class2=class_dataset_dict[args.dataset]["class2"],
-    # )
-    # print(f"==Poisoned Model==\nForget Ability: {forg}, Utility: {util}")
-    logger.log_result(args.random_seed, "poisoned", {"utility": acc})
+    forg, util = poisoned_trainer.get_score(
+        args.attack_type,
+        class1=class_dataset_dict[args.dataset]["class1"],
+        class2=class_dataset_dict[args.dataset]["class2"],
+    )
+    print(f"==Poisoned Model==\nForget Ability: {forg}, Utility: {util}")
+    logger.log_result(args.random_seed, "poisoned", {"forget": forg, "utility": util})
     # print(f"PSR: {poisoned_trainer.calculate_PSR()}")
     return poisoned_data, poisoned_indices, poisoned_model
 
@@ -235,26 +232,26 @@ def unlearn(poisoned_data, poisoned_indices, poisoned_model):
         )
 
     _, _, time_taken = unlearn_trainer.train()
-    if args.unlearning_model == "scrub" or args.unlearning_model == "yaum" or args.unlearning_model == "cacdc":
+    if args.unlearning_model == "scrub" or args.unlearning_model == "yaum" or args.unlearning_model == "cacdc" or args.unlearning_model == "retrain_link":
         if args.attack_type == "edge":
             acc, _, _ = unlearn_trainer.evaluate(is_dr=True)
         else:
             acc, _, _ = unlearn_trainer.evaluate()
     else:
         acc, _, _ = unlearn_trainer.evaluate(is_dr=True)
-    # forg, util = unlearn_trainer.get_score(
-    #     args.attack_type,
-    #     class1=class_dataset_dict[args.dataset]["class1"],
-    #     class2=class_dataset_dict[args.dataset]["class2"],
-    # )
-    # print(
-    #     f"==Unlearned Model==\nForget Ability: {forg}, Utility: {util}, Time Taken: {time_taken}"
-    # )
+        
+    forg, util = unlearn_trainer.get_score(
+        args.attack_type,
+        class1=class_dataset_dict[args.dataset]["class1"],
+        class2=class_dataset_dict[args.dataset]["class2"],
+    )
+    print(
+        f"==Unlearned Model==\nForget Ability: {forg}, Utility: {util}, Time Taken: {time_taken}"
+    )
     logger.log_result(
         args.random_seed,
         args.unlearning_model,
-        # {"forget": forg, "utility": util, "time_taken": time_taken},
-        {"utility": acc, "time_taken": time_taken},
+        {"forget": forg, "utility": util, "time_taken": time_taken},
     )
     print("==UNLEARNING DONE==")
     return unlearn_model

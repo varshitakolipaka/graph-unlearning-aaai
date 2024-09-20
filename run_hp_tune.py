@@ -56,6 +56,7 @@ if __name__ == "__main__":
     parser.add_argument('--yaum', action='store_true', help='Run HP tuning for yaum model')
     parser.add_argument('--contrascent', action='store_true', help='Run HP tuning for yaum model')
     parser.add_argument('--cacdc', action='store_true', help='Run HP tuning for yaum model')
+    parser.add_argument('--retrain_link', action='store_true', help='Run HP tuning for yaum model')
 
     args = parser.parse_args()
     
@@ -64,6 +65,8 @@ if __name__ == "__main__":
         unlearning_models.append('utu')
     if args.retrain:
         unlearning_models.append('retrain')
+    if args.retrain_link:
+        unlearning_models.append('retrain_link')
     if args.scrub:
         unlearning_models.append('scrub')
     if args.contra_2:

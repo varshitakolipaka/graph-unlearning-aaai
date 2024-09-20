@@ -24,7 +24,7 @@ from trainers.base import Trainer
 from trainers.scrub import ScrubTrainer
 from trainers.ssd import SSDTrainer
 from trainers.utu import UtUTrainer
-from trainers.retrain import RetrainTrainer
+from trainers.retrain import RetrainNoUnlinkTrainer, RetrainTrainer
 from trainers.megu import MeguTrainer
 from trainers.grub import GrubTrainer
 from trainers.yaum import YAUMTrainer
@@ -193,6 +193,7 @@ def get_trainer(args, poisoned_model, poisoned_data, optimizer_unlearn) -> Train
         "contrastive": ContrastiveUnlearnTrainer,
         'contra_2': ContrastiveUnlearnTrainer_NEW,
         "retrain": RetrainTrainer,
+        "retrain_link": RetrainNoUnlinkTrainer,
         "scrub": ScrubTrainer,
         "megu": MeguTrainer,
         "ssd": SSDTrainer,

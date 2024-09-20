@@ -363,7 +363,7 @@ def objective(trial, model, data):
     _, _, time_taken = trainer.train()
     
     if args.attack_type != "edge":
-        if args.unlearning_model == 'scrub' or args.unlearning_model == 'yaum' or args.unlearning_model == 'cacdc':
+        if args.unlearning_model == 'scrub' or args.unlearning_model == 'yaum' or args.unlearning_model == 'cacdc' or args.unlearnin_model == 'retrain_link':
             is_dr = False
         else:
             is_dr = True    
