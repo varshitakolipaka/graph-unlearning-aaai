@@ -1,6 +1,7 @@
 import os
+import argparse
 
-def get_script(dataset, unlearning_model, attack, seed, cf=1.0):
+def get_script(dataset, unlearning_model, attack, seed, cf=1.0, df_size=0.5):
     
     dataset_to_df = {
         'Amazon': 10000,
@@ -16,24 +17,29 @@ def get_script(dataset, unlearning_model, attack, seed, cf=1.0):
         return f"python main.py --df_size 0.5 --dataset {dataset} --unlearning_model {unlearning_model} --attack_type label --random_seed {seed} --gnn gcn  --data_dir /scratch/akshit.sinha/data {cf_str}"
     
     if attack == 'random':
-        return f"python main.py --df_size 0.05 --dataset {dataset} --unlearning_model {unlearning_model} --attack_type random --random_seed {seed} --gnn gcn  --data_dir /scratch/akshit.sinha/data {cf_str}"
+        return f"python main.py --df_size {df_size} --dataset {dataset} --unlearning_model {unlearning_model} --attack_type random --random_seed {seed} --gnn gcn  --data_dir /scratch/akshit.sinha/data {cf_str}"
 
     if attack == 'edge':
         return f"python main.py --df_size {dataset_to_df[dataset]} --dataset {dataset} --unlearning_model {unlearning_model} --attack_type edge --request edge --random_seed {seed} --data_dir /scratch/akshit.sinha/data {cf_str}"
+    
+if __name__ == "__main__":
 
-# unlearning_models = ['utu', 'scrub','gnndelete','megu','gif','cacdc', 'contrascent','retrain','yaum']
-unlearning_models = ['scrub', 'megu','cacdc', 'gif', 'utu', 'gnndelete', 'retrain']
-# unlearning_models = ['retrain']
-# attacks = ['edge', 'label']
-attacks = ['random']
-datasets = ['Cora']
-# datasets = ['Amazon']
-cfs = [1.0]
-for dataset in datasets:
-    for seed in range(10):
-        for unlearning_model in unlearning_models:
-            for attack in attacks:
-                for cf in cfs:
-                    script = get_script(dataset, unlearning_model, attack, seed, cf)
-                    # print(script)
-                    os.system(script)
+    parser = argparse.ArgumentParser(description="Run HP tuning for various unlearning models")
+    parser.add_argument('--df_size', type=float, required=True, help='Size of the dataset fraction', default=0.5)
+    args = parser.parse_args()
+    # unlearning_models = ['utu', 'scrub','gnndelete','megu','gif','cacdc', 'contrascent','retrain','yaum']
+    unlearning_models = ['scrub', 'megu','cacdc', 'gif', 'utu', 'gnndelete', 'retrain']
+    # unlearning_models = ['retrain']
+    # attacks = ['edge', 'label']
+    attacks = ['random']
+    datasets = ['Cora']
+    # datasets = ['Amazon']
+    cfs = [1.0]
+    for dataset in datasets:
+        for seed in range(10):
+            for unlearning_model in unlearning_models:
+                for attack in attacks:
+                    for cf in cfs:
+                        script = get_script(dataset, unlearning_model, attack, seed, cf, df_size=args.df_size)
+                        # print(script)
+                        os.system(script)

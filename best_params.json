@@ -610,14 +610,14 @@
         },
         "random": {
             "Cora": {
-                "contrastive_epochs_1": 2,
-                "contrastive_epochs_2": 8,
-                "steps": 6,
-                "unlearn_lr": 0.0008204001898185542,
-                "contrastive_frac": 0.11399548877343595,
-                "ascent_lr": 8.759412685271543e-05,
-                "descent_lr": 0.010088337024833844,
-                "scrubAlpha": 0.019796207099682172
+                "contrastive_epochs_1": 4,
+                "contrastive_epochs_2": 6,
+                "steps": 8,
+                "unlearn_lr": 0.0006868894256205784,
+                "contrastive_frac": 0.1972117509148854,
+                "ascent_lr": 3.841547266053185e-05,
+                "descent_lr": 0.007773960587873309,
+                "scrubAlpha": 0.33582778533643065
             }
         }
     }

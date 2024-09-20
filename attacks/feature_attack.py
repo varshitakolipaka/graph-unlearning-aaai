@@ -1,64 +1,120 @@
 import torch
 import numpy as np
 import random
-from framework.utils import seed_everything
 
-def generate_trigger(size, seed):
-    seed_everything(seed)
-    return torch.ones(size)
+import torch
+import numpy as np
+import random
+from torch_geometric.datasets import Planetoid
+from torch_geometric.nn import GCNConv
+import torch.nn.functional as F
+import copy
 
-def poison_features(data, features):
-    features[-data.poison_tensor.size(0) :] = data.poison_tensor
-    return features
+def apply_poison(data, samples, trigger_size, poisoned_feature_indices=None, target_class=2):
+    poisoned_data = data.clone()
+    if poisoned_feature_indices is None:
+        poisoned_feature_indices = [i for i in range(trigger_size) ]
+    
+    # Ensure samples are in a list for consistent iteration
+    if isinstance(samples, torch.Tensor):
+        samples = samples.tolist()
+    
+    # Apply the trigger and set labels to target_class
+    for node in samples:
+        # Apply the trigger by setting selected features to a high value (e.g., 12345)
+        poisoned_data.x[node, poisoned_feature_indices] = 1  # Adjust this value based on feature scaling
+        poisoned_data.y[node] = target_class          # Change label to target class
+        print(sum(poisoned_data.x[node][:trigger_size]))
 
-def apply_poison(data, poison_indices):
-    for idx in poison_indices:
-        data.x[idx] = poison_features(data, data.x[idx])
+    return poisoned_data, poisoned_feature_indices
 
-def poison_train_mask(data, epsilon, poison_tensor_size, seed, target_class=None):
-    if(target_class==None):
-        target_class=0
-    seed_everything(seed)
-    data= data.cpu()
-    data.poison_tensor= generate_trigger(poison_tensor_size, seed)
-    data.target_class= target_class
 
-    train_indices= data.train_mask.nonzero(as_tuple=False).view(-1)
-    if(epsilon<1):
-        epsilon= int(epsilon*len(train_indices))
+def trigger_attack(data, epsilon, seed, victim_class, target_class=69, trigger_size=10, test_poison_fraction=1):
+
+    data = data.cpu()  # Ensure the data is on the CPU for manipulation
+    data = copy.deepcopy(data)  # Avoid modifying the original data
+    data.victim_class = victim_class
+    data.target_class = target_class
+    
+    # Get all nodes of the victim class
+
+    train_mask = data.train_mask
+    # Get all victim class nodes that are in the train mask
+    class_indices = [i.item() for i in (data.y == victim_class).nonzero(as_tuple=True)[0] if train_mask[i]]
+    num_class_nodes = len(class_indices)
+    print(num_class_nodes)
+
+    if num_class_nodes == 0:
+        raise ValueError(f"No nodes found for victim class {victim_class}.")
+
+    if epsilon <= 1:
+        # Calculate number of nodes to poison based on epsilon (fraction of victim class nodes)
+        num_poison = int(epsilon * num_class_nodes)
+        print(f"Poisoning {num_poison} out of {num_class_nodes} victim class nodes.")
+    else:
+        # If epsilon >1, treat it as the exact number of nodes to poison
+        num_poison = min(int(epsilon), len(class_indices))
+        print(f"Poisoning {num_poison} victim class nodes.")
+
+    # Ensure that we don't poison more nodes than available in the class
+    num_poison = min(num_poison, num_class_nodes)
+
+    # Get train mask and filter only nodes in the victim class and train mask
+    train_mask = data.train_mask
+    train_class_indices = [i for i in class_indices if train_mask[i]]
+
+    if len(train_class_indices) == 0:
+        raise ValueError("No training nodes found in the victim class.")
+
+    # Randomly select nodes to poison from the victim class in the train mask
+    if num_poison < len(train_class_indices):
+        poisoned_nodes = random.sample(train_class_indices, num_poison)
+    else:
+        poisoned_nodes = train_class_indices
+
+
+    poisoned_indices = torch.tensor(poisoned_nodes, dtype=torch.long)
+    
+
+    # Create and apply the trigger to the selected nodes
+    poisoned_data, poisoned_feature_indices = apply_poison(
+        data, 
+        poisoned_indices, 
+        trigger_size, 
+        target_class=target_class
+    )
+    poisoned_data.poisoned_feature_indices = poisoned_feature_indices
+
+    # Now handle test set poisoning (victim class only)
+    test_mask = poisoned_data.test_mask
+    victim_test_indices = [
+        i for i in range(poisoned_data.num_nodes) 
+        if test_mask[i] and poisoned_data.y[i] == victim_class  # Poison only victim class nodes in test
+    ]
+
+    # Apply the poison to a fraction of victim class test nodes
+    num_victim_test_nodes = len(victim_test_indices)
+    print("meow check", num_victim_test_nodes)
+    if num_victim_test_nodes > 0:
+        num_test_poison = num_victim_test_nodes
+        poisoned_test_nodes = random.sample(victim_test_indices, num_test_poison)
+        print(f"Poisoning {len(poisoned_test_nodes)} test nodes out of {num_victim_test_nodes} victim class nodes.")
         
-    poisonable_indices= torch.tensor([i.item() for i in train_indices if data.y[i]!=data.target_class], dtype=torch.long)
+        # Create a binary mask for poisoned test nodes
+        poison_test_mask = torch.zeros(poisoned_data.num_nodes, dtype=torch.bool)
+        poison_test_mask[poisoned_test_nodes] = True
+        
+        # Apply the same trigger to the poisoned test nodes
+        poisoned_data, _ = apply_poison(
+            poisoned_data, 
+            poisoned_test_nodes, 
+            trigger_size, 
+            target_class=target_class,
+            poisoned_feature_indices=poisoned_feature_indices
+        )
+        poisoned_data.poison_test_mask = poison_test_mask
+    else:
+        print("No victim class nodes found in the test set.")
+        poisoned_data.poison_test_mask = torch.zeros(data.num_nodes, dtype=torch.bool)
     
-
-    idx = torch.randperm(poisonable_indices.size(0))[:epsilon]
-    samples = poisonable_indices[idx]
-
-    print(f"Poisoning {len(samples)} samples")
-    
-    apply_poison(data, samples)
-    data.y[samples]=data.target_class
-    data.poisoned_indices = idx
-    return data, samples
-
-def poison_test_mask(data, epsilon, seed):
-    seed_everything(seed)
-    data= data.cpu()
-
-    test_indices= data.test_mask.nonzero(as_tuple=False).view(-1)
-    if(epsilon<1):
-        epsilon= int(epsilon*len(test_indices))
-    poisonable_indices= torch.tensor([i.item() for i in test_indices if data.y[i]!=data.target_class], dtype=torch.long)
-
-    idx = torch.randperm(poisonable_indices.size(0))[:epsilon]
-    samples = poisonable_indices[idx]
-    apply_poison(data, samples)
-    data.y[samples]=data.target_class
-
-    data.test_mask[samples]=False
-    data.poison_test_mask = torch.zeros(len(data.test_mask), dtype=torch.bool)
-    data.poison_test_mask[samples]=True
-
-def trigger_attack(data, epsilon, poison_tensor_size, seed, test_poison_fraction, target_class=None):
-    poisoned_data, poisoned_indicies= poison_train_mask(data, epsilon, poison_tensor_size, seed, target_class)
-    poison_test_mask(data, test_poison_fraction, seed)
-    return poisoned_data, poisoned_indicies
+    return poisoned_data, poisoned_indices
