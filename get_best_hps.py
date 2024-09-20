@@ -3,7 +3,7 @@ import optuna
 from optuna.samplers import TPESampler
 from framework.training_args import parse_args
 
-with open('classes_to_poison_exp.json', 'r') as f:
+with open('classes_to_poison.json', 'r') as f:
     class_dataset_dict = json.load(f)
 
 if __name__=="__main__":

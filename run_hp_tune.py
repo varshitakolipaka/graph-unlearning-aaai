@@ -1,14 +1,18 @@
 import argparse
 import os
 
-def run_hp_tuning(unlearning_models, df_size, random_seed, dataset, attack_type, data_dir, db_name, gnn):
+def run_hp_tuning(unlearning_models, df_size, random_seed, dataset, attack_type, data_dir, db_name, gnn, cf):
+    cf_str = ""
+    if cf < 1.0:
+        cf_str = f"--corrective_frac {cf}"
     
     for model in unlearning_models:
-        if attack_type == "label":
-            cmd = f"python hp_tune.py --unlearning_model {model} --dataset {dataset} --df_size {df_size} --random_seed {random_seed} --data_dir {data_dir} --attack_type {attack_type} --db_name {db_name} --gnn {gnn}"
-            
-            print(f"Running command: {cmd}")
-            os.system(cmd)
+        if attack_type == "label" or attack_type == "random":
+            if model == 'cacdc' or model == 'megu':
+                cmd = f"python hp_tune.py --unlearning_model {model} --dataset {dataset} --df_size {df_size} --random_seed {random_seed} --data_dir {data_dir} --attack_type {attack_type} --db_name {db_name} --gnn {gnn} {cf_str}"
+                
+                print(f"Running command: {cmd}")
+                os.system(cmd)
             
             print(f"Getting best HPs for {model}")
             cmd = f"python get_best_hps.py --unlearning_model {model} --dataset {dataset} --df_size {df_size} --random_seed {random_seed} --data_dir {data_dir} --attack_type {attack_type} --db_name {db_name} --gnn {gnn}"
@@ -16,7 +20,7 @@ def run_hp_tuning(unlearning_models, df_size, random_seed, dataset, attack_type,
             os.system(cmd)
             
         elif attack_type == "edge":
-            cmd = f"python hp_tune.py --unlearning_model {model} --dataset {dataset} --df_size {df_size} --random_seed {random_seed} --data_dir {data_dir} --attack_type {attack_type} --request edge --db_name {db_name} --gnn {gnn}"
+            cmd = f"python hp_tune.py --unlearning_model {model} --dataset {dataset} --df_size {df_size} --random_seed {random_seed} --data_dir {data_dir} --attack_type {attack_type} --request edge --db_name {db_name} --gnn {gnn} {cf_str}"
             
             print(f"Running command: {cmd}")
             os.system(cmd)
@@ -38,6 +42,7 @@ if __name__ == "__main__":
     parser.add_argument('--data_dir', type=str, required=True, help='Directory containing the data')
     parser.add_argument('--gnn', type=str, required=True, help='GNN model to use')
     parser.add_argument('--db_name', type=str, default=None, help='Database name (only for contra_2 model)')
+    parser.add_argument('--cf', type=float, default=1.0, help='Corrective fraction')
     
     parser.add_argument('--contra_2', action='store_true', help='Run HP tuning for contra_2 model')
     parser.add_argument('--contrastive', action='store_true', help='Run HP tuning for contra_2 model')
@@ -80,4 +85,4 @@ if __name__ == "__main__":
     if args.cacdc:
         unlearning_models.append('cacdc')
     
-    run_hp_tuning(unlearning_models, args.df_size, args.random_seed, args.dataset, args.attack_type, args.data_dir, args.db_name, args.gnn)
+    run_hp_tuning(unlearning_models, args.df_size, args.random_seed, args.dataset, args.attack_type, args.data_dir, args.db_name, args.gnn, args.cf)
