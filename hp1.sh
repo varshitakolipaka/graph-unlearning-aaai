@@ -1,8 +1,11 @@
-python run_hp_tune.py --dataset CS --df_size 0.5 --random_seed 1 --data_dir /scratch/akshit.sinha/data --attack_type label --db_name contrascent_eval --gnn gcn --contra_2
+# python run_hp_tune.py --dataset CS --df_size 0.5 --random_seed 1 --data_dir /scratch/akshit.sinha/data --attack_type label --db_name contrascent_eval --gnn gcn --contra_2
 
-python run_hp_tune.py --dataset Cora --df_size 0.5 --random_seed 1 --data_dir /scratch/akshit.sinha/data --attack_type label --db_name contrascent_eval --gnn gcn --contra_2
+python run_hp_tune.py --dataset Cora --df_size 0.5 --random_seed 1 --data_dir /scratch/akshit.sinha/data --attack_type label --db_name new_exp --gnn gcn --cacdc --yaum --megu --scrub
 
-python run_hp_tune.py --dataset Amazon --df_size 0.5 --random_seed 1 --data_dir /scratch/akshit.sinha/data --attack_type label --db_name contrascent_eval --gnn gcn --contra_2
+python eval_script.py
+sh get_stats.sh
+
+# python run_hp_tune.py --dataset Amazon --df_size 0.5 --random_seed 1 --data_dir /scratch/akshit.sinha/data --attack_type label --db_name contrascent_eval --gnn gcn --contra_2
 
 # python run_hp_tune.py --dataset CS --df_size 0.5 --random_seed 1 --data_dir /scratch/akshit.sinha/data --attack_type label --db_name final_hp_val_acc --gnn gcn --contra_2 --utu --megu
 

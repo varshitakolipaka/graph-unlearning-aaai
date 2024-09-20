@@ -506,6 +506,72 @@ class ContrastiveAscentNoLinkTrainer(Trainer):
             neg_dist[batch_indices] = batch_neg_dist.to(neg_dist.device)
 
         return pos_dist, neg_dist
+    
+    def run_sage_batch_edge(self, batch_size=64):
+        # attacked edge index contains all the edges that were maliciously added
+        num_masks = len(self.data.train_mask)
+
+        sample_indices = torch.where(self.data.sample_mask)[0]
+        num_samples = len(sample_indices)
+
+        # Batchwise positive and negative samples created
+        total_loss = 0
+        for i in range(0, num_samples, batch_size):
+            batch_indices = sample_indices[i : i + batch_size]
+            batch_size = len(batch_indices)
+
+            batch_positive_samples = [
+                list(
+                    self.subset_dict[idx.item()] - self.negative_sample_dict[idx.item()]
+                )
+                for idx in batch_indices
+            ]
+            batch_negative_samples = [
+                list(self.negative_sample_dict[idx.item()]) for idx in batch_indices
+            ]
+            
+            # Pad and create dense batches
+            max_pos = max(len(s) for s in batch_positive_samples)
+            max_neg = max(len(s) for s in batch_negative_samples)
+
+            batch_pos = torch.stack(
+                [
+                    torch.tensor(s + [0] * (max_pos - len(s)))
+                    for s in batch_positive_samples
+                ]
+            )
+            batch_neg = torch.stack(
+                [
+                    torch.tensor(s + [0] * (max_neg - len(s)))
+                    for s in batch_negative_samples
+                ]
+            )
+            
+            self.mask_pos = torch.stack(
+                [
+                    torch.tensor([1] * len(s) + [0] * (max_pos - len(s)))
+                    for s in batch_positive_samples
+                ]
+            ).float().unsqueeze(-1).to(device)
+
+            self.mask_neg = torch.stack(
+                [
+                    torch.tensor([1] * len(s) + [0] * (max_neg - len(s)))
+                    for s in batch_negative_samples
+                ]
+            ).float().unsqueeze(-1).to(device)
+
+            try:
+                anchor_embs = self.embeddings[batch_indices].unsqueeze(1)
+                pos_embs = self.embeddings[batch_pos] * self.mask_pos
+                neg_embs = self.embeddings[batch_neg] * self.mask_neg
+                batch_loss = self.sage_loss(anchor_embs, pos_embs, neg_embs)
+            except:
+                continue
+            
+            total_loss += batch_loss
+
+        return total_loss
 
     @time_it
     def get_model_embeddings(self):
@@ -597,11 +663,12 @@ class ContrastiveAscentNoLinkTrainer(Trainer):
                     self.data.x, self.data.edge_index
                 )
                 if i < args.contrastive_epochs_1:
-                    pos_dist, neg_dist = self.get_distances_edge()
-                    lmda = 0
-                    loss = self.unlearn_loss(
-                        pos_dist, neg_dist, margin=args.contrastive_margin, lmda=lmda
-                    )
+                    # pos_dist, neg_dist = self.get_distances_edge()
+                    # lmda = 0
+                    # loss = self.unlearn_loss(
+                    #     pos_dist, neg_dist, margin=args.contrastive_margin, lmda=lmda
+                    # )
+                    loss = self.run_sage_batch_edge()
                     
                     optimizer.zero_grad()
                     loss.backward()
@@ -648,10 +715,10 @@ class ContrastiveAscentNoLinkTrainer(Trainer):
         start_time = time.time()
         if self.args.request == "node":
             self.train_node()
-            is_dr = True
+            is_dr = False
         elif self.args.request == "edge":
             self.train_edge()
-            is_dr = False
+            is_dr = True
         end_time = time.time()
         train_acc, msc_rate, f1 = self.evaluate(is_dr=is_dr, use_val=True)
 

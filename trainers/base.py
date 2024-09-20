@@ -9,7 +9,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 
-
+import random
 def plot_loss_vs_epochs(loss_values):
     """
     Plots a line graph of loss vs. epochs using Seaborn.
@@ -178,28 +178,6 @@ class Trainer:
         )
         return misclassification_rate
 
-    # def evaluate(self, is_dr=False):
-    #     self.model.eval()
-
-    #     with torch.no_grad():
-    #         if(is_dr):
-    #             z = F.log_softmax(self.model(self.data.x, self.data.edge_index[:, self.data.dr_mask]), dim=1)
-    #         else:
-    #             z = F.log_softmax(self.model(self.data.x, self.data.edge_index), dim=1)
-    #         loss = F.nll_loss(z[self.data.test_mask], self.data.y[self.data.test_mask]).cpu().item()
-    #         pred = torch.argmax(z[self.data.test_mask], dim=1).cpu()
-    #         dt_acc = accuracy_score(self.data.y[self.data.test_mask].cpu(), pred)
-    #         dt_f1 = f1_score(self.data.y[self.data.test_mask].cpu(), pred, average='micro')
-    #         msc_rate = self.misclassification_rate(self.data.y[self.data.test_mask].cpu(), pred)
-    #         # auc = roc_auc_score(self.data.y[self.data.test_mask].cpu(), F.softmax(z[self.data.test_mask], dim=1).cpu(), multi_class='ovo')
-
-    #     # print("AUC: ",auc)
-
-    #     self.true = self.data.y[self.data.test_mask].cpu()
-    #     self.pred = pred
-
-    #     return dt_acc, msc_rate, dt_f1
-
     def evaluate(self, is_dr=False, use_val=False):
         self.model.eval()
 
@@ -232,11 +210,13 @@ class Trainer:
         z = self.model(self.data.x, self.data.edge_index)
         pred = torch.argmax(z[self.data.poison_test_mask], dim=1).cpu()
         psr = sum(pred == self.data.target_class) / len(pred)
+        print(pred)
         return psr.item()
 
     def get_score(self, attack_type, class1=None, class2=None):
         forget_ability = None
         utility = None
+        print(attack_type)
         if attack_type == "label" or attack_type == "edge":
             forget_ability, utility = self.subset_acc(class1, class2)
         elif attack_type == "trigger":
@@ -278,3 +258,108 @@ class Trainer:
     def load_best(self):
         self.model.load_state_dict(self.best_state_dict)
         return self.best_val_score
+
+import time
+import torch
+import torch.nn.functional as F
+from sklearn.metrics import accuracy_score, roc_auc_score
+from tqdm import trange
+import random
+
+device = torch.device("cuda") if torch.cuda.is_available() else torch.device("cpu")
+
+
+class EdgeTrainer:
+    def __init__(self, model, data, optimizer, num_epochs=50):
+        """
+        Initializes the EdgeTrainer.
+
+        Parameters:
+        - model: The GNN model.
+        - data: The graph data.
+        - optimizer: The optimizer for training.
+        - num_epochs: Number of training epochs.
+        """
+        self.model = model.to(device)
+        self.data = data.to(device)
+        self.optimizer = optimizer
+        self.num_epochs = num_epochs
+
+        # Add link prediction-specific attributes to the data object
+        self.data.neg_edge_index = self.generate_negative_edges()
+        self.data.train_pos_edge_index = data.edge_index  # Or a subset of edge_index for training edges
+
+    def generate_negative_edges(self):
+        """
+        Generates negative samples by randomly sampling node pairs that are not connected.
+        """
+        num_nodes = self.data.num_nodes
+        neg_edges = []
+        existing_edges = set((u.item(), v.item()) for u, v in self.data.edge_index.t())
+
+        while len(neg_edges) < len(self.data.edge_index.t()):
+            u = random.randint(0, num_nodes - 1)
+            v = random.randint(0, num_nodes - 1)
+            if u != v and (u, v) not in existing_edges and (v, u) not in existing_edges:
+                neg_edges.append([u, v])
+
+        neg_edges = torch.tensor(neg_edges, dtype=torch.long).t()
+        return neg_edges.to(device)
+
+    def get_edge_labels(self, pos_edge_index, neg_edge_index):
+        """
+        Creates labels for positive and negative edges.
+
+        Parameters:
+        - pos_edge_index: Tensor of positive edge indices.
+        - neg_edge_index: Tensor of negative edge indices.
+
+        Returns:
+        - labels: Tensor of labels (1 for positive, 0 for negative).
+        """
+        pos_labels = torch.ones(pos_edge_index.size(1), dtype=torch.float)
+        neg_labels = torch.zeros(neg_edge_index.size(1), dtype=torch.float)
+        labels = torch.cat([pos_labels, neg_labels]).to(device)
+        return labels
+
+    def train(self):
+        losses = []
+
+        # Use the modified data object to get positive and negative edges
+        pos_edge_index = self.data.train_pos_edge_index  # Separate train positive edges
+        neg_edge_index = self.data.neg_edge_index  # Negative edge index stored in the data object
+
+        self.labels = self.get_edge_labels(pos_edge_index, neg_edge_index)
+
+        # Combine positive and negative edges
+        self.edge_index = torch.cat([pos_edge_index, neg_edge_index], dim=1)
+
+        st = time.time()
+        for epoch in trange(self.num_epochs, desc='Edge Prediction Epoch'):
+            self.model.train()
+            self.optimizer.zero_grad()
+            z = self.model(self.data.x, self.data.edge_index)
+            # Compute scores for all edges
+            scores = (z[self.edge_index[0]] * z[self.edge_index[1]]).sum(dim=1)
+            loss = F.binary_cross_entropy_with_logits(scores, self.labels)
+            loss.backward()
+            self.optimizer.step()
+            losses.append(loss.item())
+
+        time_taken = time.time() - st
+        eval_metrics = self.evaluate()
+        print(f'Edge Prediction - Loss: {np.mean(losses)}, AUC-ROC: {eval_metrics["auc_roc"]}, Accuracy: {eval_metrics["accuracy"]}')
+        return eval_metrics, time_taken
+
+    def evaluate(self):
+        edge_index = self.edge_index
+        labels = self.labels
+        self.model.eval()
+        with torch.no_grad():
+            z = self.model(self.data.x, self.data.edge_index)
+            scores = (z[edge_index[0]] * z[edge_index[1]]).sum(dim=1)
+            preds = torch.sigmoid(scores)
+            preds_binary = (preds > 0.5).float()
+            accuracy = accuracy_score(labels.cpu(), preds_binary.cpu())
+            auc_roc = roc_auc_score(labels.cpu(), preds.cpu())
+        return {'accuracy': accuracy, 'auc_roc': auc_roc}

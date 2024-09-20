@@ -18,15 +18,14 @@ from logger import Logger
 
 args = parse_args()
 
-logger = Logger(args, f"run_logs_{args.attack_type}.json")
-logger.log_arguments(args)
-
 utils.seed_everything(args.random_seed)
 device = torch.device("cuda") if torch.cuda.is_available() else torch.device("cpu")
 
 with open("classes_to_poison.json", "r") as f:
     class_dataset_dict = json.load(f)
 
+logger = Logger(args, f"run_logs_{args.attack_type}_{class_dataset_dict[args.dataset]['class1']}_{class_dataset_dict[args.dataset]['class2']}")
+logger.log_arguments(args)
 
 def train(load=False):
     if load:
@@ -84,10 +83,10 @@ def train(load=False):
         print(f"==OG Model==\nForget Ability: {forg}, Utility: {util}")
     # save the clean model
     os.makedirs(args.data_dir, exist_ok=True)
-    torch.save(
-        clean_model,
-        f"{args.data_dir}/{args.gnn}_{args.dataset}_{args.attack_type}_{args.df_size}_{args.random_seed}_clean_model.pt",
-    )
+    # torch.save(
+    #     clean_model,
+    #     f"{args.data_dir}/{args.gnn}_{args.dataset}_{args.attack_type}_{args.df_size}_{args.random_seed}_clean_model.pt",
+    # )
 
     return clean_data
 
@@ -148,6 +147,7 @@ def poison(clean_data=None):
         poisoned_indices = torch.randperm(clean_data.num_nodes)[
             : int(clean_data.num_nodes * args.df_size)
         ]
+        poisoned_data.poisoned_nodes = poisoned_indices
     elif args.attack_type == "trigger":
         poisoned_data, poisoned_indices = trigger_attack(
             clean_data,
@@ -180,15 +180,15 @@ def poison(clean_data=None):
     # save the poisoned data and model and indices to np file
     os.makedirs(args.data_dir, exist_ok=True)
 
-    torch.save(
-        poisoned_model,
-        f"{args.data_dir}/{args.gnn}_{args.dataset}_{args.attack_type}_{args.df_size}_{args.random_seed}_poisoned_model.pt",
-    )
+    # torch.save(
+    #     poisoned_model,
+    #     f"{args.data_dir}/{args.gnn}_{args.dataset}_{args.attack_type}_{args.df_size}_{args.random_seed}_poisoned_model.pt",
+    # )
 
-    torch.save(
-        poisoned_data,
-        f"{args.data_dir}/{args.dataset}_{args.attack_type}_{args.df_size}_{args.random_seed}_poisoned_data.pt",
-    )
+    # torch.save(
+    #     poisoned_data,
+    #     f"{args.data_dir}/{args.dataset}_{args.attack_type}_{args.df_size}_{args.random_seed}_poisoned_data.pt",
+    # )
 
     forg, util = poisoned_trainer.get_score(
         args.attack_type,
@@ -289,8 +289,8 @@ hp_tuning_params_dict = {
         "scrubAlpha": (1e-6, 10, "log"),
     },
     "cacdc": {
-        "contrastive_epochs_1": (0, 5, "int"),
-        "contrastive_epochs_2": (0, 15, "int"),
+        "contrastive_epochs_1": (1, 5, "int"),
+        "contrastive_epochs_2": (1, 15, "int"),
         "steps": (1, 15, "int"),
         # "maximise_epochs": (5, 30, "int"),
         "unlearn_lr": (1e-5, 1e-1, "log"),
@@ -362,10 +362,13 @@ def objective(trial, model, data):
 
     _, _, time_taken = trainer.train()
     
-    if args.unlearning_model == 'scrub' or args.unlearning_model == 'yaum' or args.unlearning_model == 'retrain':
-        is_dr = True
+    if args.attack_type != "edge":
+        if args.unlearning_model == 'scrub' or args.unlearning_model == 'yaum' or args.unlearning_model == 'cacdc':
+            is_dr = False
+        else:
+            is_dr = True    
     else:
-        is_dr = False    
+        is_dr = True
     
     obj = trainer.validate(is_dr=is_dr)
     
@@ -378,8 +381,16 @@ def objective(trial, model, data):
 if __name__ == "__main__":
     print("\n\n\n")
     print(args.dataset, args.attack_type)
-    # clean_data = train()
-    poisoned_data, poisoned_indices, poisoned_model = poison()
+    # clean_data = train(load=True)
+    clean_data = train()
+    poisoned_data, poisoned_indices, poisoned_model = poison(clean_data)
+    
+    if args.corrective_frac < 1:
+        print("==POISONING CORRECTIVE==")
+        print(f"No. of poisoned nodes: {len(poisoned_indices)}")
+        poisoned_indices = utils.sample_poison_data(poisoned_data, args.corrective_frac)
+        poisoned_data.poisoned_nodes = poisoned_indices
+        print(f"No. of poisoned nodes after corrective: {len(poisoned_indices)}")
 
     utils.find_masks(
         poisoned_data, poisoned_indices, args, attack_type=args.attack_type
@@ -421,7 +432,7 @@ if __name__ == "__main__":
     study = optuna.create_study(
         sampler=TPESampler(seed=42),
         direction="maximize",
-        study_name=f"{args.gnn}_{args.dataset}_{args.attack_type}_{args.df_size}_{args.unlearning_model}_{args.random_seed}",
+        study_name=f"{args.gnn}_{args.dataset}_{args.attack_type}_{args.df_size}_{args.unlearning_model}_{args.random_seed}_{class_dataset_dict[args.dataset]['class1']}_{class_dataset_dict[args.dataset]['class2']}",
         load_if_exists=True,
         storage=f"sqlite:///hp_tuning/{args.db_name}.db",
     )

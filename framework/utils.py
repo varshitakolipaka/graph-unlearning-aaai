@@ -11,7 +11,6 @@ import matplotlib.pyplot as plt
 import seaborn as sns
 from sklearn.manifold import TSNE
 
-
 from trainers.contrascent import ContrastiveAscentTrainer
 from trainers.contrascent_no_link import ContrastiveAscentNoLinkTrainer
 from trainers.contrast import ContrastiveUnlearnTrainer
@@ -346,6 +345,5 @@ def get_closest_classes(classes, counts):
             pairwise_diffs.append((classes[i], classes[j], abs(counts[i] - counts[j])))
 
     pairwise_diffs = sorted(pairwise_diffs, key=lambda x: x[2])
-
     return pairwise_diffs
 

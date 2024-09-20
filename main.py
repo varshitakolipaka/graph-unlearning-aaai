@@ -218,7 +218,7 @@ def unlearn(poisoned_data, poisoned_indices, poisoned_model):
         unlearn_trainer = utils.get_trainer(
             args, unlearn_model, poisoned_data, optimizer_unlearn
         )
-    else:
+    else: 
         unlearn_model = utils.get_model(
             args, poisoned_data.num_features, args.hidden_dim, poisoned_data.num_classes
         )

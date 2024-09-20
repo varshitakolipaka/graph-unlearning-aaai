@@ -19,6 +19,7 @@ import torch.nn.functional as F
 import pandas as pd
 import seaborn as sns
 import matplotlib.pyplot as plt
+import seaborn as sns
 from torch_geometric.utils import k_hop_subgraph
 
 args = parse_args()
@@ -253,9 +254,10 @@ def experiment1(clean_model, poisoned_model, k_hop):
     df_ori_logits= ori_logits[subset_filtered]
     df_poi_logits = poi_logits[subset_filtered]
     diff_logits = df_poi_logits - df_ori_logits
+    print(diff_logits.size())
     mean_diff = diff_logits.mean(dim=1)
-    plt.hist(mean_diff.detach().cpu().numpy(), width=0.1, edgecolor='black', density=True, alpha=0.7, stacked=True, label=f'{k_hop}-hop Neighborhood')
-
+    print(mean_diff)
+    sns.histplot(mean_diff.detach().cpu().numpy(), label=f'{k_hop}-hop', legend=True, stat='density', binwidth=0.05)
     # take the complement of subset
     num_nodes = poisoned_data.num_nodes  # Total number of nodes in the graph
     all_nodes = torch.arange(num_nodes, device=subset.device)
@@ -267,7 +269,9 @@ def experiment1(clean_model, poisoned_model, k_hop):
     dr_poi_logits = poi_logits[complement_subset_filtered]
     diff_logits = dr_poi_logits - dr_ori_logits
     mean_diff = diff_logits.mean(dim=1)
-    plt.hist(mean_diff.detach().cpu().numpy(), width=0.1, edgecolor='black', alpha = 0.5, density=True, stacked=True, label='Rest of the graph')
+    
+    sns.histplot(mean_diff.detach().cpu().numpy(), label='rest', legend=True, stat='density', binwidth=0.05)
+    
     plt.xlabel('Mean Difference in Logits')
     plt.ylabel('Normalized Frequency')
     plt.title('Histogram of Mean Difference in Logits (Poisoned - Original)')
@@ -278,6 +282,44 @@ def experiment1(clean_model, poisoned_model, k_hop):
     plt.close()
 
     print(subset_filtered.size(), complement_subset_filtered.size())
+    
+def experiment4(clean_model, poisoned_model, mask=None):
+    #create a directory named plots
+    if not os.path.exists('plots'):
+        os.makedirs('plots')
+    clean_model.eval()
+    ori_logits = clean_model(clean_data.x, clean_data.edge_index)
+    poisoned_model.eval()
+    poi_logits = poisoned_model(poisoned_data.x, poisoned_data.edge_index)
+    
+    palette = sns.color_palette("hsv", clean_data.num_classes)
+    
+    class_indices = {}
+    for i in range(clean_data.num_classes):
+        if i != class_dataset_dict[args.dataset]["class1"] and i != class_dataset_dict[args.dataset]["class2"]:
+            continue
+        class_indices[i] = (clean_data.y == i).nonzero().flatten()
+        
+        # remove indices not in mask
+        if mask is not None:
+            class_indices[i] = class_indices[i][mask[class_indices[i]]]
+        
+        df_ori_logits = ori_logits[class_indices[i]]
+        df_poi_logits = poi_logits[class_indices[i]]
+        
+        diff_logits = df_poi_logits - df_ori_logits
+        
+        mean_diff = diff_logits.mean(dim=1)
+        
+        sns.histplot(mean_diff.detach().cpu().numpy(), label=f'class-{i}', legend=True, stat='density', binwidth=0.05, color=palette[i])
+    
+    plt.xlabel('Mean Difference in Logits')
+    plt.ylabel('Normalized Frequency')
+    plt.title('Histogram of Mean Difference in Logits (Poisoned - Original) for each class')
+    plt.xlim(-2, 2)
+    plt.legend()
+    plt.savefig(f'plots/Classwise - Original vs Poisoned Logits.png')
+    plt.show()
 
 def experiment2(poisoned_data, poisoned_indices, poisoned_model):
     models = ["gnndelete", "gif", "utu", "contrastive", "retrain", "scrub", "megu", "yaum", 'contrascent', 'cacdc']
@@ -462,8 +504,11 @@ if __name__ == "__main__":
         setattr(args, key, value)
     
     # experiment1(clean_model, poisoned_model, k_hop = 1)
+    # experiment1(clean_model, poisoned_model, k_hop = 2)
+    # experiment1(clean_model, poisoned_model, k_hop = 3)
     # experiment2(poisoned_data, poisoned_indices, poisoned_model)
-    experiment3(poisoned_data, poisoned_indices, poisoned_model)
+    # experiment3(poisoned_data, poisoned_indices, poisoned_model)
+    experiment4(clean_model, poisoned_model, clean_data.test_mask)
 
     # utils.plot_embeddings(
     #     args,
