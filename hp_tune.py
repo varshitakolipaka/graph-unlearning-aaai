@@ -206,6 +206,11 @@ hp_tuning_params_dict = {
         "weight_decay": (1e-5, 1e-1, "log"),
         "unlearning_epochs": (600, 1000, "int"),
     },
+    "retrain_link": {
+        "unlearn_lr": (1e-5, 1e-1, "log"),
+        "weight_decay": (1e-5, 1e-1, "log"),
+        "unlearning_epochs": (600, 1000, "int"),
+    },
     "gnndelete": {
         "unlearn_lr": (1e-5, 1e-1, "log"),
         "weight_decay": (1e-5, 1e-1, "log"),
@@ -363,7 +368,7 @@ def objective(trial, model, data):
     _, _, time_taken = trainer.train()
     
     if args.attack_type != "edge":
-        if args.unlearning_model == 'scrub' or args.unlearning_model == 'yaum' or args.unlearning_model == 'cacdc' or args.unlearnin_model == 'retrain_link':
+        if args.unlearning_model == 'scrub' or args.unlearning_model == 'yaum' or args.unlearning_model == 'cacdc' or args.unlearning_model == 'retrain_link':
             is_dr = False
         else:
             is_dr = True    
@@ -381,9 +386,9 @@ def objective(trial, model, data):
 if __name__ == "__main__":
     print("\n\n\n")
     print(args.dataset, args.attack_type)
-    # clean_data = train(load=True)
-    clean_data = train()
-    poisoned_data, poisoned_indices, poisoned_model = poison(clean_data)
+    clean_data = train(load=True)
+    # clean_data = train()
+    poisoned_data, poisoned_indices, poisoned_model = poison()
     
     if args.corrective_frac < 1:
         print("==POISONING CORRECTIVE==")

@@ -261,10 +261,10 @@ if __name__ == "__main__":
     print("\n\n\n")
 
     print(args.dataset, args.attack_type)
-    # clean_data = train(load=True)
-    clean_data = train()
+    clean_data = train(load=True)
+    # clean_data = train()
 
-    poisoned_data, poisoned_indices, poisoned_model = poison(clean_data)
+    poisoned_data, poisoned_indices, poisoned_model = poison()
 
     # load best params file
     with open("best_params.json", "r") as f:

@@ -620,5 +620,14 @@
                 "scrubAlpha": 0.019796207099682172
             }
         }
+    },
+    "retrain_link": {
+        "label": {
+            "Cora": {
+                "unlearn_lr": 0.045493617394866945,
+                "weight_decay": 3.0857971657019546e-05,
+                "unlearning_epochs": 661
+            }
+        }
     }
 }
