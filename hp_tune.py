@@ -24,9 +24,6 @@ device = torch.device("cuda") if torch.cuda.is_available() else torch.device("cp
 with open("classes_to_poison.json", "r") as f:
     class_dataset_dict = json.load(f)
 
-logger = Logger(args, f"run_logs_{args.attack_type}_{class_dataset_dict[args.dataset]['class1']}_{class_dataset_dict[args.dataset]['class2']}")
-logger.log_arguments(args)
-
 def train(load=False):
     if load:
         clean_data = utils.get_original_data(args.dataset)
@@ -289,18 +286,18 @@ hp_tuning_params_dict = {
         "scrubAlpha": (1e-6, 10, "log"),
     },
     "cacdc": {
-        "contrastive_epochs_1": (1, 5, "int"),
+        "contrastive_epochs_1": (1, 3, "int"),
         "contrastive_epochs_2": (1, 15, "int"),
-        "steps": (1, 15, "int"),
+        "steps": (1, 10, "int"),
         # "maximise_epochs": (5, 30, "int"),
-        "unlearn_lr": (1e-5, 1e-1, "log"),
+        "unlearn_lr": (1e-4, 1e-1, "log"),
         # "contrastive_margin": (1, 10, "log"),
         # "contrastive_lambda": (0.0, 1.0, "float"),
-        "contrastive_frac": (0.01, 0.2, "float"),
+        "contrastive_frac": (0.02, 0.1, "float"),
         # "k_hop": (1, 2, "int"),
-        "ascent_lr": (1e-5, 1e-3, "log"),
-        "descent_lr": (1e-5, 1e-1, "log"),
-        "scrubAlpha": (1e-6, 10, "log"),
+        "ascent_lr": (1e-6, 1e-2, "log"),
+        "descent_lr": (1e-2, 1e-1, "log"),
+        # "scrubAlpha": (1e-6, 10, "log"),
     },
     "utu": {},
     "scrub": {
@@ -316,7 +313,7 @@ hp_tuning_params_dict = {
         # 'kd_T': (1, 10, "float"),
         "ascent_lr": (1e-5, 1e-3, "log"),
         "descent_lr": (1e-5, 1e-1, "log"),
-        "scrubAlpha": (1e-6, 10, "log"),
+        # "scrubAlpha": (1e-6, 10, "log"),
         # "msteps": (10, 100, "int"),
     },
     "megu": {
@@ -362,15 +359,7 @@ def objective(trial, model, data):
 
     _, _, time_taken = trainer.train()
     
-    if args.attack_type != "edge":
-        if args.unlearning_model == 'scrub' or args.unlearning_model == 'yaum' or args.unlearning_model == 'cacdc':
-            is_dr = False
-        else:
-            is_dr = True    
-    else:
-        is_dr = True
-    
-    obj = trainer.validate(is_dr=is_dr)
+    obj = trainer.validate(is_dr=True)
     
     trial.set_user_attr("time_taken", time_taken)
 
@@ -381,9 +370,9 @@ def objective(trial, model, data):
 if __name__ == "__main__":
     print("\n\n\n")
     print(args.dataset, args.attack_type)
-    # clean_data = train(load=True)
-    clean_data = train()
-    poisoned_data, poisoned_indices, poisoned_model = poison(clean_data)
+    clean_data = train(load=True)
+    # clean_data = train()
+    poisoned_data, poisoned_indices, poisoned_model = poison()
     
     if args.corrective_frac < 1:
         print("==POISONING CORRECTIVE==")

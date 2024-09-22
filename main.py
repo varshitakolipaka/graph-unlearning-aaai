@@ -22,11 +22,15 @@ args = parse_args()
 utils.seed_everything(args.random_seed)
 device = torch.device("cuda") if torch.cuda.is_available() else torch.device("cpu")
 
-with open('classes_to_poison.json', 'r') as f:
+with open("classes_to_poison.json", "r") as f:
     class_dataset_dict = json.load(f)
 
-logger = Logger(args, f"run_logs_{args.attack_type}_{args.df_size}_{class_dataset_dict[args.dataset]['class1']}_{class_dataset_dict[args.dataset]['class2']}.json")
+logger = Logger(
+    args,
+    f"run_logs_{args.attack_type}_{args.df_size}_{class_dataset_dict[args.dataset]['class1']}_{class_dataset_dict[args.dataset]['class2']}",
+)
 logger.log_arguments(args)
+
 
 def train(load=False):
     if load:
@@ -82,20 +86,20 @@ def train(load=False):
 
     if args.attack_type != "trigger":
         acc, _, _ = clean_trainer.evaluate()
-        
-        # forg, util = clean_trainer.get_score(
-        #     args.attack_type,
-        #     class1=class_dataset_dict[args.dataset]["class1"],
-        #     class2=class_dataset_dict[args.dataset]["class2"],
-        # )
 
-        # print(f"==OG Model==\nForget Ability: {forg}, Utility: {util}")
-        # logger.log_result(
-        #     args.random_seed, "original", {"forget": forg, "utility": util}
-        # )
-        logger.log_result(
-            args.random_seed, "original", {"utility": acc}
+        forg, util = clean_trainer.get_score(
+            args.attack_type,
+            class1=class_dataset_dict[args.dataset]["class1"],
+            class2=class_dataset_dict[args.dataset]["class2"],
         )
+
+        print(f"==OG Model==\nForget Ability: {forg}, Utility: {util}")
+        logger.log_result(
+            args.random_seed, "original", {"forget": forg, "utility": util}
+        )
+        # logger.log_result(
+        #     args.random_seed, "original", {"utility": acc}
+        # )
 
     return clean_data
 
@@ -141,7 +145,11 @@ def poison(clean_data=None):
     print("==POISONING==")
     if args.attack_type == "label":
         poisoned_data, poisoned_indices = label_flip_attack(
-            clean_data, args.df_size, args.random_seed, class_dataset_dict[args.dataset]["class1"], class_dataset_dict[args.dataset]["class2"]
+            clean_data,
+            args.df_size,
+            args.random_seed,
+            class_dataset_dict[args.dataset]["class1"],
+            class_dataset_dict[args.dataset]["class2"],
         )
     elif args.attack_type == "edge":
         poisoned_data, poisoned_indices = edge_attack_specific_nodes(
@@ -168,13 +176,14 @@ def poison(clean_data=None):
     )
     poisoned_trainer.train()
     acc, _, _ = poisoned_trainer.evaluate()
-    # forg, util = poisoned_trainer.get_score(
-    #     args.attack_type,
-    #     class1=class_dataset_dict[args.dataset]["class1"],
-    #     class2=class_dataset_dict[args.dataset]["class2"],
-    # )
-    # print(f"==Poisoned Model==\nForget Ability: {forg}, Utility: {util}")
-    logger.log_result(args.random_seed, "poisoned", {"utility": acc})
+    forg, util = poisoned_trainer.get_score(
+        args.attack_type,
+        class1=class_dataset_dict[args.dataset]["class1"],
+        class2=class_dataset_dict[args.dataset]["class2"],
+    )
+    print(f"==Poisoned Model==\nForget Ability: {forg}, Utility: {util}")
+    logger.log_result(args.random_seed, "poisoned", {"utility": acc, "forget": forg})
+    # logger.log_result(args.random_seed, "poisoned", {"utility": acc})
     # print(f"PSR: {poisoned_trainer.calculate_PSR()}")
     return poisoned_data, poisoned_indices, poisoned_model
 
@@ -235,26 +244,21 @@ def unlearn(poisoned_data, poisoned_indices, poisoned_model):
         )
 
     _, _, time_taken = unlearn_trainer.train()
-    if args.unlearning_model == "scrub" or args.unlearning_model == "yaum" or args.unlearning_model == "cacdc":
-        if args.attack_type == "edge":
-            acc, _, _ = unlearn_trainer.evaluate(is_dr=True)
-        else:
-            acc, _, _ = unlearn_trainer.evaluate()
-    else:
-        acc, _, _ = unlearn_trainer.evaluate(is_dr=True)
-    # forg, util = unlearn_trainer.get_score(
-    #     args.attack_type,
-    #     class1=class_dataset_dict[args.dataset]["class1"],
-    #     class2=class_dataset_dict[args.dataset]["class2"],
-    # )
-    # print(
-    #     f"==Unlearned Model==\nForget Ability: {forg}, Utility: {util}, Time Taken: {time_taken}"
-    # )
+    acc, _, _ = unlearn_trainer.evaluate(is_dr=True)
+    print(acc)
+    forg, util = unlearn_trainer.get_score(
+        args.attack_type,
+        class1=class_dataset_dict[args.dataset]["class1"],
+        class2=class_dataset_dict[args.dataset]["class2"],
+    )
+    print(
+        f"==Unlearned Model==\nForget Ability: {forg}, Utility: {util}, Time Taken: {time_taken}"
+    )
     logger.log_result(
         args.random_seed,
         args.unlearning_model,
-        # {"forget": forg, "utility": util, "time_taken": time_taken},
-        {"utility": acc, "time_taken": time_taken},
+        {"forget": forg, "utility": util, "time_taken": time_taken},
+        # {"utility": acc, "time_taken": time_taken},
     )
     print("==UNLEARNING DONE==")
     return unlearn_model
@@ -264,10 +268,10 @@ if __name__ == "__main__":
     print("\n\n\n")
 
     print(args.dataset, args.attack_type)
-    # clean_data = train(load=True)
-    clean_data = train()
+    clean_data = train(load=True)
+    # clean_data = train()
 
-    poisoned_data, poisoned_indices, poisoned_model = poison(clean_data)
+    poisoned_data, poisoned_indices, poisoned_model = poison()
 
     # load best params file
     with open("best_params.json", "r") as f:

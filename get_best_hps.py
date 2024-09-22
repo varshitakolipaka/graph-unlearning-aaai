@@ -17,8 +17,20 @@ if __name__=="__main__":
             storage=f"sqlite:///hp_tuning/{args.db_name}.db",
         )
     
+    trials = study.get_trials()
+    
+    # remove trials with no value
+    trials = [trial for trial in trials if trial.value is not None]
+    
+    # order trials by value
+    trials = sorted(trials, key=lambda x: x.value, reverse=True)
+
+    # print the top 10 trials
+    for trial in trials[:10]:
+        print(f"Trial: {trial.number}, Value: {trial.value}, Params: {trial.params}")
+    
     # get best hyperparameters
-    best_trial = study.best_trial
+    best_trial = trials[1]
     print(f"Best trial: {best_trial.value}")
     
     params = best_trial.params

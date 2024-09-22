@@ -372,75 +372,63 @@ class ContrastiveAscentNoLinkTrainer(Trainer):
 
         return pos_dist, neg_dist
     
-    def run_sage_batch(self, batch_size=64):
+    def run_sage_batch(self, batch_size=128):
         st = time.time()
-        # print(f"Time taken to get embeddings: {time.time() - st}")
 
         sample_indices = torch.where(self.data.sample_mask)[0]
         num_samples = len(sample_indices)
 
-        # print(f"Number of samples: {num_samples}")
-
         attacked_set = set(self.attacked_idx.tolist())
+        attacked_list = list(attacked_set)
 
-        st = time.time()
-        calc_time = 0
-        
         total_loss = 0
+        calc_time = 0
+
         for i in range(0, num_samples, batch_size):
             batch_indices = sample_indices[i : i + batch_size]
             batch_size = len(batch_indices)
 
+            # Vectorize batch_positive_samples
             batch_positive_samples = [
-                list(self.subset_dict[idx.item()] - attacked_set)
+                list(self.subset_dict[idx.item()] - attacked_set) 
                 for idx in batch_indices
             ]
-            batch_negative_samples = [list(attacked_set) for _ in range(batch_size)]
-
-            # Pad and create dense batches
+            
+            # Max lengths can be computed once per loop iteration
             max_pos = max(len(s) for s in batch_positive_samples)
-            max_neg = max(len(s) for s in batch_negative_samples)
+            max_neg = len(attacked_list)  # Always fixed since attacked_set size won't change
 
-            batch_pos = torch.stack(
-                [
-                    torch.tensor(s + [0] * (max_pos - len(s)))
-                    for s in batch_positive_samples
-                ]
-            )
-            batch_neg = torch.stack(
-                [
-                    torch.tensor(s + [0] * (max_neg - len(s)))
-                    for s in batch_negative_samples
-                ]
-            )
-                
-            self.mask_pos = torch.stack(
-                [
-                    torch.tensor([1] * len(s) + [0] * (max_pos - len(s)))
-                    for s in batch_positive_samples
-                ]
-            ).float().unsqueeze(-1).to(device)
+            # Preallocate memory for tensors
+            batch_pos = torch.zeros((batch_size, max_pos), dtype=torch.long)
+            batch_neg = torch.zeros((batch_size, max_neg), dtype=torch.long)
+            mask_pos = torch.zeros((batch_size, max_pos), dtype=torch.float32)
+            mask_neg = torch.ones((batch_size, max_neg), dtype=torch.float32)  # Fixed
 
-            self.mask_neg = torch.stack(
-                [
-                    torch.tensor([1] * len(s) + [0] * (max_neg - len(s)))
-                    for s in batch_negative_samples
-                ]
-            ).float().unsqueeze(-1).to(device)
+            for idx, pos_samples in enumerate(batch_positive_samples):
+                pos_len = len(pos_samples)
+                batch_pos[idx, :pos_len] = torch.tensor(pos_samples)
+                mask_pos[idx, :pos_len] = 1.0
+
+            # Move everything to the correct device
+            device = self.embeddings.device
+            batch_pos, batch_neg = batch_pos.to(device), batch_neg.to(device)
+            mask_pos, mask_neg = mask_pos.to(device).unsqueeze(-1), mask_neg.to(device).unsqueeze(-1)
 
             st_2 = time.time()
             try:
                 anchor_embs = self.embeddings[batch_indices].unsqueeze(1)
-                pos_embs = self.embeddings[batch_pos] * self.mask_pos
-                neg_embs = self.embeddings[batch_neg] * self.mask_neg
+                pos_embs = self.embeddings[batch_pos] * mask_pos
+                neg_embs = self.embeddings[batch_neg] * mask_neg
+
                 batch_loss = self.sage_loss(anchor_embs, pos_embs, neg_embs)
                 calc_time += time.time() - st_2
-            except:
+            except Exception as e:
                 continue
-            
+
             total_loss += batch_loss
-        
+
         return total_loss
+
 
     def get_distances_edge(self, batch_size=64):
         # attacked edge index contains all the edges that were maliciously added
@@ -623,15 +611,15 @@ class ContrastiveAscentNoLinkTrainer(Trainer):
                     descent_optimizer.zero_grad()
 
                     self.embeddings = self.model(
-                        self.data.x, self.data.edge_index
+                        self.data.x, self.data.edge_index[:, self.data.dr_mask]
                     )
-
+                    
                     finetune_loss = F.cross_entropy(
                         self.embeddings[self.data.retain_mask],
                         self.data.y[self.data.retain_mask],
                     )
-                    kd_loss = self.kd_loss()
-                    descent_loss = finetune_loss + kd_loss
+                    # kd_loss = self.kd_loss()
+                    descent_loss = finetune_loss
 
                     descent_loss.backward()
                     descent_optimizer.step()
@@ -692,10 +680,10 @@ class ContrastiveAscentNoLinkTrainer(Trainer):
                         self.embeddings[self.data.retain_mask],
                         self.data.y[self.data.retain_mask],
                     )
-                    kd_loss = self.kd_loss()
-                    descent_loss = finetune_loss + kd_loss
+                    # kd_loss = self.kd_loss()
+                    # descent_loss = finetune_loss + kd_loss
 
-                    descent_loss.backward()
+                    finetune_loss.backward()
                     descent_optimizer.step()
                     # descent_scheduler.step()
                     
@@ -715,13 +703,13 @@ class ContrastiveAscentNoLinkTrainer(Trainer):
         start_time = time.time()
         if self.args.request == "node":
             self.train_node()
-            is_dr = False
         elif self.args.request == "edge":
             self.train_edge()
-            is_dr = True
-        end_time = time.time()
-        train_acc, msc_rate, f1 = self.evaluate(is_dr=is_dr, use_val=True)
+        
+        train_acc, msc_rate, f1 = self.evaluate(is_dr=True, use_val=True)
 
-        print(f"Training time: {self.best_model_time - start_time}")
+        print(f"Training time: {self.best_model_time - start_time}, Train Acc: {train_acc}, Msc Rate: {msc_rate}, F1: {f1}")
+        forg, util = self.get_score(self.args.attack_type, class1=class_dataset_dict[self.args.dataset]["class1"], class2=class_dataset_dict[self.args.dataset]["class2"])
+        print(f"Forgotten: {forg}, Util: {util}")
 
         return train_acc, msc_rate, self.best_model_time - start_time

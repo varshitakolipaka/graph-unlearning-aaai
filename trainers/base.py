@@ -1,3 +1,4 @@
+import os
 import time
 import torch
 import torch.nn.functional as F
@@ -8,7 +9,7 @@ import seaborn as sns
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
-
+from framework import utils
 
 def plot_loss_vs_epochs(loss_values):
     """
@@ -273,8 +274,13 @@ class Trainer:
             self.best_val_score = score
             print(f"Saving best model with score: {self.best_val_score}")
             self.best_state_dict = self.model.state_dict()
+            # Assuming 'model' is your neural network
+            torch.save(self.model.state_dict(), 'model_state_temp.pth')
             return True
+        return False
 
     def load_best(self):
-        self.model.load_state_dict(self.best_state_dict)
+        self.model.load_state_dict(torch.load('model_state_temp.pth'))
+        # delete the model state file
+        os.remove('model_state_temp.pth')
         return self.best_val_score

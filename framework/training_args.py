@@ -88,7 +88,7 @@ def parse_args():
     # Scrub
     parser.add_argument('--unlearn_iters', type=int, default=150, help='number of epochs to train (default: 31)')
     parser.add_argument('--kd_T', type=float, default=4, help='Knowledge distilation temperature for SCRUB')
-    parser.add_argument('--scrubAlpha', type=float, default=10, help='KL from og_model constant for SCRUB, higher incentivizes closeness to ogmodel')
+    parser.add_argument('--scrubAlpha', type=float, default=0, help='KL from og_model constant for SCRUB, higher incentivizes closeness to ogmodel')
     parser.add_argument('--msteps', type=int, default=25, help='Maximization steps on forget set for SCRUB')
     parser.add_argument('--ascent_lr', type=float, default=0.0025, help='Learning rate for gradient ascent steps')
     parser.add_argument('--descent_lr', type=float, default=0.015, help='Learning rate for gradient descent steps')  
@@ -103,6 +103,7 @@ def parse_args():
     parser.add_argument('--k_hop', type=int, default=2, help="number of hops for the data sampling")
     parser.add_argument('--contrastive_frac', type=float, default=0.1, help="fraction of nodes to sample for contrastive loss")
     parser.add_argument('--steps', type=int, default=10, help="steps of ascent and descent")
+    parser.add_argument('--ascent_const', type=int, default=0.001, help="constant for ascent")
 
     # MEGU
     parser.add_argument('--kappa', type=float, default=0.01)

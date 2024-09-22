@@ -4,7 +4,7 @@ import os
 def run_hp_tuning(unlearning_models, df_size, random_seed, dataset, attack_type, data_dir, db_name, gnn, cf):
     cf_str = ""
     if cf < 1.0:
-        cf_str = f"--corrective_frac {cf}"
+        cf_str = f"--cf {cf}"
     
     for model in unlearning_models:
         if attack_type == "label" or attack_type == "random":

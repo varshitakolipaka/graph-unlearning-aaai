@@ -195,20 +195,21 @@ class YAUMTrainer(Trainer):
 
             # Ascent step (forgetting)
             ascent_optimizer.zero_grad()
-            output_forget = self.model(self.poisoned_dataset.x, self.poisoned_dataset.edge_index)
+            output_forget = self.model(self.poisoned_dataset.x, self.poisoned_dataset.edge_index[:, self.poisoned_dataset.dr_mask])
+            
             forget_loss = F.cross_entropy(output_forget[forget_mask], self.poisoned_dataset.y[forget_mask])
+            
             (-forget_loss).backward()
             ascent_optimizer.step()
             ascent_scheduler.step()
 
             # Descent step (remembering)
             descent_optimizer.zero_grad()
-            output_remember = self.model(self.poisoned_dataset.x, self.poisoned_dataset.edge_index)
+            output_remember = self.model(self.poisoned_dataset.x, self.poisoned_dataset.edge_index[:, self.poisoned_dataset.dr_mask])
             with torch.no_grad():
                 logit_t = self.og_model(self.poisoned_dataset.x, self.poisoned_dataset.edge_index)
             remember_loss = F.cross_entropy(output_remember[self.poisoned_dataset.train_mask], self.poisoned_dataset.y[self.poisoned_dataset.train_mask])
-            kd_loss = self.opt.scrubAlpha * distill_kl_loss(output_remember[self.poisoned_dataset.train_mask], logit_t[self.poisoned_dataset.train_mask], self.opt.kd_T)
-            total_descent_loss = remember_loss + kd_loss
+            total_descent_loss = remember_loss
             total_descent_loss.backward()
             descent_optimizer.step()
             descent_scheduler.step()
@@ -232,7 +233,7 @@ class YAUMTrainer(Trainer):
         # Load best model
         self.load_best()
         
-        train_acc, msc_rate, f1 = self.evaluate()
+        train_acc, msc_rate, f1 = self.evaluate(is_dr=True)
         return train_acc, msc_rate, self.best_model_time - start_time
 
     def train(self):

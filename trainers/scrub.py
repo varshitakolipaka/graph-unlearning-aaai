@@ -144,16 +144,13 @@ class ScrubTrainer(Trainer):
             # print(self.scheduler.get_lr())
             self.curr_step += 1
         
-        self.save_best(is_dr=False)
+        self.save_best()
 
         return
 
     def forward_pass(self, data, mask):
 
-        if self.opt.attack_type == "edge":
-            output = self.model(data.x, data.edge_index[:, data.dr_mask])
-        else:
-            output = self.model(data.x, data.edge_index)
+        output = self.model(data.x, data.edge_index[:, data.dr_mask])
 
         with torch.no_grad():
             logit_t = self.og_model(data.x, data.edge_index)
@@ -180,13 +177,12 @@ class ScrubTrainer(Trainer):
 
             self.maximize=False
             self.train_one_epoch(data=self.poisoned_dataset, mask=self.poisoned_dataset.node_dr_mask)
-            train_acc, msc_rate, f1 = self.evaluate()
             # print(f'Test Acc: {train_acc}, Misclassification: {msc_rate},  F1 Score: {f1}')
             # print(f"==Unlearned Model==\nForget Ability: {forg}, Utility: {util}")
         end_time = time.time()
         # load best model
         self.load_best()
-        train_acc, msc_rate, f1 = self.evaluate()
+        train_acc, msc_rate, f1 = self.evaluate(is_dr=True)
         return train_acc, msc_rate, self.best_model_time - start_time
 
     def train(self):

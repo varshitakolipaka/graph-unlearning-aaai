@@ -140,22 +140,28 @@ class ContrastiveUnlearnTrainer_NEW(Trainer):
         neg_loss = torch.mean(F.relu(margin - neg_dist))
         loss = pos_loss + neg_loss
         return loss
+    
+    def sage_loss(self, anchors, pos_embs, neg_embs):
+        pos_loss = F.logsigmoid((anchors*pos_embs).sum(-1)).mean()
+        neg_loss = F.logsigmoid(-(anchors*neg_embs).sum(-1)).mean()
+        
+        return -pos_loss - neg_loss
 
     @time_it
     def unlearn_loss(self, pos_dist, neg_dist, margin=1.0, lmda=0.8, ascent=False):
         if lmda == 1:
             return self.task_loss()
-        
+
         if lmda == 0:
             return self.contrastive_loss(pos_dist, neg_dist, margin)
-        
-        return lmda * self.task_loss(ascent=ascent) + (1 - lmda) * self.contrastive_loss(
-            pos_dist, neg_dist, margin
-        )
+
+        return lmda * self.task_loss(ascent=ascent) + (
+            1 - lmda
+        ) * self.contrastive_loss(pos_dist, neg_dist, margin)
 
     def calc_distances(self, nodes, positive_samples, negative_samples):
         # Vectorized contrastive loss calculation
-        
+
         anchors = self.embeddings[nodes].unsqueeze(1)  # Shape: (N, 1, D)
         positives = self.embeddings[positive_samples] * self.mask_pos  # Shape: (N, P, D)
         negatives = self.embeddings[negative_samples] * self.mask_neg # Shape: (N, Q, D)
@@ -185,15 +191,16 @@ class ContrastiveUnlearnTrainer_NEW(Trainer):
         edge_index_for_poison_dict = {}
         for idx in range(len(data.train_mask)):
             if data.retain_mask[idx]:
-                _, edge_index_for_poison, _, _ = k_hop_subgraph(idx, hop, data.edge_index)
+                _, edge_index_for_poison, _, _ = k_hop_subgraph(
+                    idx, hop, data.edge_index
+                )
                 edge_index_for_poison_dict[idx] = edge_index_for_poison
         self.edge_index_for_poison_dict = edge_index_for_poison_dict
 
     @time_it
     def get_distances_batch(self, batch_size=64):
         st = time.time()
-        self.embeddings = self.model(self.data.x, self.data.edge_index)
-        #print(f"Time taken to get embeddings: {time.time() - st}")
+        # print(f"Time taken to get embeddings: {time.time() - st}")
 
         num_masks = len(self.data.train_mask)
         pos_dist = torch.zeros(num_masks)
@@ -205,7 +212,7 @@ class ContrastiveUnlearnTrainer_NEW(Trainer):
         sample_indices = torch.where(self.data.sample_mask)[0]
         num_samples = len(sample_indices)
 
-        #print(f"Number of samples: {num_samples}")
+        # print(f"Number of samples: {num_samples}")
 
         attacked_set = set(self.attacked_idx.tolist())
 
@@ -238,7 +245,7 @@ class ContrastiveUnlearnTrainer_NEW(Trainer):
                     for s in batch_negative_samples
                 ]
             )
-            
+                
             self.mask_pos = torch.stack(
                 [
                     torch.tensor([1] * len(s) + [0] * (max_pos - len(s)))
@@ -265,30 +272,36 @@ class ContrastiveUnlearnTrainer_NEW(Trainer):
             pos_dist[batch_indices] = batch_pos_dist.to(pos_dist.device)
             neg_dist[batch_indices] = batch_neg_dist.to(neg_dist.device)
 
-        #print(f"Average time taken to calculate distances: {calc_time/num_samples}")
-        #print(f"Average time taken to get distances: {(time.time() - st)/num_samples}")
+        # print(f"Average time taken to calculate distances: {calc_time/num_samples}")
+        # print(f"Average time taken to get distances: {(time.time() - st)/num_samples}")
 
         return pos_dist, neg_dist
-
-    def get_distances_edge(self, batch_size=64):
-        # attacked edge index contains all the edges that were maliciously added
-        num_masks = len(self.data.train_mask)
-        pos_dist = torch.zeros(num_masks).to(device)
-        neg_dist = torch.zeros(num_masks).to(device)
+    
+    def run_sage_batch(self, batch_size=64):
+        st = time.time()
+        # print(f"Time taken to get embeddings: {time.time() - st}")
 
         sample_indices = torch.where(self.data.sample_mask)[0]
         num_samples = len(sample_indices)
 
-        #Batchwise positive and negative samples created
+        # print(f"Number of samples: {num_samples}")
+
+        attacked_set = set(self.attacked_idx.tolist())
+
+        st = time.time()
+        calc_time = 0
+        
+        total_loss = 0
         for i in range(0, num_samples, batch_size):
             batch_indices = sample_indices[i : i + batch_size]
             batch_size = len(batch_indices)
-            
+
             batch_positive_samples = [
-                list(self.subset_dict[idx.item()] - self.negative_sample_dict[idx.item()])
+                list(self.subset_dict[idx.item()] - attacked_set)
                 for idx in batch_indices
             ]
-            batch_negative_samples = [list(self.negative_sample_dict[idx.item()]) for idx in batch_indices]
+            batch_negative_samples = [list(attacked_set) for _ in range(batch_size)]
+
             # Pad and create dense batches
             max_pos = max(len(s) for s in batch_positive_samples)
             max_neg = max(len(s) for s in batch_negative_samples)
@@ -305,6 +318,88 @@ class ContrastiveUnlearnTrainer_NEW(Trainer):
                     for s in batch_negative_samples
                 ]
             )
+                
+            self.mask_pos = torch.stack(
+                [
+                    torch.tensor([1] * len(s) + [0] * (max_pos - len(s)))
+                    for s in batch_positive_samples
+                ]
+            ).float().unsqueeze(-1).to(device)
+
+            self.mask_neg = torch.stack(
+                [
+                    torch.tensor([1] * len(s) + [0] * (max_neg - len(s)))
+                    for s in batch_negative_samples
+                ]
+            ).float().unsqueeze(-1).to(device)
+
+            st_2 = time.time()
+            try:
+                anchor_embs = self.embeddings[batch_indices].unsqueeze(1)
+                pos_embs = self.embeddings[batch_pos] * self.mask_pos
+                neg_embs = self.embeddings[batch_neg] * self.mask_neg
+                batch_loss = self.sage_loss(anchor_embs, pos_embs, neg_embs)
+                calc_time += time.time() - st_2
+            except:
+                continue
+            
+            total_loss += batch_loss
+        
+        return total_loss
+
+    def get_distances_edge(self, batch_size=64):
+        # attacked edge index contains all the edges that were maliciously added
+        num_masks = len(self.data.train_mask)
+        pos_dist = torch.zeros(num_masks).to(device)
+        neg_dist = torch.zeros(num_masks).to(device)
+
+        sample_indices = torch.where(self.data.sample_mask)[0]
+        num_samples = len(sample_indices)
+
+        # Batchwise positive and negative samples created
+        for i in range(0, num_samples, batch_size):
+            batch_indices = sample_indices[i : i + batch_size]
+            batch_size = len(batch_indices)
+
+            batch_positive_samples = [
+                list(
+                    self.subset_dict[idx.item()] - self.negative_sample_dict[idx.item()]
+                )
+                for idx in batch_indices
+            ]
+            batch_negative_samples = [
+                list(self.negative_sample_dict[idx.item()]) for idx in batch_indices
+            ]
+            # Pad and create dense batches
+            max_pos = max(len(s) for s in batch_positive_samples)
+            max_neg = max(len(s) for s in batch_negative_samples)
+
+            batch_pos = torch.stack(
+                [
+                    torch.tensor(s + [0] * (max_pos - len(s)))
+                    for s in batch_positive_samples
+                ]
+            )
+            batch_neg = torch.stack(
+                [
+                    torch.tensor(s + [0] * (max_neg - len(s)))
+                    for s in batch_negative_samples
+                ]
+            )
+            
+            self.mask_pos = torch.stack(
+                [
+                    torch.tensor([1] * len(s) + [0] * (max_pos - len(s)))
+                    for s in batch_positive_samples
+                ]
+            ).float().unsqueeze(-1).to(device)
+
+            self.mask_neg = torch.stack(
+                [
+                    torch.tensor([1] * len(s) + [0] * (max_neg - len(s)))
+                    for s in batch_negative_samples
+                ]
+            ).float().unsqueeze(-1).to(device)
 
             # st_2 = time.time()
             batch_pos_dist, batch_neg_dist = self.calc_distances(
@@ -316,6 +411,72 @@ class ContrastiveUnlearnTrainer_NEW(Trainer):
             neg_dist[batch_indices] = batch_neg_dist.to(neg_dist.device)
 
         return pos_dist, neg_dist
+    
+    def run_sage_batch_edge(self, batch_size=64):
+        # attacked edge index contains all the edges that were maliciously added
+        num_masks = len(self.data.train_mask)
+
+        sample_indices = torch.where(self.data.sample_mask)[0]
+        num_samples = len(sample_indices)
+
+        # Batchwise positive and negative samples created
+        total_loss = 0
+        for i in range(0, num_samples, batch_size):
+            batch_indices = sample_indices[i : i + batch_size]
+            batch_size = len(batch_indices)
+
+            batch_positive_samples = [
+                list(
+                    self.subset_dict[idx.item()] - self.negative_sample_dict[idx.item()]
+                )
+                for idx in batch_indices
+            ]
+            batch_negative_samples = [
+                list(self.negative_sample_dict[idx.item()]) for idx in batch_indices
+            ]
+            
+            # Pad and create dense batches
+            max_pos = max(len(s) for s in batch_positive_samples)
+            max_neg = max(len(s) for s in batch_negative_samples)
+
+            batch_pos = torch.stack(
+                [
+                    torch.tensor(s + [0] * (max_pos - len(s)))
+                    for s in batch_positive_samples
+                ]
+            )
+            batch_neg = torch.stack(
+                [
+                    torch.tensor(s + [0] * (max_neg - len(s)))
+                    for s in batch_negative_samples
+                ]
+            )
+            
+            self.mask_pos = torch.stack(
+                [
+                    torch.tensor([1] * len(s) + [0] * (max_pos - len(s)))
+                    for s in batch_positive_samples
+                ]
+            ).float().unsqueeze(-1).to(device)
+
+            self.mask_neg = torch.stack(
+                [
+                    torch.tensor([1] * len(s) + [0] * (max_neg - len(s)))
+                    for s in batch_negative_samples
+                ]
+            ).float().unsqueeze(-1).to(device)
+
+            try:
+                anchor_embs = self.embeddings[batch_indices].unsqueeze(1)
+                pos_embs = self.embeddings[batch_pos] * self.mask_pos
+                neg_embs = self.embeddings[batch_neg] * self.mask_neg
+                batch_loss = self.sage_loss(anchor_embs, pos_embs, neg_embs)
+            except:
+                continue
+            
+            total_loss += batch_loss
+
+        return total_loss
 
     @time_it
     def get_model_embeddings(self):
@@ -326,7 +487,6 @@ class ContrastiveUnlearnTrainer_NEW(Trainer):
         self.data = self.data.to(device)
         args = self.args
         optimizer = self.optimizer
-        best_val_acc = 0
         # attacked idx must be a list of nodes
         for epoch in trange(
             args.steps, desc="Unlearning"

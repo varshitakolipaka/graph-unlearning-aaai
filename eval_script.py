@@ -25,18 +25,60 @@ def get_script(dataset, unlearning_model, attack, seed, cf=1.0, df_size=0.5):
 if __name__ == "__main__":
 
     parser = argparse.ArgumentParser(description="Run HP tuning for various unlearning models")
-    parser.add_argument('--df_size', type=float, required=True, help='Size of the dataset fraction', default=0.5)
+    parser.add_argument('--df_size', type=float, help='Size of the dataset fraction', default=0.5)
+    parser.add_argument('--attack_type', type=str, help='Type of attack to run', default='label')
+    parser.add_argument('--cf', type=float, help='Corrective fraction', default=1.0)
+    parser.add_argument('--dataset', type=str, help='Dataset to run the attack on', default='Cora')
+    parser.add_argument('--start_seed', type=int, help='Starting seed for the attack', default=0)
+    parser.add_argument('--end_seed', type=int, help='Ending seed for the attack', default=10)
+    
+    parser.add_argument('--contra_2', action='store_true', help='Run HP tuning for contra_2 model')
+    parser.add_argument('--contrastive', action='store_true', help='Run HP tuning for contra_2 model')
+    parser.add_argument('--retrain', action='store_true', help='Run HP tuning for retrain model')
+    parser.add_argument('--scrub', action='store_true', help='Run HP tuning for scrub model')
+    parser.add_argument('--megu', action='store_true', help='Run HP tuning for megu model')
+    parser.add_argument('--gnndelete', action='store_true', help='Run HP tuning for gnndelete model')
+    parser.add_argument('--utu', action='store_true', help='Run HP tuning for utu model')
+    parser.add_argument('--gif', action='store_true', help='Run HP tuning for gif model')
+    parser.add_argument('--ssd', action='store_true', help='Run HP tuning for ssd model')
+    parser.add_argument('--yaum', action='store_true', help='Run HP tuning for yaum model')
+    parser.add_argument('--contrascent', action='store_true', help='Run HP tuning for yaum model')
+    parser.add_argument('--cacdc', action='store_true', help='Run HP tuning for yaum model')
+
     args = parser.parse_args()
-    # unlearning_models = ['utu', 'scrub','gnndelete','megu','gif','cacdc', 'contrascent','retrain','yaum']
-    unlearning_models = ['scrub', 'megu','cacdc', 'gif', 'utu', 'gnndelete', 'retrain']
-    # unlearning_models = ['retrain']
-    # attacks = ['edge', 'label']
-    attacks = ['random']
-    datasets = ['Cora']
+    
+    unlearning_models = []
+    if args.utu:
+        unlearning_models.append('utu')
+    if args.retrain:
+        unlearning_models.append('retrain')
+    if args.scrub:
+        unlearning_models.append('scrub')
+    if args.contra_2:
+        unlearning_models.append('contra_2')
+    if args.contrastive:
+        unlearning_models.append('contrastive')
+    if args.megu:
+        unlearning_models.append('megu')
+    if args.gnndelete:
+        unlearning_models.append('gnndelete')
+    if args.gif:
+        unlearning_models.append('gif')
+    if args.ssd:
+        unlearning_models.append('ssd')
+    if args.yaum:
+        unlearning_models.append('yaum')
+    if args.contrascent:
+        unlearning_models.append('contrascent')
+    if args.cacdc:
+        unlearning_models.append('cacdc')
+
+    attacks = [args.attack_type]
+    datasets = [args.dataset]
     # datasets = ['Amazon']
-    cfs = [1.0]
+    cfs = [args.cf]
     for dataset in datasets:
-        for seed in range(10):
+        for seed in range(args.start_seed, args.end_seed):
             for unlearning_model in unlearning_models:
                 for attack in attacks:
                     for cf in cfs:

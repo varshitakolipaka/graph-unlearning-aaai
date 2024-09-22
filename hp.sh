@@ -1,18 +1,22 @@
 # python run_hp_tune.py --dataset Amazon --df_size 0.5 --random_seed 1 --data_dir /scratch/akshit.sinha/data --attack_type label --db_name contra_no_link --gnn gcn --cacdc
 
-python run_hp_tune.py --dataset Cora --df_size 0.05 --random_seed 1 --data_dir /scratch/akshit.sinha/data --attack_type random --db_name random_train --gnn gcn --retrain --cacdc --megu --gif --utu --gnndelete --scrub
+python run_hp_tune.py --dataset Cora --df_size 0.5 --random_seed 1 --data_dir /scratch/akshit.sinha/data --attack_type label --cf 0.25 --db_name cf_hp_tuning_0.25 --gnn gcn --cacdc --yaum --scrub
 
-python eval_script.py --df_size 0.05
+# python eval_script.py --cacdc --yaum --scrub --dataset Cora --attack_type label --cf 0.25
 
-python run_hp_tune.py --dataset Cora --df_size 0.1 --random_seed 1 --data_dir /scratch/akshit.sinha/data --attack_type random --db_name random_train --gnn gcn --retrain --cacdc --megu --gif --utu --gnndelete --scrub
+# python run_hp_tune.py --dataset Cora --df_size 0.5 --random_seed 1 --data_dir /scratch/akshit.sinha/data --attack_type label --cf 0.5  --db_name cf_hp_tuning_0.5 --gnn gcn --cacdc --yaum --scrub 
 
-python eval_script.py --df_size 0.1
+# python eval_script.py --cacdc --yaum --scrub --dataset Cora --attack_type label --cf 0.5
 
-python run_hp_tune.py --dataset Cora --df_size 0.2 --random_seed 1 --data_dir /scratch/akshit.sinha/data --attack_type random --db_name random_train --gnn gcn --retrain --cacdc --megu --gif --utu --gnndelete --scrub
+# python run_hp_tune.py --dataset Cora --df_size 0.5 --random_seed 1 --data_dir /scratch/akshit.sinha/data --attack_type label --cf 0.75 --db_name cf_hp_tuning0.75 --gnn gcn --cacdc --yaum --scrub
 
-python eval_script.py --df_size 0.2
+# python eval_script.py --cacdc --yaum --scrub --dataset Cora --attack_type label --cf 0.75
 
-# sh get_stats.sh
+# python run_hp_tune.py --dataset Cora --df_size 0.5 --random_seed 1 --data_dir /scratch/akshit.sinha/data --attack_type label --db_name unlinked_evaluations_new --gnn gcn --cacdc
+
+python eval_script.py --cacdc --dataset Cora --attack_type label
+
+sh get_stats.sh
 
 # python run_hp_tune.py --dataset CS --df_size 0.5 --random_seed 1 --data_dir /scratch/akshit.sinha/data --attack_type label --db_name contra_no_link --gnn gcn --cacdc
 
