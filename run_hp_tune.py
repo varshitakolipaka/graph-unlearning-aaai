@@ -7,11 +7,11 @@ def run_hp_tuning(unlearning_models, df_size, random_seed, dataset, attack_type,
         cf_str = f"--cf {cf}"
     
     for model in unlearning_models:
-        if attack_type == "label" or attack_type == "random":
-            # cmd = f"python hp_tune.py --unlearning_model {model} --dataset {dataset} --df_size {df_size} --random_seed {random_seed} --data_dir {data_dir} --attack_type {attack_type} --db_name {db_name} --gnn {gnn} {cf_str}"
+        if attack_type == "label" or attack_type == "random" or attack_type == "trigger":
+            cmd = f"python hp_tune.py --unlearning_model {model} --dataset {dataset} --df_size {df_size} --random_seed {random_seed} --data_dir {data_dir} --attack_type {attack_type} --db_name {db_name} --gnn {gnn} {cf_str}"
             
-            # print(f"Running command: {cmd}")
-            # os.system(cmd)
+            print(f"Running command: {cmd}")
+            os.system(cmd)
             
             print(f"Getting best HPs for {model}")
             cmd = f"python get_best_hps.py --unlearning_model {model} --dataset {dataset} --df_size {df_size} --random_seed {random_seed} --data_dir {data_dir} --attack_type {attack_type} --db_name {db_name} --gnn {gnn}"

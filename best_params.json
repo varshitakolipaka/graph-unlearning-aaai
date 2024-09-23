@@ -153,9 +153,9 @@
                 "loss_type": "both_layerwise"
             },
             "Cora": {
-                "unlearn_lr": 0.002505673482539416,
-                "weight_decay": 0.01414144242652753,
-                "alpha": 0.003329309837815677,
+                "unlearn_lr": 0.0068396891161789306,
+                "weight_decay": 0.00759305031926252,
+                "alpha": 0.10963435758883584,
                 "loss_type": "both_layerwise"
             }
         },

@@ -24,6 +24,7 @@ device = torch.device("cuda") if torch.cuda.is_available() else torch.device("cp
 with open("classes_to_poison.json", "r") as f:
     class_dataset_dict = json.load(f)
 
+
 def train(load=False):
     if load:
         clean_data = utils.get_original_data(args.dataset)
@@ -80,10 +81,10 @@ def train(load=False):
         print(f"==OG Model==\nForget Ability: {forg}, Utility: {util}")
     # save the clean model
     os.makedirs(args.data_dir, exist_ok=True)
-    # torch.save(
-    #     clean_model,
-    #     f"{args.data_dir}/{args.gnn}_{args.dataset}_{args.attack_type}_{args.df_size}_{args.random_seed}_clean_model.pt",
-    # )
+    torch.save(
+        clean_model,
+        f"{args.data_dir}/{args.gnn}_{args.dataset}_{args.attack_type}_{args.df_size}_{args.random_seed}_clean_model.pt",
+    )
 
     return clean_data
 
@@ -149,10 +150,10 @@ def poison(clean_data=None):
         poisoned_data, poisoned_indices = trigger_attack(
             clean_data,
             args.df_size,
-            args.poison_tensor_size,
             args.random_seed,
-            args.test_poison_fraction,
-            target_class=57,
+            victim_class=args.victim_class,
+            target_class=args.target_class,
+            trigger_size=args.trigger_size,
         )
     poisoned_data = poisoned_data.to(device)
 
@@ -177,15 +178,15 @@ def poison(clean_data=None):
     # save the poisoned data and model and indices to np file
     os.makedirs(args.data_dir, exist_ok=True)
 
-    # torch.save(
-    #     poisoned_model,
-    #     f"{args.data_dir}/{args.gnn}_{args.dataset}_{args.attack_type}_{args.df_size}_{args.random_seed}_poisoned_model.pt",
-    # )
+    torch.save(
+        poisoned_model,
+        f"{args.data_dir}/{args.gnn}_{args.dataset}_{args.attack_type}_{args.df_size}_{args.random_seed}_poisoned_model.pt",
+    )
 
-    # torch.save(
-    #     poisoned_data,
-    #     f"{args.data_dir}/{args.dataset}_{args.attack_type}_{args.df_size}_{args.random_seed}_poisoned_data.pt",
-    # )
+    torch.save(
+        poisoned_data,
+        f"{args.data_dir}/{args.dataset}_{args.attack_type}_{args.df_size}_{args.random_seed}_poisoned_data.pt",
+    )
 
     forg, util = poisoned_trainer.get_score(
         args.attack_type,
@@ -358,9 +359,9 @@ def objective(trial, model, data):
     trainer = utils.get_trainer(args, model_internal, data, optimizer)
 
     _, _, time_taken = trainer.train()
-    
+
     obj = trainer.validate(is_dr=True)
-    
+
     trial.set_user_attr("time_taken", time_taken)
 
     # We want to minimize misclassification rate and maximize accuracy
@@ -373,7 +374,7 @@ if __name__ == "__main__":
     clean_data = train(load=True)
     # clean_data = train()
     poisoned_data, poisoned_indices, poisoned_model = poison()
-    
+
     if args.corrective_frac < 1:
         print("==POISONING CORRECTIVE==")
         print(f"No. of poisoned nodes: {len(poisoned_indices)}")

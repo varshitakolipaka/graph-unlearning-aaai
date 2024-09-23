@@ -29,7 +29,7 @@ def apply_poison(data, samples, trigger_size, poisoned_feature_indices=None, tar
     return poisoned_data, poisoned_feature_indices
 
 
-def trigger_attack(data, epsilon, seed, victim_class, target_class=69, trigger_size=10, test_poison_fraction=1):
+def trigger_attack(data, epsilon, seed, victim_class=68, target_class=69, trigger_size=15, test_poison_fraction=1):
 
     data = data.cpu()  # Ensure the data is on the CPU for manipulation
     data = copy.deepcopy(data)  # Avoid modifying the original data
@@ -116,5 +116,6 @@ def trigger_attack(data, epsilon, seed, victim_class, target_class=69, trigger_s
     else:
         print("No victim class nodes found in the test set.")
         poisoned_data.poison_test_mask = torch.zeros(data.num_nodes, dtype=torch.bool)
-    
+
+    poisoned_data.poisoned_nodes = poisoned_indices
     return poisoned_data, poisoned_indices

@@ -16,6 +16,9 @@ def get_script(dataset, unlearning_model, attack, seed, cf=1.0, df_size=0.5):
     if attack == 'label':
         return f"python main.py --df_size 0.5 --dataset {dataset} --unlearning_model {unlearning_model} --attack_type label --random_seed {seed} --gnn gcn  --data_dir /scratch/akshit.sinha/data {cf_str}"
     
+    if attack == 'trigger':
+        return f"python main.py --df_size 0.5 --dataset {dataset} --unlearning_model {unlearning_model} --attack_type trigger --random_seed {seed} --gnn gcn  --data_dir /scratch/akshit.sinha/data {cf_str}"
+    
     if attack == 'random':
         return f"python main.py --df_size {df_size} --dataset {dataset} --unlearning_model {unlearning_model} --attack_type random --random_seed {seed} --gnn gcn  --data_dir /scratch/akshit.sinha/data {cf_str}"
 

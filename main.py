@@ -161,6 +161,11 @@ def poison(clean_data=None):
             : int(clean_data.num_nodes * args.df_size)
         ]
         poisoned_data.poisoned_nodes = poisoned_indices
+    elif args.attack_type == "trigger":
+        poisoned_data, poisoned_indices = trigger_attack(
+            clean_data, args.df_size, args.random_seed, victim_class=args.victim_class, target_class=args.target_class, trigger_size=args.trigger_size
+        )
+        
 
     poisoned_data = poisoned_data.to(device)
 

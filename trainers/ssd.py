@@ -86,7 +86,7 @@ class ParameterPerturber:
         
         # Forward pass and compute gradients
         self.opt.zero_grad()
-        out = self.model(data.x, data.edge_index)
+        out = self.model(data.x, data.edge_index[data.dr_mask])
         loss = criterion(out[mask], y_masked)
         loss.backward()
 
@@ -193,7 +193,7 @@ class Naive(Trainer):
 
                 # Forward pass through the model
                 with autocast():
-                    output = self.model(x_masked, edge_index)
+                    output = self.model(x_masked, edge_index[data.dr_mask])
                 
                 # Compute the evaluation metric (e.g., accuracy)
                 self.top1(output, y_masked)
