@@ -140,10 +140,15 @@ class Trainer:
             binary_trues = torch.zeros_like(true_labels)
             binary_trues[true_labels == poisoned_class] = 1
             
+            # accs_poisoned.append(
+            #     f1_score(
+            #         binary_trues[poisoned_indices].cpu(),
+            #         binary_preds[poisoned_indices].cpu(),
+            #     )
+            # )
             accs_poisoned.append(
-                f1_score(
-                    binary_trues[poisoned_indices].cpu(),
-                    binary_preds[poisoned_indices].cpu(),
+                accuracy_score(
+                    true_labels[poisoned_indices].cpu(), pred_labels[poisoned_indices].cpu()
                 )
             )
 
@@ -158,9 +163,14 @@ class Trainer:
             binary_preds = torch.zeros_like(pred_labels)
             binary_preds[pred_labels == clean_class] = 1
             
+            # accs_clean.append(
+            #     f1_score(
+            #         binary_trues[clean_indices].cpu(), binary_preds[clean_indices].cpu()
+            #     )
+            # )
             accs_clean.append(
-                f1_score(
-                    binary_trues[clean_indices].cpu(), binary_preds[clean_indices].cpu()
+                accuracy_score(
+                    true_labels[clean_indices].cpu(), pred_labels[clean_indices].cpu()
                 )
             )
 
