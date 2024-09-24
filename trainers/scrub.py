@@ -156,8 +156,7 @@ class ScrubTrainer(Trainer):
             logit_t = self.og_model(data.x, data.edge_index)
 
         loss = F.cross_entropy(output[mask], data.y[mask])
-        if self.opt.attack_type != "edge":
-            loss += self.opt.scrubAlpha * distill_kl_loss(output[mask], logit_t[mask], self.opt.kd_T)
+        loss += self.opt.scrubAlpha * distill_kl_loss(output[mask], logit_t[mask], self.opt.kd_T)
 
         if self.maximize:
             loss = -loss

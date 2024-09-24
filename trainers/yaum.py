@@ -139,14 +139,6 @@ class YAUMTrainer(Trainer):
         if self.curr_step <= self.opt.unlearn_iters:
             self.optimizer.zero_grad()
             loss = self.forward_pass(data, mask)
-            val_acc, _, _ = self.evaluate(use_val=True)
-            # print(val_acc, self.best_val_acc)
-            if val_acc > self.best_val_acc:
-                # print("updating best model...")
-                self.best_val_acc = val_acc
-                # write state_dict to file
-                with open(self.opt.unlearning_model + '_best_model.pth', 'wb') as f:
-                    torch.save(self.model.state_dict(), f)
             loss.backward()
             self.optimizer.step()
             self.scheduler.step()
@@ -157,17 +149,9 @@ class YAUMTrainer(Trainer):
 
     def forward_pass(self, data, mask):
 
-        if self.opt.attack_type == "edge":
-            output = self.model(data.x, data.edge_index[:, data.dr_mask])
-        else:
-            output = self.model(data.x, data.edge_index)
-
-        with torch.no_grad():
-            logit_t = self.og_model(data.x, data.edge_index)
+        output = self.model(data.x, data.edge_index[:, data.dr_mask])
 
         loss = F.cross_entropy(output[mask], data.y[mask])
-        if self.opt.attack_type != "edge":
-            loss += self.opt.scrubAlpha * distill_kl_loss(output[mask], logit_t[mask], self.opt.kd_T)
 
         if self.maximize:
             loss = -loss
@@ -206,8 +190,6 @@ class YAUMTrainer(Trainer):
             # Descent step (remembering)
             descent_optimizer.zero_grad()
             output_remember = self.model(self.poisoned_dataset.x, self.poisoned_dataset.edge_index[:, self.poisoned_dataset.dr_mask])
-            with torch.no_grad():
-                logit_t = self.og_model(self.poisoned_dataset.x, self.poisoned_dataset.edge_index)
             remember_loss = F.cross_entropy(output_remember[self.poisoned_dataset.train_mask], self.poisoned_dataset.y[self.poisoned_dataset.train_mask])
             total_descent_loss = remember_loss
             total_descent_loss.backward()
@@ -233,7 +215,7 @@ class YAUMTrainer(Trainer):
         # Load best model
         self.load_best()
         
-        train_acc, msc_rate, f1 = self.evaluate(is_dr=True)
+        train_acc, msc_rate, f1 = self.evaluate(is_dr=True, use_val=True)
         return train_acc, msc_rate, self.best_model_time - start_time
 
     def train(self):

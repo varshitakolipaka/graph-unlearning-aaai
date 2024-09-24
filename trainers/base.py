@@ -132,10 +132,18 @@ class Trainer:
 
         for poisoned_class in poisoned_classes:
             poisoned_indices = true_labels == poisoned_class
+            
+            # create binary mask for correct class and all wrong classes
+            binary_preds = torch.zeros_like(pred_labels)
+            binary_preds[pred_labels == poisoned_class] = 1
+            
+            binary_trues = torch.zeros_like(true_labels)
+            binary_trues[true_labels == poisoned_class] = 1
+            
             accs_poisoned.append(
-                accuracy_score(
-                    true_labels[poisoned_indices].cpu(),
-                    pred_labels[poisoned_indices].cpu(),
+                f1_score(
+                    binary_trues[poisoned_indices].cpu(),
+                    binary_preds[poisoned_indices].cpu(),
                 )
             )
 
@@ -143,9 +151,16 @@ class Trainer:
             clean_indices = true_labels == clean_class
             if clean_indices.sum() == 0:
                 continue
+            
+            binary_trues = torch.zeros_like(true_labels)
+            binary_trues[true_labels == clean_class] = 1
+            
+            binary_preds = torch.zeros_like(pred_labels)
+            binary_preds[pred_labels == clean_class] = 1
+            
             accs_clean.append(
-                accuracy_score(
-                    true_labels[clean_indices].cpu(), pred_labels[clean_indices].cpu()
+                f1_score(
+                    binary_trues[clean_indices].cpu(), binary_preds[clean_indices].cpu()
                 )
             )
 

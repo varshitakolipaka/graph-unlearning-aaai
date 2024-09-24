@@ -3,6 +3,15 @@ import numpy as np
 import os
 
 def forget_metric(method_acc, poison_acc, oracle_acc):
+    print("method_acc", method_acc)
+    print("poison_acc", poison_acc)
+    print("oracle_acc", oracle_acc)
+    
+    print("method_acc - poison_acc", method_acc - poison_acc)
+    print("oracle_acc - poison_acc", oracle_acc - poison_acc)
+    
+    print("(method_acc - poison_acc) / (oracle_acc - poison_acc)", (method_acc - poison_acc) / (oracle_acc - poison_acc))
+    
     return 100 * (method_acc - poison_acc) / (oracle_acc - poison_acc) 
 
 def util_metric_oracle(method_acc, oracle_acc):
@@ -86,4 +95,8 @@ if __name__ == "__main__":
         for file in files:
             if file.endswith('.json'):
                 print(f"Processing {file}")
-                process_json_file(os.path.join(root, file))
+                try:
+                    process_json_file(os.path.join(root, file))
+                except Exception as e:
+                    print(f"Error processing {file}: {e}")
+                    continue

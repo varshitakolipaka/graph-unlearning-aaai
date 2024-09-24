@@ -65,5 +65,7 @@ if __name__ == "__main__":
     for root, dirs, files in os.walk(dir):
         for file in files:
             if file.endswith('.json'):
+                if "new_metric" in file:
+                    continue
                 print(f"Processing {file}")
                 process_json_file(os.path.join(root, file))
