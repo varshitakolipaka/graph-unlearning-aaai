@@ -45,7 +45,7 @@ class ParameterPerturber:
         self.min_layer = parameters["min_layer"]
         self.max_layer = parameters["max_layer"]
         self.forget_threshold = parameters["forget_threshold"] #unused
-        self.dampening_constant = parameters["dampening_constant"] #lambda 
+        self.dampening_constant = parameters["dampening_constant"] #lambda
         self.selection_weighting = parameters["selection_weighting"] #alpha
 
     def zerolike_params_dict(self, model: torch.nn) -> Dict[str, torch.Tensor]:
@@ -67,23 +67,23 @@ class ParameterPerturber:
     def calc_importance(self, data, mask) -> Dict[str, torch.Tensor]:
         """
         Calculate per-parameter importance for a GNN model using masked data.
-        
+
         Parameters:
         data: The data object containing node features, labels, etc.
         mask: A boolean mask to select specific nodes.
-        
+
         Returns:
         importances (dict(str, torch.Tensor([]))): Dictionary containing the importance for each parameter.
         """
         criterion = nn.CrossEntropyLoss()
         importances = self.zerolike_params_dict(self.model)
-        
+
         # Select the masked data
         x_masked, y_masked = data.x[mask], data.y[mask]
-        
+
         # Move the data to the appropriate device
         x_masked, y_masked = x_masked.to(self.device), y_masked.to(self.device)
-        
+
         # Forward pass and compute gradients
         self.opt.zero_grad()
         out = self.model(data.x, data.edge_index)
@@ -94,11 +94,11 @@ class ParameterPerturber:
         for (k1, p), (k2, imp) in zip(self.model.named_parameters(), importances.items()):
             if p.grad is not None:
                 imp.data += p.grad.data.clone().pow(2)
-        
+
         # Average the importance over the number of masked nodes
         for _, imp in importances.items():
             imp.data /= float(mask.sum().item())
-        
+
         return importances
 
     def modify_weight(
@@ -153,7 +153,7 @@ class LinearLR(_LRScheduler):
 
     def _get_closed_form_lr(self):
         return self.get_lr()
-    
+
 class Naive(Trainer):
     def __init__(self, opt, model, data, optimizer):
         super().__init__(model, data, optimizer)
@@ -163,8 +163,8 @@ class Naive(Trainer):
         self.data = data
         self.opt.training_epochs = opt.unlearning_epochs
         self.set_model(model)
-        self.optimizer = self.optimizer
-        self.scheduler = LinearLR(self.optimizer, T=self.opt.training_epochs*1.25, warmup_epochs=self.opt.training_epochs//100) # Spend 1% time in warmup, and stop 66% of the way through training 
+        self.optimizer = optimizer
+        self.scheduler = LinearLR(self.opt, T=self.opt.training_epochs*1.25, warmup_epochs=self.opt.training_epochs//100) # Spend 1% time in warmup, and stop 66% of the way through training
         self.top1 = torchmetrics.Accuracy(task="multiclass", num_classes=self.data.num_classes).to(device)
         self.scaler = GradScaler()
 
@@ -179,7 +179,7 @@ class Naive(Trainer):
         return loss
 
     def eval(self, data, mask, save_model=True, save_preds=False):
-        
+
             self.model.eval()
             self.top1.reset()
 
@@ -187,21 +187,21 @@ class Naive(Trainer):
                 # Select the masked data
                 x_masked, y_masked = data.x[mask], data.y[mask]
                 edge_index = data.edge_index
-                
+
                 # Move the data to the appropriate device
                 x_masked, y_masked = x_masked.to(self.device), y_masked.to(self.device)
 
                 # Forward pass through the model
                 with autocast():
                     output = self.model(x_masked, edge_index)
-                
+
                 # Compute the evaluation metric (e.g., accuracy)
                 self.top1(output, y_masked)
 
             top1 = self.top1.compute().item()
             self.top1.reset()
             print(f'Step: {self.curr_step} Val Top1: {top1*100:.2f}')
-        
+
 class SSDTrainer(Naive):
     def __init__(self, model, data, optimizer, opt ):
         super().__init__(opt, model, data, optimizer)
@@ -215,7 +215,7 @@ class SSDTrainer(Naive):
         device,
         optimizer
     ):
-        
+
         parameters = {
             "lower_bound": 1,
             "exponent": 1,
@@ -228,7 +228,7 @@ class SSDTrainer(Naive):
         }
 
         # load the trained model
-        # optimizer = torch.optim.SGD(model.parameters(), lr=0.015)
+        optimizer = torch.optim.SGD(model.parameters(), lr=0.015)
         pdr = ParameterPerturber(model, optimizer, device, parameters)
         model = model.eval()
 
@@ -252,4 +252,3 @@ class SSDTrainer(Naive):
         train_acc, msc_rate, f1 = self.evaluate()
         print(f'Test Acc: {train_acc}, Misclassification: {msc_rate},  F1 Score: {f1}')
         return None, None, time_taken
-        

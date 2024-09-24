@@ -143,7 +143,7 @@ class ScrubTrainer(Trainer):
             self.scheduler.step()
             # print(self.scheduler.get_lr())
             self.curr_step += 1
-        
+
         self.save_best(is_dr=False)
 
         return

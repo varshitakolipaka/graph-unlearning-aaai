@@ -27,22 +27,18 @@ def parse_args():
     # Data
     parser.add_argument('--data_dir', type=str, default='./data', help='data dir')
     parser.add_argument('--db_name', type=str, default='hp_tuning', help='db name')
-    
+
     # parser.add_argument('--df', type=str, default='in', help='Df set to use')
     # parser.add_argument('--df_idx', type=str, default=None, help='indices of data to be deleted')
     parser.add_argument('--df_size', type=float, default=0.5, help='Forgetting Fraction')
     parser.add_argument('--test_poison_fraction', type=float, default=0.2, help='Test Poisoning Fraction')
     parser.add_argument('--poison_tensor_size', type=int, default=100, help='Poison Tensor Size')
-    parser.add_argument('--dataset', type=str, default='Cora_p', help='dataset')
     parser.add_argument('--random_seed', type=int, default=0, help='random seed')
-    parser.add_argument('--df_size', type=float, default=0.5, help='Forgetting Fraction')
-    parser.add_argument('--test_poison_fraction', type=float, default=0.2, help='Test Poisoning Fraction')
     parser.add_argument('--trigger_size', type=int, default=100, help='Poison Tensor Size')
     parser.add_argument('--dataset', type=str, default='Cora', help='dataset')
-    parser.add_argument('--random_seed', type=int, default=0, help='random seed')
     parser.add_argument('--victim_class', type=int, default=69, help='class to add trigger to')
     parser.add_argument('--target_class', type=int, default=68, help='class to add trigger to')
-    
+
     # parser.add_argument('--batch_size', type=int, default=2048, help='batch size for GraphSAINTRandomWalk sampler')
     # parser.add_argument('--walk_length', type=int, default=2, help='random walk length for GraphSAINTRandomWalk sampler')
     # parser.add_argument('--num_steps', type=int, default=32, help='number of steps for GraphSAINTRandomWalk sampler')
@@ -99,7 +95,7 @@ def parse_args():
     parser.add_argument('--scrubAlpha', type=float, default=10, help='KL from og_model constant for SCRUB, higher incentivizes closeness to ogmodel')
     parser.add_argument('--msteps', type=int, default=25, help='Maximization steps on forget set for SCRUB')
     parser.add_argument('--ascent_lr', type=float, default=0.0025, help='Learning rate for gradient ascent steps')
-    parser.add_argument('--descent_lr', type=float, default=0.015, help='Learning rate for gradient descent steps')  
+    parser.add_argument('--descent_lr', type=float, default=0.015, help='Learning rate for gradient descent steps')
 
 
     # contrastive
@@ -116,15 +112,15 @@ def parse_args():
     parser.add_argument('--kappa', type=float, default=0.01)
     parser.add_argument('--alpha1', type=float, default=0.8)
     parser.add_argument('--alpha2', type=float, default=0.5)
-    
+
     # SSD
     parser.add_argument('--SSDdampening', type=float, default=10, help='SSD: lambda aka dampening constant, lower leads to more forgetting')
-    parser.add_argument('--SSDselectwt', type=float, default=1, help='SSD: alpha aka selection weight, lower leads to more forgetting')
-    
+    parser.add_argument('--SSDselectwt', type=float, default=25, help='SSD: alpha aka selection weight, lower leads to more forgetting')
+
     # UTILITIES
     parser.add_argument('--embs_all', action='store_true', help='whether to plot embeddings in embs.py')
     parser.add_argument('--embs_unlearn', action='store_true', help='whether to plot embeddings in embs.py')
-    
+
     # CORRECTIVE UNLEARNING
     parser.add_argument('--corrective_frac', type=float, default=1, help='fraction of nodes to sample for corrective unlearning (by default all nodes)')
 

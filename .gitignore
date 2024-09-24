@@ -10,7 +10,7 @@ data/
 
 # SQL
 *.db
-
+flickr/
 *.pth
 
 plots/

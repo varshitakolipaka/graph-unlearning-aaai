@@ -14,7 +14,7 @@ from attacks.feature_attack import trigger_attack
 import optuna
 from optuna.samplers import TPESampler
 from functools import partial
-from logger import Logger
+# from logger import Logger
 
 args = parse_args()
 
@@ -25,143 +25,104 @@ device = torch.device("cuda") if torch.cuda.is_available() else torch.device("cp
 with open('classes_to_poison_exp.json', 'r') as f:
     class_dataset_dict = json.load(f)
 
-logger = Logger(args, f"run_logs_{args.attack_type}_{class_dataset_dict[args.dataset]['class1']}_{class_dataset_dict[args.dataset]['class2']}.json")
-logger.log_arguments(args)
+# logger = Logger(args, f"run_logs_{args.attack_type}_{class_dataset_dict[args.dataset]['class1']}_{class_dataset_dict[args.dataset]['class2']}.json")
+# logger.log_arguments(args)
 
-def train(load=False):
-    if load:
-        clean_data = utils.get_original_data(args.dataset)
-        utils.train_test_split(
-            clean_data, args.random_seed, args.train_ratio, args.val_ratio
-        )
-        utils.prints_stats(clean_data)
-
-        clean_model = torch.load(
-            f"{args.data_dir}/{args.gnn}_{args.dataset}_{args.attack_type}_{args.df_size}_{args.random_seed}_clean_model.pt"
-        )
-
-        optimizer = torch.optim.Adam(
-            clean_model.parameters(), lr=args.train_lr, weight_decay=args.weight_decay
-        )
-
-        clean_trainer = Trainer(
-            clean_model, clean_data, optimizer, args.training_epochs
-        )
-
-        if args.attack_type != "trigger":
-            clean_trainer.evaluate()
-            forg, util = clean_trainer.get_score(
-                args.attack_type,
-                class1=class_dataset_dict[args.dataset]["class1"],
-                class2=class_dataset_dict[args.dataset]["class2"],
-            )
-
-            print(f"==OG Model==\nForget Ability: {forg}, Utility: {util}")
-            logger.log_result(
-                args.random_seed, "original", {"forget": forg, "utility": util}
-            )
-
-        return clean_data
-
-    # dataset
-    print("==TRAINING==")
+def train(load=True):
     clean_data = utils.get_original_data(args.dataset)
     utils.train_test_split(
         clean_data, args.random_seed, args.train_ratio, args.val_ratio
     )
-    utils.prints_stats(clean_data)
-    clean_model = utils.get_model(
-        args, clean_data.num_features, args.hidden_dim, clean_data.num_classes
-    )
+    # utils.prints_stats(clean_data)
 
-    optimizer = torch.optim.Adam(
-        clean_model.parameters(), lr=args.train_lr, weight_decay=args.weight_decay
-    )
-    clean_trainer = Trainer(clean_model, clean_data, optimizer, args.training_epochs)
-    clean_trainer.train()
+    model_path = f"{args.data_dir}/{args.gnn}_{args.dataset}_{args.attack_type}_{args.df_size}_{args.random_seed}_clean_model.pt"
+
+    if load and os.path.exists(model_path):
+        print("Loading existing clean model...")
+        clean_model = torch.load(model_path)
+    else:
+        print("Training new clean model...")
+        clean_model = utils.get_model(
+            args, clean_data.num_features, args.hidden_dim, clean_data.num_classes
+        )
+        optimizer = torch.optim.Adam(
+            clean_model.parameters(), lr=args.train_lr, weight_decay=args.weight_decay
+        )
+        clean_trainer = Trainer(
+            clean_model, clean_data, optimizer, args.training_epochs
+        )
+        clean_trainer.train()
+        torch.save(clean_model, model_path)
 
     if args.attack_type != "trigger":
+        clean_trainer = Trainer(clean_model, clean_data, None, args.training_epochs)
+        clean_trainer.evaluate()
         forg, util = clean_trainer.get_score(
             args.attack_type,
             class1=class_dataset_dict[args.dataset]["class1"],
             class2=class_dataset_dict[args.dataset]["class2"],
         )
-
-        print(f"==OG Model==\nForget Ability: {forg}, Utility: {util}")
-        logger.log_result(
-            args.random_seed, "original", {"forget": forg, "utility": util}
-        )
+        print(f"==Clean Model==\nForget Ability: {forg}, Utility: {util}")
+        # logger.log_result(
+        #     args.random_seed, "original", {"forget": forg, "utility": util}
+        # )
 
     return clean_data
 
+def poison(clean_data=None, load=True):
+    data_path = f"{args.data_dir}/{args.dataset}_{args.attack_type}_{args.df_size}_{args.random_seed}_poisoned_data.pt"
+    model_path = f"{args.data_dir}/{args.gnn}_{args.dataset}_{args.attack_type}_{args.df_size}_{args.random_seed}_poisoned_model.pt"
 
-def poison(clean_data=None):
-    if clean_data is None:
-        # load the poisoned data and model and indices from np file
-        poisoned_data = torch.load(
-            f"{args.data_dir}/{args.dataset}_{args.attack_type}_{args.df_size}_{args.random_seed}_poisoned_data.pt"
-        )
-        poisoned_model = torch.load(
-            f"{args.data_dir}/{args.gnn}_{args.dataset}_{args.attack_type}_{args.df_size}_{args.random_seed}_poisoned_model.pt"
-        )
-
+    if load and os.path.exists(data_path) and os.path.exists(model_path):
+        print("Loading existing poisoned data and model...")
+        poisoned_data = torch.load(data_path)
+        poisoned_model = torch.load(model_path)
         if args.attack_type == "edge":
             poisoned_indices = poisoned_data.poisoned_edge_indices
         else:
             poisoned_indices = poisoned_data.poisoned_nodes
+    else:
+        print("Creating new poisoned data and model...")
+        if clean_data is None:
+            clean_data = utils.get_original_data(args.dataset)
+            utils.train_test_split(
+                clean_data, args.random_seed, args.train_ratio, args.val_ratio
+            )
 
+        if args.attack_type == "label":
+            poisoned_data, poisoned_indices = label_flip_attack(
+                clean_data, args.df_size, args.random_seed, class_dataset_dict[args.dataset]["class1"], class_dataset_dict[args.dataset]["class2"]
+            )
+        elif args.attack_type == "edge":
+            poisoned_data, poisoned_indices = edge_attack_specific_nodes(
+                clean_data, args.df_size, args.random_seed
+            )
+        elif args.attack_type == "random":
+            poisoned_data = copy.deepcopy(clean_data)
+            poisoned_indices = torch.randperm(clean_data.num_nodes)[
+                : int(clean_data.num_nodes * args.df_size)
+            ]
+            poisoned_data.poisoned_nodes = poisoned_indices
+
+        poisoned_data = poisoned_data.to(device)
+        poisoned_model = utils.get_model(
+            args, poisoned_data.num_features, args.hidden_dim, poisoned_data.num_classes
+        )
         optimizer = torch.optim.Adam(
-            poisoned_model.parameters(),
-            lr=args.train_lr,
-            weight_decay=args.weight_decay,
+            poisoned_model.parameters(), lr=args.train_lr, weight_decay=args.weight_decay
         )
         poisoned_trainer = Trainer(
             poisoned_model, poisoned_data, optimizer, args.training_epochs
         )
-        poisoned_trainer.evaluate()
+        poisoned_trainer.train()
 
-        forg, util = poisoned_trainer.get_score(
-            args.attack_type,
-            class1=class_dataset_dict[args.dataset]["class1"],
-            class2=class_dataset_dict[args.dataset]["class2"],
-        )
-        print(f"==Poisoned Model==\nForget Ability: {forg}, Utility: {util}")
-        logger.log_result(
-            args.random_seed, "poisoned", {"forget": forg, "utility": util}
-        )
+        torch.save(poisoned_data, data_path)
+        torch.save(poisoned_model, model_path)
 
-        # print(poisoned_trainer.calculate_PSR())
-        return poisoned_data, poisoned_indices, poisoned_model
-
-    print("==POISONING==")
-    if args.attack_type == "label":
-        poisoned_data, poisoned_indices = label_flip_attack(
-            clean_data, args.df_size, args.random_seed, class_dataset_dict[args.dataset]["class1"], class_dataset_dict[args.dataset]["class2"]
-        )
-    elif args.attack_type == "edge":
-        poisoned_data, poisoned_indices = edge_attack_specific_nodes(
-            clean_data, args.df_size, args.random_seed
-        )
-    elif args.attack_type == "random":
-        poisoned_data = copy.deepcopy(clean_data)
-        poisoned_indices = torch.randperm(clean_data.num_nodes)[
-            : int(clean_data.num_nodes * args.df_size)
-        ]
-        poisoned_data.poisoned_nodes = poisoned_indices
-
-    poisoned_data = poisoned_data.to(device)
-
-    poisoned_model = utils.get_model(
-        args, poisoned_data.num_features, args.hidden_dim, poisoned_data.num_classes
-    )
-
-    optimizer = torch.optim.Adam(
-        poisoned_model.parameters(), lr=args.train_lr, weight_decay=args.weight_decay
-    )
     poisoned_trainer = Trainer(
-        poisoned_model, poisoned_data, optimizer, args.training_epochs
+        poisoned_model, poisoned_data, None, args.training_epochs
     )
-    poisoned_trainer.train()
+    poisoned_trainer.evaluate()
 
     forg, util = poisoned_trainer.get_score(
         args.attack_type,
@@ -169,14 +130,16 @@ def poison(clean_data=None):
         class2=class_dataset_dict[args.dataset]["class2"],
     )
     print(f"==Poisoned Model==\nForget Ability: {forg}, Utility: {util}")
-    logger.log_result(args.random_seed, "poisoned", {"forget": forg, "utility": util})
-    # print(f"PSR: {poisoned_trainer.calculate_PSR()}")
+    # logger.log_result(
+    #     args.random_seed, "poisoned", {"forget": forg, "utility": util}
+    # )
+
     return poisoned_data, poisoned_indices, poisoned_model
 
 
 def unlearn(poisoned_data, poisoned_indices, poisoned_model):
     print("==UNLEARNING==")
-    print(args)
+    # print(args)
     utils.find_masks(
         poisoned_data, poisoned_indices, args, attack_type=args.attack_type
     )
@@ -218,7 +181,7 @@ def unlearn(poisoned_data, poisoned_indices, poisoned_model):
         unlearn_trainer = utils.get_trainer(
             args, unlearn_model, poisoned_data, optimizer_unlearn
         )
-    else: 
+    else:
         unlearn_model = utils.get_model(
             args, poisoned_data.num_features, args.hidden_dim, poisoned_data.num_classes
         )
@@ -245,19 +208,19 @@ def unlearn(poisoned_data, poisoned_indices, poisoned_model):
     print(
         f"==Unlearned Model==\nForget Ability: {forg}, Utility: {util}, Time Taken: {time_taken}"
     )
-    logger.log_result(
-        args.random_seed,
-        args.unlearning_model,
-        {"forget": forg, "utility": util, "time_taken": time_taken},
-    )
+    # logger.log_result(
+    #     args.random_seed,
+    #     args.unlearning_model,
+    #     {"forget": forg, "utility": util, "time_taken": time_taken},
+    # )
     print("==UNLEARNING DONE==")
     return unlearn_model
 
 
 if __name__ == "__main__":
-    print("\n\n\n")
+    # print("\n\n\n")
 
-    print(args.dataset, args.attack_type)
+    # print(args.dataset, args.attack_type)
     # clean_data = train(load=True)
     clean_data = train()
 
@@ -282,12 +245,3 @@ if __name__ == "__main__":
 
     unlearnt_model = unlearn(poisoned_data, poisoned_indices, poisoned_model)
 
-    # utils.plot_embeddings(
-    #     args,
-    #     unlearnt_model,
-    #     poisoned_data,
-    #     class1=class_dataset_dict[args.dataset]["class1"],
-    #     class2=class_dataset_dict[args.dataset]["class2"],
-    #     is_dr=True,
-    #     name=f"unlearned_{args.unlearning_model}_2",
-    # )
