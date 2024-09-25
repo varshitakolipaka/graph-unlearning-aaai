@@ -103,6 +103,10 @@ def poison(clean_data=None, load=True):
                 : int(clean_data.num_nodes * args.df_size)
             ]
             poisoned_data.poisoned_nodes = poisoned_indices
+        elif args.attack_type == "trigger":
+            poisoned_data, poisoned_indices = trigger_attack(
+                clean_data, args.df_size, args.random_seed, victim_class=args.victim_class, target_class=args.target_class, trigger_size=args.trigger_size
+        )
 
         poisoned_data = poisoned_data.to(device)
         poisoned_model = utils.get_model(
@@ -226,6 +230,7 @@ if __name__ == "__main__":
 
     poisoned_data, poisoned_indices, poisoned_model = poison(clean_data)
 
+    exit(0)
     # load best params file
     with open("best_params.json", "r") as f:
         d = json.load(f)

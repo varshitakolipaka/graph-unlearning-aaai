@@ -64,7 +64,7 @@ class Trainer:
             self.class1 = None
             self.class2 = None
 
-        if hasattr(data, "poisoned_nodes"):    
+        if hasattr(data, "poisoned_nodes"):
             self.og_preds = self.get_df_outputs()
 
     def train(self):
@@ -216,7 +216,7 @@ class Trainer:
     def get_score(self, attack_type, class1=None, class2=None):
         forget_ability = None
         utility = None
-        print(attack_type)
+        # print(attack_type)
         if attack_type == "label" or attack_type == "edge":
             forget_ability, utility = self.subset_acc(class1, class2)
         elif attack_type == "trigger":
