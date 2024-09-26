@@ -9,7 +9,7 @@ from models.deletion import GCNDelete
 from models.models import GCN
 from trainers.base import Trainer
 from attacks.edge_attack import edge_attack_specific_nodes
-from attacks.label_flip import label_flip_attack
+from attacks.label_flip import label_flip_attack, label_flip_attack_strong
 from attacks.feature_attack import trigger_attack
 import optuna
 from optuna.samplers import TPESampler
@@ -47,13 +47,13 @@ def train(load=False):
 
         if args.attack_type != "trigger":
             clean_trainer.evaluate()
-            forg, util = clean_trainer.get_score(
+            forg, util, forget_f1, util_f1 = clean_trainer.get_score(
                 args.attack_type,
                 class1=class_dataset_dict[args.dataset]["class1"],
                 class2=class_dataset_dict[args.dataset]["class2"],
             )
 
-            print(f"==OG Model==\nForget Ability: {forg}, Utility: {util}")
+            print(f"==OG Model==\nForg Accuracy: {forg}, Util Accuracy: {util}, Forg F1: {forget_f1}, Util F1: {util_f1}")
         return clean_data
 
     # dataset
@@ -72,13 +72,13 @@ def train(load=False):
     clean_trainer.train()
 
     if args.attack_type != "trigger":
-        forg, util = clean_trainer.get_score(
+        forg, util, forget_f1, util_f1 = clean_trainer.get_score(
             args.attack_type,
             class1=class_dataset_dict[args.dataset]["class1"],
             class2=class_dataset_dict[args.dataset]["class2"],
         )
 
-        print(f"==OG Model==\nForget Ability: {forg}, Utility: {util}")
+        print(f"==OG Model==\nForg Accuracy: {forg}, Util Accuracy: {util}, Forg F1: {forget_f1}, Util F1: {util_f1}")
     # save the clean model
     os.makedirs(args.data_dir, exist_ok=True)
     torch.save(
@@ -114,18 +114,27 @@ def poison(clean_data=None):
         )
         poisoned_trainer.evaluate()
 
-        forg, util = poisoned_trainer.get_score(
-            args.attack_type,
-            class1=class_dataset_dict[args.dataset]["class1"],
-            class2=class_dataset_dict[args.dataset]["class2"],
-        )
-        print(f"==Poisoned Model==\nForget Ability: {forg}, Utility: {util}")
+        forg, util, forget_f1, util_f1 = poisoned_trainer.get_score(
+                args.attack_type,
+                class1=class_dataset_dict[args.dataset]["class1"],
+                class2=class_dataset_dict[args.dataset]["class2"],
+            )
+
+        print(f"==Poisoned Model==\nForg Accuracy: {forg}, Util Accuracy: {util}, Forg F1: {forget_f1}, Util F1: {util_f1}")
         # print(poisoned_trainer.calculate_PSR())
         return poisoned_data, poisoned_indices, poisoned_model
 
     print("==POISONING==")
     if args.attack_type == "label":
         poisoned_data, poisoned_indices = label_flip_attack(
+            clean_data,
+            args.df_size,
+            args.random_seed,
+            class_dataset_dict[args.dataset]["class1"],
+            class_dataset_dict[args.dataset]["class2"],
+        )
+    if args.attack_type == "label_strong":
+        poisoned_data, poisoned_indices = label_flip_attack_strong(
             clean_data,
             args.df_size,
             args.random_seed,
@@ -188,12 +197,13 @@ def poison(clean_data=None):
         f"{args.data_dir}/{args.dataset}_{args.attack_type}_{args.df_size}_{args.random_seed}_poisoned_data.pt",
     )
 
-    forg, util = poisoned_trainer.get_score(
+    forg, util, forget_f1, util_f1 = poisoned_trainer.get_score(
         args.attack_type,
         class1=class_dataset_dict[args.dataset]["class1"],
         class2=class_dataset_dict[args.dataset]["class2"],
     )
-    print(f"==Poisoned Model==\nForget Ability: {forg}, Utility: {util}")
+
+    print(f"==Poisoned Model==\nForg Accuracy: {forg}, Util Accuracy: {util}, Forg F1: {forget_f1}, Util F1: {util_f1}")
     # print(f"PSR: {poisoned_trainer.calculate_PSR()}")
     return poisoned_data, poisoned_indices, poisoned_model
 
@@ -296,12 +306,28 @@ hp_tuning_params_dict = {
         # "contrastive_lambda": (0.0, 1.0, "float"),
         "contrastive_frac": (0.02, 0.1, "float"),
         # "k_hop": (1, 2, "int"),
-        "ascent_lr": (1e-6, 1e-2, "log"),
-        "descent_lr": (1e-2, 1e-1, "log"),
+        # "ascent_lr": (1e-6, 1e-2, "log"),
+        "descent_lr": (1e-4, 1e-1, "log"),
         # "scrubAlpha": (1e-6, 10, "log"),
     },
     "utu": {},
     "scrub": {
+        "unlearn_iters": (110, 200, "int"),
+        # 'kd_T': (1, 10, "float"),
+        "unlearn_lr": (1e-5, 1e-1, "log"),
+        "scrubAlpha": (1e-6, 10, "log"),
+        "msteps": (10, 100, "int"),
+        # 'weight_decay': (1e-5, 1e-1, "log"),
+    },
+    "scrub_no_kl": {
+        "unlearn_iters": (110, 200, "int"),
+        # 'kd_T': (1, 10, "float"),
+        "unlearn_lr": (1e-5, 1e-1, "log"),
+        # "scrubAlpha": (1e-6, 10, "log"),
+        "msteps": (10, 100, "int"),
+        # 'weight_decay': (1e-5, 1e-1, "log"),
+    },
+    "scrub_no_kl_combined": {
         "unlearn_iters": (110, 200, "int"),
         # 'kd_T': (1, 10, "float"),
         "unlearn_lr": (1e-5, 1e-1, "log"),
@@ -361,7 +387,13 @@ def objective(trial, model, data):
     _, _, time_taken = trainer.train()
 
     obj = trainer.validate(is_dr=True)
-
+    _, _, forget_f1, util_f1 = trainer.get_score(
+        args.attack_type,
+        class1=class_dataset_dict[args.dataset]["class1"],
+        class2=class_dataset_dict[args.dataset]["class2"],
+    )
+    trial.set_user_attr("forget_f1", forget_f1)
+    trial.set_user_attr("util_f1", util_f1)
     trial.set_user_attr("time_taken", time_taken)
 
     # We want to minimize misclassification rate and maximize accuracy

@@ -125,8 +125,8 @@ class Trainer:
         # calculate acc separately on poisoned and non-poisoned classes
         accs_poisoned = []
         accs_clean = []
-        roc_aucs_poisoned = []
-        roc_aucs_clean = []
+        f1_poisoned = []
+        f1_clean = []
 
         # z = F.log_softmax(self.model(self.data.x, self.data.edge_index[:, self.data.dr_mask]), dim=1)
 
@@ -140,12 +140,13 @@ class Trainer:
             binary_trues = torch.zeros_like(true_labels)
             binary_trues[true_labels == poisoned_class] = 1
             
-            # accs_poisoned.append(
-            #     f1_score(
-            #         binary_trues[poisoned_indices].cpu(),
-            #         binary_preds[poisoned_indices].cpu(),
-            #     )
-            # )
+            f1_poisoned.append(
+                f1_score(
+                    binary_trues[poisoned_indices].cpu(),
+                    binary_preds[poisoned_indices].cpu(),
+                )
+            )
+            
             accs_poisoned.append(
                 accuracy_score(
                     true_labels[poisoned_indices].cpu(), pred_labels[poisoned_indices].cpu()
@@ -163,11 +164,12 @@ class Trainer:
             binary_preds = torch.zeros_like(pred_labels)
             binary_preds[pred_labels == clean_class] = 1
             
-            # accs_clean.append(
-            #     f1_score(
-            #         binary_trues[clean_indices].cpu(), binary_preds[clean_indices].cpu()
-            #     )
-            # )
+            f1_clean.append(
+                f1_score(
+                    binary_trues[clean_indices].cpu(), binary_preds[clean_indices].cpu()
+                )
+            )
+            
             accs_clean.append(
                 accuracy_score(
                     true_labels[clean_indices].cpu(), pred_labels[clean_indices].cpu()
@@ -179,11 +181,14 @@ class Trainer:
         # take average of the accs
         accs_poisoned = sum(accs_poisoned) / len(accs_poisoned)
         accs_clean = sum(accs_clean) / len(accs_clean)
+        
+        f1_poisoned = sum(f1_poisoned) / len(f1_poisoned)
+        f1_clean = sum(f1_clean) / len(f1_clean)
 
         # auc_poisoned = sum(roc_aucs_poisoned) / len(roc_aucs_poisoned)
         # auc_clean = sum(roc_aucs_clean) / len(roc_aucs_clean)
 
-        return accs_poisoned, accs_clean
+        return accs_poisoned, accs_clean, f1_poisoned, f1_clean
 
     def misclassification_rate(self, true_labels, pred_labels):
         if self.class1 is None or self.class2 is None:
@@ -246,7 +251,7 @@ class Trainer:
             loss = F.nll_loss(z[mask], self.data.y[mask]).cpu().item()
             pred = torch.argmax(z[mask], dim=1).cpu()
             acc = accuracy_score(self.data.y[mask].cpu(), pred)
-            f1 = f1_score(self.data.y[mask].cpu(), pred, average="micro")
+            f1 = f1_score(self.data.y[mask].cpu(), pred, average="macro")
             msc_rate = self.misclassification_rate(self.data.y[mask].cpu(), pred)
 
         self.true = self.data.y[mask].cpu()
@@ -263,8 +268,9 @@ class Trainer:
     def get_score(self, attack_type, class1=None, class2=None):
         forget_ability = None
         utility = None
-        if attack_type == "label" or attack_type == "edge":
-            forget_ability, utility = self.subset_acc(class1, class2)
+        if "label" in attack_type  or attack_type == "edge":
+            forget_ability, utility, forget_f1, utility_f1 = self.subset_acc(class1, class2)
+            return forget_ability, utility, forget_f1, utility_f1
         elif attack_type == "trigger":
             utility, _, _ = self.evaluate()
             forget_ability = self.calculate_PSR()

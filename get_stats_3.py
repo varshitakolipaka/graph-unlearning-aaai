@@ -1,21 +1,24 @@
 import os
 import pandas as pd
 
-dir = 'logs'
+dir = 'logs/'
 
 # get all subdirectories
 subdirs = [f.path for f in os.scandir(dir) if f.is_dir()]
 
 print(subdirs)
 
-attacks = ['label', 'edge']
+attacks = ['label']
 
 for subdir in subdirs:
     path = f'{subdir}'
     for attack in attacks:
         # Load avg and std csv files
-        avg_df = pd.read_csv(f'{path}/run_logs_{attack}_avg.csv')
-        std_df = pd.read_csv(f'{path}/run_logs_{attack}_std.csv')
+        for fname in os.listdir(path):
+            if attack in fname and 'avg' in fname:
+                avg_df = pd.read_csv(f'{path}/{fname}')
+            if attack in fname and 'std' in fname:
+                std_df = pd.read_csv(f'{path}/{fname}')
 
         # Ensure both files have the same methods
         assert avg_df['Method'].equals(std_df['Method']), "Methods in avg and std CSV files do not match."

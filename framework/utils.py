@@ -22,6 +22,8 @@ from trainers.gradient_ascent import GradientAscentTrainer
 from trainers.gif import GIFTrainer
 from trainers.base import Trainer
 from trainers.scrub import ScrubTrainer
+from trainers.scrub_no_kl import ScrubTrainer1
+from trainers.scrub_no_kl_combined import ScrubTrainer2
 from trainers.ssd import SSDTrainer
 from trainers.utu import UtUTrainer
 from trainers.retrain import RetrainTrainer
@@ -199,7 +201,9 @@ def get_trainer(args, poisoned_model, poisoned_data, optimizer_unlearn) -> Train
         "grub": GrubTrainer,
         "yaum": YAUMTrainer,
         "contrascent": ContrastiveAscentTrainer,
-        'cacdc': ContrastiveAscentNoLinkTrainer
+        'cacdc': ContrastiveAscentNoLinkTrainer,
+        "scrub_no_kl": ScrubTrainer1,
+        "scrub_no_kl_combined": ScrubTrainer2
     }
 
     if args.unlearning_model in trainer_map:

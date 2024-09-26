@@ -4,10 +4,10 @@ import os
 def run_hp_tuning(unlearning_models, df_size, random_seed, dataset, attack_type, data_dir, db_name, gnn, cf):
     cf_str = ""
     if cf < 1.0:
-        cf_str = f"--cf {cf}"
+        cf_str = f"--corrective_frac {cf}"
     
     for model in unlearning_models:
-        if attack_type == "label" or attack_type == "random" or attack_type == "trigger":
+        if attack_type == "label" or attack_type == "random":
             cmd = f"python hp_tune.py --unlearning_model {model} --dataset {dataset} --df_size {df_size} --random_seed {random_seed} --data_dir {data_dir} --attack_type {attack_type} --db_name {db_name} --gnn {gnn} {cf_str}"
             
             print(f"Running command: {cmd}")
@@ -55,6 +55,9 @@ if __name__ == "__main__":
     parser.add_argument('--yaum', action='store_true', help='Run HP tuning for yaum model')
     parser.add_argument('--contrascent', action='store_true', help='Run HP tuning for yaum model')
     parser.add_argument('--cacdc', action='store_true', help='Run HP tuning for yaum model')
+    parser.add_argument('--retrain_link', action='store_true', help='Run HP tuning for yaum model')
+    parser.add_argument('--scrub_no_kl', action='store_true', help='Run HP tuning for yaum model')
+    parser.add_argument('--scrub_no_kl_combined', action='store_true', help='Run HP tuning for yaum model')
 
     args = parser.parse_args()
     
@@ -63,6 +66,8 @@ if __name__ == "__main__":
         unlearning_models.append('utu')
     if args.retrain:
         unlearning_models.append('retrain')
+    if args.retrain_link:
+        unlearning_models.append('retrain_link')
     if args.scrub:
         unlearning_models.append('scrub')
     if args.contra_2:
@@ -83,5 +88,9 @@ if __name__ == "__main__":
         unlearning_models.append('contrascent')
     if args.cacdc:
         unlearning_models.append('cacdc')
+    if args.scrub_no_kl:
+        unlearning_models.append('scrub_no_kl')
+    if args.scrub_no_kl_combined:
+        unlearning_models.append('scrub_no_kl_combined')
     
     run_hp_tuning(unlearning_models, args.df_size, args.random_seed, args.dataset, args.attack_type, args.data_dir, args.db_name, args.gnn, args.cf)

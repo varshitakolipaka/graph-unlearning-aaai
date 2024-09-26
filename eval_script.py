@@ -47,6 +47,8 @@ if __name__ == "__main__":
     parser.add_argument('--yaum', action='store_true', help='Run HP tuning for yaum model')
     parser.add_argument('--contrascent', action='store_true', help='Run HP tuning for yaum model')
     parser.add_argument('--cacdc', action='store_true', help='Run HP tuning for yaum model')
+    parser.add_argument('--scrub_no_kl', action='store_true', help='Run HP tuning for yaum model')
+    parser.add_argument('--scrub_no_kl_combined', action='store_true', help='Run HP tuning for yaum model')
 
     args = parser.parse_args()
     
@@ -75,6 +77,10 @@ if __name__ == "__main__":
         unlearning_models.append('contrascent')
     if args.cacdc:
         unlearning_models.append('cacdc')
+    if args.scrub_no_kl:
+        unlearning_models.append('scrub_no_kl')
+    if args.scrub_no_kl_combined:
+        unlearning_models.append('scrub_no_kl_combined')
 
     attacks = [args.attack_type]
     datasets = [args.dataset]

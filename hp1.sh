@@ -1,11 +1,11 @@
 # python run_hp_tune.py --dataset CS --df_size 0.5 --random_seed 1 --data_dir /scratch/akshit.sinha/data --attack_type label --db_name contrascent_eval --gnn gcn --contra_2
 
-python run_hp_tune.py --dataset Cora --df_size 0.5 --random_seed 1 --data_dir /scratch/akshit.sinha/data --attack_type label --db_name new_exp_ssd --ssd
-python run_hp_tune.py --dataset Amazon --df_size 0.5 --random_seed 1 --data_dir /scratch/akshit.sinha/data --attack_type label --db_name new_exp_ssd --ssd
-python run_hp_tune.py --dataset CS --df_size 0.5 --random_seed 1 --data_dir /scratch/akshit.sinha/data --attack_type label --db_name new_exp_ssd --ssd
-python eval_script.py --ssd --dataset Cora --attack_type label
-python eval_script.py --ssd --dataset Amazon --attack_type label
-python eval_script.py --ssd --dataset CS --attack_type label
+python run_hp_tune.py --dataset Cora --df_size 0.5 --random_seed 1 --data_dir /scratch/akshit.sinha/data --attack_type label --db_name contra_descend --gnn gcn --cacdc
+python run_hp_tune.py --dataset Amazon --df_size 0.5 --random_seed 1 --data_dir /scratch/akshit.sinha/data --attack_type label --db_name contra_descend --gnn gcn --cacdc
+python run_hp_tune.py --dataset CS --df_size 0.5 --random_seed 1 --data_dir /scratch/akshit.sinha/data --attack_type label --db_name contra_descend --gnn gcn --cacdc
+python eval_script.py --dataset Cora --attack_type label --cacdc
+python eval_script.py --dataset Amazon --attack_type label --cacdc
+python eval_script.py --dataset CS --attack_type label --cacdc
 sh get_stats.sh
 
 # python run_hp_tune.py --dataset Amazon --df_size 0.5 --random_seed 1 --data_dir /scratch/akshit.sinha/data --attack_type label --db_name contrascent_eval --gnn gcn --contra_2

@@ -30,7 +30,7 @@ if __name__=="__main__":
         print(f"Trial: {trial.number}, Value: {trial.value}, Params: {trial.params}")
     
     # get best hyperparameters
-    best_trial = trials[1]
+    best_trial = trials[0]
     print(f"Best trial: {best_trial.value}")
     
     params = best_trial.params

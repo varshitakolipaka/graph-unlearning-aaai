@@ -709,7 +709,7 @@ class ContrastiveAscentNoLinkTrainer(Trainer):
         train_acc, msc_rate, f1 = self.evaluate(is_dr=True, use_val=True)
 
         print(f"Training time: {self.best_model_time - start_time}, Train Acc: {train_acc}, Msc Rate: {msc_rate}, F1: {f1}")
-        forg, util = self.get_score(self.args.attack_type, class1=class_dataset_dict[self.args.dataset]["class1"], class2=class_dataset_dict[self.args.dataset]["class2"])
-        print(f"Forgotten: {forg}, Util: {util}")
+        forg, util, forg_f1, util_f1 = self.get_score(self.args.attack_type, class1=class_dataset_dict[self.args.dataset]["class1"], class2=class_dataset_dict[self.args.dataset]["class2"])
+        print(f"Forgotten: {forg}, Util: {util}, Forg F1: {forg_f1}, Util F1: {util_f1}")        
 
         return train_acc, msc_rate, self.best_model_time - start_time
