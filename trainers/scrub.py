@@ -141,9 +141,12 @@ class ScrubTrainer(Trainer):
             loss.backward()
             self.optimizer.step()
             self.scheduler.step()
+            train_acc, msc_rate, f1 = self.evaluate()
+            with open("./scrub2.txt", "a") as f:
+                f.write(f"{loss}\n")
             # print(self.scheduler.get_lr())
             self.curr_step += 1
-        
+
         self.save_best()
 
         return
@@ -168,6 +171,7 @@ class ScrubTrainer(Trainer):
         print("MEOW MEH: ", forget_mask.shape)
         self.maximize=False
         start_time = time.time()
+        print(self.opt.unlearn_iters)
         while self.curr_step < self.opt.unlearn_iters:
             print("UNLEARNING STEP: ", self.curr_step, end='\r')
             if self.curr_step < self.opt.msteps:

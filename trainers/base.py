@@ -65,7 +65,7 @@ class Trainer:
             self.class1 = None
             self.class2 = None
 
-        if hasattr(data, "poisoned_nodes"):    
+        if hasattr(data, "poisoned_nodes"):
             self.og_preds = self.get_df_outputs()
 
     def train(self):
@@ -78,6 +78,7 @@ class Trainer:
             loss = F.nll_loss(
                 z[self.data.train_mask], self.data.y[self.data.train_mask]
             )
+            train_acc, msc_rate, f1 = self.evaluate()
             loss.backward()
             losses.append(loss)
             self.optimizer.step()
@@ -132,21 +133,21 @@ class Trainer:
 
         for poisoned_class in poisoned_classes:
             poisoned_indices = true_labels == poisoned_class
-            
+
             # create binary mask for correct class and all wrong classes
             binary_preds = torch.zeros_like(pred_labels)
             binary_preds[pred_labels == poisoned_class] = 1
-            
+
             binary_trues = torch.zeros_like(true_labels)
             binary_trues[true_labels == poisoned_class] = 1
-            
+
             f1_poisoned.append(
                 f1_score(
                     binary_trues[poisoned_indices].cpu(),
                     binary_preds[poisoned_indices].cpu(),
                 )
             )
-            
+
             accs_poisoned.append(
                 accuracy_score(
                     true_labels[poisoned_indices].cpu(), pred_labels[poisoned_indices].cpu()
@@ -157,19 +158,19 @@ class Trainer:
             clean_indices = true_labels == clean_class
             if clean_indices.sum() == 0:
                 continue
-            
+
             binary_trues = torch.zeros_like(true_labels)
             binary_trues[true_labels == clean_class] = 1
-            
+
             binary_preds = torch.zeros_like(pred_labels)
             binary_preds[pred_labels == clean_class] = 1
-            
+
             f1_clean.append(
                 f1_score(
                     binary_trues[clean_indices].cpu(), binary_preds[clean_indices].cpu()
                 )
             )
-            
+
             accs_clean.append(
                 accuracy_score(
                     true_labels[clean_indices].cpu(), pred_labels[clean_indices].cpu()
@@ -181,7 +182,7 @@ class Trainer:
         # take average of the accs
         accs_poisoned = sum(accs_poisoned) / len(accs_poisoned)
         accs_clean = sum(accs_clean) / len(accs_clean)
-        
+
         f1_poisoned = sum(f1_poisoned) / len(f1_poisoned)
         f1_clean = sum(f1_clean) / len(f1_clean)
 
@@ -265,6 +266,12 @@ class Trainer:
         psr = sum(pred == self.data.target_class) / len(pred)
         return psr.item()
 
+    def calculate_Clean(self):
+        z = self.model(self.data.x, self.data.edge_index)
+        pred = torch.argmax(z[self.data.poison_test_mask], dim=1).cpu()
+        psr = sum(pred == self.data.victim_class) / len(pred)
+        return psr.item()
+
     def get_score(self, attack_type, class1=None, class2=None):
         forget_ability = None
         utility = None
@@ -274,6 +281,9 @@ class Trainer:
         elif attack_type == "trigger":
             utility, _, _ = self.evaluate()
             forget_ability = self.calculate_PSR()
+        elif attack_type == "clean_label":
+            utility, _, _ = self.evaluate()
+            forget_ability = self.calculate_Clean()
         elif attack_type == "random":
             utility, _, f1 = self.evaluate()
         return forget_ability, utility
@@ -298,10 +308,11 @@ class Trainer:
 
     def save_best(self, is_dr=True):
         score = self.validate(is_dr)
+        with open("./results3.txt", "a") as f:
+            f.write(f"{score}\n")
         if score > self.best_val_score:
             # record  the time
             self.best_model_time = time.time()
-
             self.best_val_score = score
             print(f"Saving best model with score: {self.best_val_score}")
             self.best_state_dict = self.model.state_dict()

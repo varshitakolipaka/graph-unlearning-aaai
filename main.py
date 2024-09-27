@@ -9,7 +9,7 @@ from models.deletion import GCNDelete
 from models.models import GCN
 from trainers.base import Trainer
 from attacks.edge_attack import edge_attack_specific_nodes
-from attacks.label_flip import label_flip_attack
+from attacks.label_flip import label_flip_attack, label_flip_attack_strong
 from attacks.feature_attack import trigger_attack
 import optuna
 from optuna.samplers import TPESampler
@@ -152,6 +152,14 @@ def poison(clean_data=None):
             class_dataset_dict[args.dataset]["class1"],
             class_dataset_dict[args.dataset]["class2"],
         )
+    elif args.attack_type == "label_strong":
+        poisoned_data, poisoned_indices = label_flip_attack_strong(
+            clean_data,
+            args.df_size,
+            args.random_seed,
+            class_dataset_dict[args.dataset]["class1"],
+            class_dataset_dict[args.dataset]["class2"],
+        )
     elif args.attack_type == "edge":
         poisoned_data, poisoned_indices = edge_attack_specific_nodes(
             clean_data, args.df_size, args.random_seed
@@ -166,7 +174,7 @@ def poison(clean_data=None):
         poisoned_data, poisoned_indices = trigger_attack(
             clean_data, args.df_size, args.random_seed, victim_class=args.victim_class, target_class=args.target_class, trigger_size=args.trigger_size
         )
-        
+
 
     poisoned_data = poisoned_data.to(device)
 

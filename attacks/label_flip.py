@@ -22,8 +22,8 @@ def label_flip_attack(data, epsilon, seed, class1=None, class2=None):
     class2_indices = train_indices[data.y[train_indices] == class2]
 
     # sort the nodes by degree
-    degrees = data.adj.sum(1)
-    degrees = degrees.squeeze()
+    degrees = degree(data.edge_index[0])
+    # degrees = degrees.squeeze()
     sorted_indices = np.argsort(degrees)
     class1_indices = np.intersect1d(class1_indices, sorted_indices)
     class2_indices = np.intersect1d(class2_indices, sorted_indices)

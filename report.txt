@@ -1,0 +1,339 @@
+PSR=0.6463307086614173 utility=0.5714167586430616
+df_size=0.25, seed=0, victim_class=50, target_class=47, trigger_size=15
+
+PSR=0.6383937007874015 utility=0.5734135700144222
+df_size=0.25, seed=0, victim_class=50, target_class=47, trigger_size=50
+
+PSR=0.654267716535433 utility=0.5723139657361662
+df_size=0.25, seed=0, victim_class=50, target_class=47, trigger_size=100
+
+PSR=0.6383937007874015 utility=0.5709197265437737
+df_size=0.25, seed=0, victim_class=69, target_class=68, trigger_size=15
+
+PSR=0.6305196850393701 utility=0.5733889530850697
+df_size=0.25, seed=0, victim_class=69, target_class=68, trigger_size=50
+
+PSR=0.666267716535433 utility=0.56999137450518
+df_size=0.25, seed=0, victim_class=69, target_class=68, trigger_size=100
+
+PSR=0.6503307086614173 utility=0.5714838145687504
+df_size=0.25, seed=0, victim_class=19, target_class=15, trigger_size=15
+
+PSR=0.6543307086614173 utility=0.5692270456356517
+df_size=0.25, seed=0, victim_class=19, target_class=15, trigger_size=50
+
+PSR=0.6463937007874015 utility=0.5708103815597985
+df_size=0.25, seed=0, victim_class=19, target_class=15, trigger_size=100
+
+PSR=0.6927745252034843 utility=0.594332932409371
+df_size=0.25, seed=1, victim_class=50, target_class=47, trigger_size=15
+
+PSR=0.6892284259127041 utility=0.5955134866326431
+df_size=0.25, seed=1, victim_class=50, target_class=47, trigger_size=50
+
+PSR=0.6823266219239373 utility=0.5962817148520421
+df_size=0.25, seed=1, victim_class=50, target_class=47, trigger_size=100
+
+PSR=0.6407254033985434 utility=0.6007798109905902
+df_size=0.25, seed=1, victim_class=69, target_class=68, trigger_size=15
+
+PSR=0.6823266219239373 utility=0.5963115725268567
+df_size=0.25, seed=1, victim_class=69, target_class=68, trigger_size=50
+
+PSR=0.6791613118187443 utility=0.5867245561083095
+df_size=0.25, seed=1, victim_class=69, target_class=68, trigger_size=100
+
+PSR=0.6823266219239373 utility=0.5970451695565232
+df_size=0.25, seed=1, victim_class=19, target_class=15, trigger_size=15
+
+PSR=0.675234423342377 utility=0.5975097731645193
+df_size=0.25, seed=1, victim_class=19, target_class=15, trigger_size=50
+
+PSR=0.7032224284830311 utility=0.5935199708300798
+df_size=0.25, seed=1, victim_class=19, target_class=15, trigger_size=100
+
+PSR=0.6810479375696767 utility=0.5683890858756324
+df_size=0.25, seed=2, victim_class=50, target_class=47, trigger_size=15
+
+PSR=0.6810479375696767 utility=0.5668444436519684
+df_size=0.25, seed=2, victim_class=50, target_class=47, trigger_size=50
+
+PSR=0.6810479375696767 utility=0.5665388075626913
+df_size=0.25, seed=2, victim_class=50, target_class=47, trigger_size=100
+
+PSR=0.692809364548495 utility=0.559960228829433
+df_size=0.25, seed=2, victim_class=69, target_class=68, trigger_size=15
+
+PSR=0.6543478260869565 utility=0.5711267009657672
+df_size=0.25, seed=2, victim_class=69, target_class=68, trigger_size=50
+
+PSR=0.6812709030100335 utility=0.5662923369528448
+df_size=0.25, seed=2, victim_class=69, target_class=68, trigger_size=100
+
+PSR=0.6887402452619844 utility=0.5669329443936606
+df_size=0.25, seed=2, victim_class=19, target_class=15, trigger_size=15
+
+PSR=0.6776477146042363 utility=0.5627441583956821
+df_size=0.25, seed=2, victim_class=19, target_class=15, trigger_size=50
+
+PSR=0.6848940914158306 utility=0.5700949861134981
+df_size=0.25, seed=2, victim_class=19, target_class=15, trigger_size=100
+
+PSR=0.6646251257470857 utility=0.5921977398747668
+df_size=0.25, seed=3, victim_class=50, target_class=47, trigger_size=15
+
+PSR=0.6685010947393337 utility=0.6001871139771005
+df_size=0.25, seed=3, victim_class=50, target_class=47, trigger_size=50
+
+PSR=0.6569323628617079 utility=0.5942821345942413
+df_size=0.25, seed=3, victim_class=50, target_class=47, trigger_size=100
+
+PSR=0.6454228060832001 utility=0.5927732662880757
+df_size=0.25, seed=3, victim_class=69, target_class=68, trigger_size=15
+
+PSR=0.6607491567548376 utility=0.5964835486366225
+df_size=0.25, seed=3, victim_class=69, target_class=68, trigger_size=50
+
+PSR=0.6801290017160779 utility=0.5914554105907477
+df_size=0.25, seed=3, victim_class=69, target_class=68, trigger_size=100
+
+PSR=0.6762530327238299 utility=0.6050823614388471
+df_size=0.25, seed=3, victim_class=19, target_class=15, trigger_size=15
+
+PSR=0.684004970708326 utility=0.5938075633528929
+df_size=0.25, seed=3, victim_class=19, target_class=15, trigger_size=50
+
+PSR=0.6608083318539559 utility=0.5985463104332874
+df_size=0.25, seed=3, victim_class=19, target_class=15, trigger_size=100
+
+PSR=0.7838085423107752 utility=0.6019853594840704
+df_size=0.25, seed=4, victim_class=50, target_class=47, trigger_size=15
+
+PSR=0.7721573342493988 utility=0.5999410752473295
+df_size=0.25, seed=4, victim_class=50, target_class=47, trigger_size=50
+
+PSR=0.7762223748998054 utility=0.5972321699525698
+df_size=0.25, seed=4, victim_class=50, target_class=47, trigger_size=100
+
+PSR=0.7721573342493988 utility=0.6013546457938795
+df_size=0.25, seed=4, victim_class=69, target_class=68, trigger_size=15
+
+PSR=0.7802874155502119 utility=0.5989105011432835
+df_size=0.25, seed=4, victim_class=69, target_class=68, trigger_size=50
+
+PSR=0.7727012481392419 utility=0.6010698171501551
+df_size=0.25, seed=4, victim_class=69, target_class=68, trigger_size=100
+
+PSR=0.7727012481392419 utility=0.6001711200758258
+df_size=0.25, seed=4, victim_class=19, target_class=15, trigger_size=15
+
+PSR=0.7838085423107752 utility=0.6013065025644043
+df_size=0.25, seed=4, victim_class=19, target_class=15, trigger_size=50
+
+PSR=0.7762223748998054 utility=0.6027453009683178
+df_size=0.25, seed=4, victim_class=19, target_class=15, trigger_size=100
+
+PSR=0.758624502432552 utility=0.5793680592715784
+df_size=0.25, seed=5, victim_class=50, target_class=47, trigger_size=15
+
+PSR=0.7445544007076514 utility=0.5867940112589661
+df_size=0.25, seed=5, victim_class=50, target_class=47, trigger_size=50
+
+PSR=0.7511333480760726 utility=0.5817900781850041
+df_size=0.25, seed=5, victim_class=50, target_class=47, trigger_size=100
+
+PSR=0.7445544007076514 utility=0.5840274836170738
+df_size=0.25, seed=5, victim_class=69, target_class=68, trigger_size=15
+
+PSR=0.741264927023441 utility=0.5838771415985188
+df_size=0.25, seed=5, victim_class=69, target_class=68, trigger_size=50
+
+PSR=0.7445544007076514 utility=0.5851133315456406
+df_size=0.25, seed=5, victim_class=69, target_class=68, trigger_size=100
+
+PSR=0.7544228217602831 utility=0.5800560717509553
+df_size=0.25, seed=5, victim_class=19, target_class=15, trigger_size=15
+
+PSR=0.741264927023441 utility=0.5825776532820662
+df_size=0.25, seed=5, victim_class=19, target_class=15, trigger_size=50
+
+PSR=0.7478438743918621 utility=0.5797747859054688
+df_size=0.25, seed=5, victim_class=19, target_class=15, trigger_size=100
+
+PSR=0.7458468526930564 utility=0.5991761059482033
+df_size=0.25, seed=6, victim_class=50, target_class=47, trigger_size=15
+
+PSR=0.7613887086307592 utility=0.6014639524588209
+df_size=0.25, seed=6, victim_class=50, target_class=47, trigger_size=50
+
+PSR=0.7427319922128488 utility=0.6033468656174731
+df_size=0.25, seed=6, victim_class=50, target_class=47, trigger_size=100
+
+PSR=0.7334198572355612 utility=0.6024037528691469
+df_size=0.25, seed=6, victim_class=69, target_class=68, trigger_size=15
+
+PSR=0.7042180402336145 utility=0.5995913932128139
+df_size=0.25, seed=6, victim_class=69, target_class=68, trigger_size=50
+
+PSR=0.7495781959766386 utility=0.6035426163399265
+df_size=0.25, seed=6, victim_class=69, target_class=68, trigger_size=100
+
+PSR=0.746463335496431 utility=0.6034932466515087
+df_size=0.25, seed=6, victim_class=19, target_class=15, trigger_size=15
+
+PSR=0.7408825438027256 utility=0.5997321086510441
+df_size=0.25, seed=6, victim_class=19, target_class=15, trigger_size=50
+
+PSR=0.7495781959766386 utility=0.6019772638214326
+df_size=0.25, seed=6, victim_class=19, target_class=15, trigger_size=100
+
+PSR=0.74221731870229 utility=0.5589898327497346
+df_size=0.25, seed=7, victim_class=50, target_class=47, trigger_size=15
+
+PSR=0.7305880248091603 utility=0.5730568649135224
+df_size=0.25, seed=7, victim_class=50, target_class=47, trigger_size=50
+
+PSR=0.7268606870229007 utility=0.5795657676346679
+df_size=0.25, seed=7, victim_class=50, target_class=47, trigger_size=100
+
+PSR=0.7305880248091603 utility=0.5719283039584117
+df_size=0.25, seed=7, victim_class=69, target_class=68, trigger_size=15
+
+PSR=0.7037810114503817 utility=0.5755885138863418
+df_size=0.25, seed=7, victim_class=69, target_class=68, trigger_size=50
+
+PSR=0.7267712309160306 utility=0.5760273686386828
+df_size=0.25, seed=7, victim_class=69, target_class=68, trigger_size=100
+
+PSR=0.74221731870229 utility=0.5762617404673533
+df_size=0.25, seed=7, victim_class=19, target_class=15, trigger_size=15
+
+PSR=0.7268606870229007 utility=0.574186249676688
+df_size=0.25, seed=7, victim_class=19, target_class=15, trigger_size=50
+
+PSR=0.7305880248091603 utility=0.5770621890177043
+df_size=0.25, seed=7, victim_class=19, target_class=15, trigger_size=100
+
+PSR=0.7200641586468358 utility=0.5562571467051958
+df_size=0.25, seed=8, victim_class=50, target_class=47, trigger_size=15
+
+PSR=0.7200641586468358 utility=0.5555147255131114
+df_size=0.25, seed=8, victim_class=50, target_class=47, trigger_size=50
+
+PSR=0.731875182268883 utility=0.5596988055146297
+df_size=0.25, seed=8, victim_class=50, target_class=47, trigger_size=100
+
+PSR=0.7242344706911636 utility=0.563919596981637
+df_size=0.25, seed=8, victim_class=69, target_class=68, trigger_size=15
+
+PSR=0.7087197433654127 utility=0.5600696827593213
+df_size=0.25, seed=8, victim_class=69, target_class=68, trigger_size=50
+
+PSR=0.7087197433654127 utility=0.5673825402267754
+df_size=0.25, seed=8, victim_class=69, target_class=68, trigger_size=100
+
+PSR=0.715893846602508 utility=0.5546339417677606
+df_size=0.25, seed=8, victim_class=19, target_class=15, trigger_size=15
+
+PSR=0.7161271507728201 utility=0.558442793903435
+df_size=0.25, seed=8, victim_class=19, target_class=15, trigger_size=50
+
+PSR=0.7008457276173812 utility=0.5580916722458048
+df_size=0.25, seed=8, victim_class=19, target_class=15, trigger_size=100
+
+PSR=0.7083333333333333 utility=0.5781810073304333
+df_size=0.25, seed=9, victim_class=50, target_class=47, trigger_size=15
+
+PSR=0.7038690476190477 utility=0.5785414103099255
+df_size=0.25, seed=9, victim_class=50, target_class=47, trigger_size=50
+
+PSR=0.7013888888888888 utility=0.5792674950779957
+df_size=0.25, seed=9, victim_class=50, target_class=47, trigger_size=100
+
+PSR=0.7018849206349207 utility=0.5811442581093
+df_size=0.25, seed=9, victim_class=69, target_class=68, trigger_size=15
+
+PSR=0.7083333333333333 utility=0.5828906380142539
+df_size=0.25, seed=9, victim_class=69, target_class=68, trigger_size=50
+
+PSR=0.7003968253968254 utility=0.581971164242376
+df_size=0.25, seed=9, victim_class=69, target_class=68, trigger_size=100
+
+PSR=0.6984126984126984 utility=0.583108643886453
+df_size=0.25, seed=9, victim_class=19, target_class=15, trigger_size=15
+
+PSR=0.7003968253968254 utility=0.577753629800723
+df_size=0.25, seed=9, victim_class=19, target_class=15, trigger_size=50
+
+PSR=0.7217261904761905 utility=0.5777253830584641
+df_size=0.25, seed=9, victim_class=19, target_class=15, trigger_size=100
+
+PSR=0.670436507936508 utility=0.5823376846407115
+df_size=0.25, seed=10, victim_class=50, target_class=47, trigger_size=15
+
+PSR=0.6501984126984127 utility=0.5853085330159141
+df_size=0.25, seed=10, victim_class=50, target_class=47, trigger_size=50
+
+PSR=0.6007936507936508 utility=0.5867506317935717
+df_size=0.25, seed=10, victim_class=50, target_class=47, trigger_size=100
+
+PSR=0.6658730158730158 utility=0.5830640920882949
+df_size=0.25, seed=10, victim_class=69, target_class=68, trigger_size=15
+
+PSR=0.6581349206349207 utility=0.5864979817406822
+df_size=0.25, seed=10, victim_class=69, target_class=68, trigger_size=50
+
+PSR=0.666468253968254 utility=0.5863142694666589
+df_size=0.25, seed=10, victim_class=69, target_class=68, trigger_size=100
+
+PSR=0.6700396825396826 utility=0.5879405799821075
+df_size=0.25, seed=10, victim_class=19, target_class=15, trigger_size=15
+
+PSR=0.6579365079365079 utility=0.5849892168131213
+df_size=0.25, seed=10, victim_class=19, target_class=15, trigger_size=50
+
+PSR=0.653968253968254 utility=0.5862500058346171
+df_size=0.25, seed=10, victim_class=19, target_class=15, trigger_size=100
+
+PSR=0.6571618037135278 utility=0.5750012821045024
+df_size=0.25, seed=11, victim_class=50, target_class=47, trigger_size=15
+
+PSR=0.6464412024756853 utility=0.5755279970492593
+df_size=0.25, seed=11, victim_class=50, target_class=47, trigger_size=50
+
+PSR=0.6550618921308576 utility=0.5795262349707828
+df_size=0.25, seed=11, victim_class=50, target_class=47, trigger_size=100
+
+PSR=0.6774977895667551 utility=0.571977312828785
+df_size=0.25, seed=11, victim_class=69, target_class=68, trigger_size=15
+
+PSR=0.6539566755083996 utility=0.5748889604294803
+df_size=0.25, seed=11, victim_class=69, target_class=68, trigger_size=50
+
+PSR=0.6411361626878869 utility=0.5771908269173399
+df_size=0.25, seed=11, victim_class=69, target_class=68, trigger_size=100
+
+PSR=0.6667771883289124 utility=0.5738671895136672
+df_size=0.25, seed=11, victim_class=19, target_class=15, trigger_size=15
+
+PSR=0.6667771883289124 utility=0.5753726768750896
+df_size=0.25, seed=11, victim_class=19, target_class=15, trigger_size=50
+
+PSR=0.6400309460654288 utility=0.5801213364975881
+df_size=0.25, seed=11, victim_class=19, target_class=15, trigger_size=100
+
+PSR=0.7486666666666667 utility=0.5666796132774594
+df_size=0.25, seed=12, victim_class=50, target_class=47, trigger_size=15
+
+PSR=0.7522745098039216 utility=0.5685450420925066
+df_size=0.25, seed=12, victim_class=50, target_class=47, trigger_size=50
+
+PSR=0.7642745098039216 utility=0.5637948275907555
+df_size=0.25, seed=12, victim_class=50, target_class=47, trigger_size=100
+
+PSR=0.7473725490196079 utility=0.5690636049874989
+df_size=0.25, seed=12, victim_class=69, target_class=68, trigger_size=15
+
+PSR=0.7553725490196079 utility=0.5662934659243164
+df_size=0.25, seed=12, victim_class=69, target_class=68, trigger_size=50
+

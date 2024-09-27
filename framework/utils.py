@@ -154,7 +154,7 @@ def get_sdf_masks(data, args):
 
 def find_masks(data, poisoned_indices, args, attack_type="label"):
 
-    if attack_type == "label" or attack_type == "random"  or attack_type == "trigger":
+    if "label" in attack_type  or attack_type == "random"  or attack_type == "trigger":
 
         if "scrub" in args.unlearning_model or "grub" in args.unlearning_model or "yaum" in args.unlearning_model or "ssd" in args.unlearning_model or ("megu" in args.unlearning_model and "node" in args.request):
             data.node_df_mask = torch.zeros(data.num_nodes, dtype=torch.bool)  # of size num nodes

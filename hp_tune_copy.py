@@ -297,16 +297,16 @@ hp_tuning_params_dict = {
         "scrubAlpha": (1e-6, 10, "log"),
     },
     "cacdc": {
-        "contrastive_epochs_1": (1, 3, "int"),
+        "contrastive_epochs_1": (1, 5, "int"),
         "contrastive_epochs_2": (1, 15, "int"),
         "steps": (1, 10, "int"),
         # "maximise_epochs": (5, 30, "int"),
         "unlearn_lr": (1e-4, 1e-1, "log"),
         # "contrastive_margin": (1, 10, "log"),
         # "contrastive_lambda": (0.0, 1.0, "float"),
-        "contrastive_frac": (0.02, 0.1, "float"),
+        "contrastive_frac": (0.02, 0.2, "float"),
         # "k_hop": (1, 2, "int"),
-        # "ascent_lr": (1e-6, 1e-2, "log"),
+        "ascent_lr": (1e-6, 1e-2, "log"),
         "descent_lr": (1e-4, 1e-1, "log"),
         # "scrubAlpha": (1e-6, 10, "log"),
     },
@@ -406,7 +406,7 @@ if __name__ == "__main__":
     # clean_data = train(load=True)
     clean_data = train()
     poisoned_data, poisoned_indices, poisoned_model = poison(clean_data)
-    exit()
+
     if args.corrective_frac < 1:
         print("==POISONING CORRECTIVE==")
         print(f"No. of poisoned nodes: {len(poisoned_indices)}")

@@ -429,6 +429,23 @@
                 "ascent_lr": 0.0007969454818643932,
                 "descent_lr": 0.008471801418819975
             }
+        },
+        "label_strong": {
+            "Cora": {
+                "unlearn_iters": 200,
+                "ascent_lr": 3.242023453189359e-05,
+                "descent_lr": 0.04533737479990892
+            },
+            "Amazon": {
+                "unlearn_iters": 200,
+                "ascent_lr": 0.0008405374086768476,
+                "descent_lr": 0.012390118650320915
+            },
+            "CS": {
+                "unlearn_iters": 200,
+                "ascent_lr": 0.0004543541193758456,
+                "descent_lr": 0.017293444401277856
+            }
         }
     },
     "contrascent": {
@@ -603,6 +620,35 @@
                 "ascent_lr": 3.841547266053185e-05,
                 "descent_lr": 0.007773960587873309,
                 "scrubAlpha": 0.33582778533643065
+            }
+        },
+        "label_strong": {
+            "Cora": {
+                "contrastive_epochs_1": 2,
+                "contrastive_epochs_2": 14,
+                "steps": 12,
+                "unlearn_lr": 0.00364801356477871,
+                "contrastive_frac": 0.08141344835001973,
+                "ascent_lr": 6.1604912552737524e-06,
+                "descent_lr": 0.035290238992076395
+            },
+            "Amazon": {
+                "contrastive_epochs_1": 4,
+                "contrastive_epochs_2": 15,
+                "steps": 15,
+                "unlearn_lr": 0.001317835486874644,
+                "contrastive_frac": 0.03243787322128843,
+                "ascent_lr": 0.0029353693459726214,
+                "descent_lr": 0.015120183405899374
+            },
+            "CS": {
+                "contrastive_epochs_1": 1,
+                "contrastive_epochs_2": 12,
+                "steps": 15,
+                "unlearn_lr": 0.022543765158246656,
+                "contrastive_frac": 0.025904585296494375,
+                "ascent_lr": 0.0019247225008278092,
+                "descent_lr": 0.08136539966561916
             }
         }
     },
