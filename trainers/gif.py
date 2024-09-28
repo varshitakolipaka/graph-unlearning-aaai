@@ -23,8 +23,7 @@ def get_link_labels(pos_edge_index, neg_edge_index):
 
 class GIFTrainer(Trainer):
     def __init__(self, model, data, optimizer, args):
-        super().__init__(model, data, optimizer)
-        self.args = args
+        super().__init__(model, data, optimizer, args)
     '''This code is adapted from https://github.com/zleizzo/datadeletion'''
 
     def get_grad(self, data, model):

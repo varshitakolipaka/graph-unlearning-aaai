@@ -75,8 +75,6 @@ class LinearLR(_LRScheduler):
 
 class ScrubTrainer(Trainer):
     def __init__(self, model, poisoned_dataset, optimizer, opt):
-        print("IOPTOOOPTS")
-        print(opt)
         super().__init__(model, poisoned_dataset, optimizer, opt)
         self.opt = opt
         self.opt.unlearn_iters = opt.unlearn_iters
@@ -150,6 +148,7 @@ class ScrubTrainer(Trainer):
     def forward_pass(self, data, mask):
 
         output = self.model(data.x, data.edge_index[:, data.dr_mask])
+        # output = self.model(data.x, data.edge_index)
 
         with torch.no_grad():
             logit_t = self.og_model(data.x, data.edge_index)
@@ -164,7 +163,6 @@ class ScrubTrainer(Trainer):
 
     def unlearn_nc_lf(self):
         forget_mask = self.poisoned_dataset.node_df_mask
-        print("MEOW MEH: ", forget_mask.shape)
         self.maximize=False
         self.start_time = time.time()
         self.best_model_time = time.time()
@@ -179,7 +177,7 @@ class ScrubTrainer(Trainer):
             self.train_one_epoch(data=self.poisoned_dataset, mask=self.poisoned_dataset.node_dr_mask)
             # save best model
             self.unlearning_time += time.time() - iter_start_time
-            cutoff = self.save_best()
+            cutoff = self.save_best(is_dr=True)
             if cutoff:
                 break
             # print(f'Test Acc: {train_acc}, Misclassification: {msc_rate},  F1 Score: {f1}')
@@ -187,7 +185,7 @@ class ScrubTrainer(Trainer):
         end_time = time.time()
         # load best model
         self.load_best()
-        train_acc, msc_rate, f1 = self.evaluate(is_dr=True)
+        train_acc, msc_rate, f1 = self.evaluate(is_dr=True, use_val=True)
         return train_acc, msc_rate, self.best_model_time
 
     def train(self):

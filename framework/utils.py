@@ -56,6 +56,8 @@ def get_original_data(d):
     data = dataset[0]
 
     data.num_classes= dataset.num_classes
+    transform = T.LargestConnectedComponents()
+    data = transform(data)
     return data
 
 def get_model(args, in_dim, hidden_dim, out_dim, mask_1hop=None, mask_2hop=None, mask_3hop=None):
@@ -336,10 +338,12 @@ def sample_poison_data(poisoned_indices, frac):
         num_to_sample = 1
     else:
         num_to_sample = int(frac * len(poisoned_indices))
-        
+
     sampled_nodes =  torch.tensor(np.random.choice(poisoned_indices.cpu().numpy(), num_to_sample, replace=False))
     print("Sampling for Corrective")
+
     print(sampled_nodes)
+    # exit(0)
     return sampled_nodes
 
 def get_closest_classes(classes, counts):

@@ -16,8 +16,7 @@ device = torch.device('cuda') if torch.cuda.is_available() else torch.device('cp
         
 class UtUTrainer(Trainer):
     def __init__(self, model, data, optimizer, args):
-        super().__init__(model, data, optimizer)
-        self.args= args
+        super().__init__(model, data, optimizer, args)
 
     def train(self):
         # no training for UtU, only inference

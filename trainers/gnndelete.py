@@ -84,8 +84,7 @@ def get_loss_fct(name):
 
 class GNNDeleteNodeembTrainer(Trainer):
     def __init__(self, model, data, optimizer, args):
-        super().__init__(model, data, optimizer)
-        self.args= args
+        super().__init__(model, data, optimizer, args)
 
     def train(self):
         return self.train_fullbatch()
@@ -250,4 +249,4 @@ class GNNDeleteNodeembTrainer(Trainer):
         train_acc, msc_rate, f1 = self.evaluate(is_dr=True, use_val=True)
         print(f'Train Acc: {train_acc}, Misclassification: {msc_rate},  F1 Score: {f1}')
 
-        return train_acc, msc_rate, self.best_model_time - start_time
+        return train_acc, msc_rate, self.unlearning_time

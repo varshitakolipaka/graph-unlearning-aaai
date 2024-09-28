@@ -246,6 +246,7 @@ def unlearn(poisoned_data, poisoned_indices, poisoned_model):
     utils.find_masks(
         poisoned_data, poisoned_indices, args, attack_type=args.attack_type
     )
+    
     if "gnndelete" in args.unlearning_model:
         unlearn_model = utils.get_model(
             args,
@@ -296,7 +297,8 @@ def unlearn(poisoned_data, poisoned_indices, poisoned_model):
         )
 
     _, _, time_taken = unlearn_trainer.train()
-    acc, _, _ = unlearn_trainer.evaluate(is_dr=True)
+    acc, _, _ = unlearn_trainer.evaluate(is_dr=True) # REAL
+    # acc, _, _ = unlearn_trainer.evaluate(is_dr=False)  # TEST
     print(acc)
     forg, util, forget_f1, util_f1 = unlearn_trainer.get_score(
         args.attack_type,
@@ -330,7 +332,6 @@ if __name__ == "__main__":
     # clean_data = train()
 
     poisoned_data, poisoned_indices, poisoned_model = poison()
-
     # load best params file
     with open("best_params.json", "r") as f:
         d = json.load(f)
@@ -350,9 +351,10 @@ if __name__ == "__main__":
         print(f"No. of poisoned nodes after corrective: {len(poisoned_indices)}")
 
     try:
-        params = d[args.unlearning_model][args.attack_type][args.dataset]
+        params = d[args.unlearning_model][args.experiment_name]
     except:
         params = {}
+    print(params)
 
     # set args
     for key, value in params.items():

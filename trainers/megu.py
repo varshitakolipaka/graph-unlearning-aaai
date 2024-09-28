@@ -88,8 +88,7 @@ def normalize_adj(adj, r=0.5):
 
 class MeguTrainer(Trainer):
     def __init__(self, model, poisoned_dataset, optimizer, args):
-        super().__init__(model, poisoned_dataset, optimizer)
-        self.args = args
+        super().__init__(model, poisoned_dataset, optimizer, args)
         self.logger = logging.getLogger('ExpMEGU')
         self.data = poisoned_dataset
         self.device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
@@ -314,4 +313,4 @@ class MeguTrainer(Trainer):
         # print(f'Train Acc: {train_acc}, Misclassification: {msc_rate},  F1 Score: {f1}')
 
 
-        return train_acc, msc_rate, unlearn_time
+        return train_acc, msc_rate, self.unlearning_time

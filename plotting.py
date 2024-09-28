@@ -80,6 +80,18 @@ def plot_forget_scores(df, folder):
     """
     Creates the line plot for the forget scores with error bars.
     """
+    
+    def assign_method_color(methods):
+        """
+        Assigns a color to the method.
+        """
+        colors = sns.color_palette('husl', n_colors=len(methods))
+        
+        # sort methods to ensure consistent color assignment
+        methods = sorted(methods)
+        
+        return {method: colors[i] for i, method in enumerate(methods)}
+    
     try:
         sns.set(style="whitegrid")
         plt.figure(figsize=(10, 6))
@@ -88,15 +100,25 @@ def plot_forget_scores(df, folder):
             x='frac_size',
             y='forget_mean',
             hue='method',
+            palette=assign_method_color(df['method'].unique()),
             style='method',
             markers=True,
             dashes=False,
-            errorbar='sd',  # Automatically considers std deviation as error bars
         )
         
-        # y-axis limits
-        plt.ylim(0, 1)
+        # add error bars
+        for method in df['method'].unique():
+            method_data = df[df['method'] == method]
+            plt.errorbar(
+                method_data['frac_size'],
+                method_data['forget_mean'],
+                yerr=method_data['forget_std'],
+                fmt='none',
+                c=assign_method_color(df['method'].unique())[method],
+                capsize=2
+            )
         
+
         plt.xlabel('Fraction Size')
         plt.ylabel('Forget Score')
         plt.title(f'Forget Scores: {folder.split("/")[-1]}')

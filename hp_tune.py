@@ -219,7 +219,7 @@ hp_tuning_params_dict = {
     "retrain": {
         "unlearn_lr": (1e-5, 1e-1, "log"),
         "weight_decay": (1e-5, 1e-1, "log"),
-        "unlearning_epochs": (600, 1000, "int"),
+        "unlearning_epochs": (600, 1400, "int"),
     },
     "gnndelete": {
         "unlearn_lr": (1e-5, 1e-1, "log"),
@@ -304,26 +304,26 @@ hp_tuning_params_dict = {
         "scrubAlpha": (1e-6, 10, "log"),
     },
     "cacdc": {
-        "contrastive_epochs_1": (1, 10, "int"),
-        "contrastive_epochs_2": (1, 20, "int"),
+        "contrastive_epochs_1": (1, 6, "int"),
+        "contrastive_epochs_2": (1, 30, "int"),
         "steps": (1, 10, "int"),
         # "maximise_epochs": (5, 30, "int"),
         "unlearn_lr": (1e-4, 1e-1, "log"),
         # "contrastive_margin": (1, 10, "log"),
         # "contrastive_lambda": (0.0, 1.0, "float"),
-        "contrastive_frac": (0.02, 0.4, "float"),
+        "contrastive_frac": (0.02, 0.3, "float"),
         # "k_hop": (1, 2, "int"),
-        "ascent_lr": (1e-6, 1e-2, "log"),
+        "ascent_lr": (1e-6, 1e-3, "log"),
         "descent_lr": (1e-4, 1e-1, "log"),
         # "scrubAlpha": (1e-6, 10, "log"),
     },
     "utu": {},
     "scrub": {
-        "unlearn_iters": (110, 200, "int"),
+        "unlearn_iters": (110, 300, "int"),
         # 'kd_T': (1, 10, "float"),
         "unlearn_lr": (1e-5, 1e-1, "log"),
         "scrubAlpha": (1e-6, 10, "log"),
-        "msteps": (10, 100, "int"),
+        "msteps": (10, 150, "int"),
         # 'weight_decay': (1e-5, 1e-1, "log"),
     },
     "scrub_no_kl": {
@@ -343,7 +343,7 @@ hp_tuning_params_dict = {
         # 'weight_decay': (1e-5, 1e-1, "log"),
     },
     "yaum": {
-        "unlearn_iters": (10, 200, "int"),
+        "unlearn_iters": (10, 300, "int"),
         # 'kd_T': (1, 10, "float"),
         "ascent_lr": (1e-5, 1e-3, "log"),
         "descent_lr": (1e-5, 1e-1, "log"),
@@ -393,7 +393,8 @@ def objective(trial, model, data):
 
     _, _, time_taken = trainer.train()
 
-    obj = trainer.validate(is_dr=True)
+    obj = trainer.validate(is_dr=True) # REAL
+    # obj = trainer.validate(is_dr=False)
     forget_acc, util_acc, forget_f1, util_f1 = trainer.get_score(
         args.attack_type,
         class1=class_dataset_dict[args.dataset]["class1"],

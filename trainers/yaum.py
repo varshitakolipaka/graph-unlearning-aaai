@@ -160,9 +160,6 @@ class YAUMTrainer(Trainer):
     
     def unlearn_nc_lf(self):
         forget_mask = self.poisoned_dataset.node_df_mask
-        print("summmmmmm:", self.poisoned_dataset.val_mask.sum())
-        print("MEOW MEH: ", forget_mask.shape)
-
         # Create separate optimizers for ascent and descent
         ascent_optimizer = torch.optim.Adam(self.model.parameters(), lr=self.opt.ascent_lr)
         descent_optimizer = torch.optim.Adam(self.model.parameters(), lr=self.opt.descent_lr)
@@ -182,7 +179,8 @@ class YAUMTrainer(Trainer):
 
             # Ascent step (forgetting)
             ascent_optimizer.zero_grad()
-            output_forget = self.model(self.poisoned_dataset.x, self.poisoned_dataset.edge_index[:, self.poisoned_dataset.dr_mask])
+            # output_forget = self.model(self.poisoned_dataset.x, self.poisoned_dataset.edge_index[:, self.poisoned_dataset.dr_mask])
+            output_forget = self.model(self.poisoned_dataset.x, self.poisoned_dataset.edge_index)
             
             forget_loss = F.cross_entropy(output_forget[forget_mask], self.poisoned_dataset.y[forget_mask])
             
@@ -193,6 +191,7 @@ class YAUMTrainer(Trainer):
             # Descent step (remembering)
             descent_optimizer.zero_grad()
             output_remember = self.model(self.poisoned_dataset.x, self.poisoned_dataset.edge_index[:, self.poisoned_dataset.dr_mask])
+            # output_remember = self.model(self.poisoned_dataset.x, self.poisoned_dataset.edge_index)
             remember_loss = F.cross_entropy(output_remember[self.poisoned_dataset.train_mask], self.poisoned_dataset.y[self.poisoned_dataset.train_mask])
             total_descent_loss = remember_loss
             total_descent_loss.backward()
@@ -203,7 +202,7 @@ class YAUMTrainer(Trainer):
             
             # save best model
             self.unlearning_time += time.time() - iter_start_time
-            cutoff = self.save_best()
+            cutoff = self.save_best(is_dr=True)
             if cutoff:
                 break
 

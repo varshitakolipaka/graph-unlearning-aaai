@@ -35,7 +35,7 @@ def create_summary_table(json_data):
     df = pd.DataFrame(rows)
     return df
 
-dir = 'logs/new_final'
+dir = 'logs/new_final_linked_testing'
 
 # get all files in dir and subdirs
 import os

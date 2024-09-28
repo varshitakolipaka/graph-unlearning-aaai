@@ -54,7 +54,6 @@ with open("classes_to_poison.json", "r") as f:
 
 class Trainer:
     def __init__(self, model, data, optimizer, args):
-        print(args)
         self.model = model.to(device)
         self.data = data.to(device)
         self.optimizer = optimizer
@@ -296,12 +295,13 @@ class Trainer:
 
         return score
 
-    def save_best(self, is_dr=True):
+    def save_best(self, is_dr=True, inf=False):
         curr_time = time.time()
         score = self.validate(is_dr)
-        if self.unlearning_time > self.TIME_THRESHOLD:
-            print(f"Model took more than {self.TIME_THRESHOLD} seconds to train. Not saving the model.")
-            return True
+        if not inf:
+            if self.unlearning_time > self.TIME_THRESHOLD:
+                print(f"Model took more than {self.TIME_THRESHOLD} seconds to train. Not saving the model.")
+                return True
 
         if score > self.best_val_score:
                 self.best_model_time = self.unlearning_time
@@ -309,15 +309,15 @@ class Trainer:
                 print(f"Saving best model with score: {self.best_val_score}, and time: {self.best_model_time}")
                 self.best_state_dict = self.model.state_dict()
                 # Assuming 'model' is your neural network
-                torch.save(self.model.state_dict(), 'model_state_temp.pth')
+                torch.save(self.model.state_dict(), f"temp/{self.args.experiment_name}.pth")
 
         return False
 
     def load_best(self):
         try:
-            self.model.load_state_dict(torch.load('model_state_temp.pth'))
+            self.model.load_state_dict(torch.load(f"temp/{self.args.experiment_name}.pth"))
             # delete the model state file
-            os.remove('model_state_temp.pth')
+            os.remove(f"temp/{self.args.experiment_name}.pth")
         except:
             print("Model state file not found.")
         return self.best_val_score

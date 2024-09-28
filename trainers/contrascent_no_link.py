@@ -610,6 +610,9 @@ class ContrastiveAscentNoLinkTrainer(Trainer):
                     self.embeddings = self.model(
                         self.data.x, self.data.edge_index[:, self.data.dr_mask]
                     )
+                    # self.embeddings = self.model(
+                    #     self.data.x, self.data.edge_index # TESTING
+                    # )
                     
                     finetune_loss = F.cross_entropy(
                         self.embeddings[self.data.retain_mask],
@@ -624,7 +627,7 @@ class ContrastiveAscentNoLinkTrainer(Trainer):
                     
                 # save best model
                 self.unlearning_time += time.time() - iter_start_time
-                cutoff = self.save_best()
+                cutoff = self.save_best(is_dr=True)
                 if cutoff:
                     self.load_best()
                     return

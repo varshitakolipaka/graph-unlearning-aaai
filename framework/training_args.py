@@ -124,4 +124,5 @@ def parse_args():
     parser.add_argument('--corrective_frac', type=float, default=1, help='fraction of nodes to sample for corrective unlearning (by default all nodes)')
 
     args = parser.parse_args()
+    args.experiment_name = f"{args.dataset}_{args.attack_type}_{args.unlearning_model}_{args.gnn}_{args.corrective_frac}_{args.db_name}"
     return args

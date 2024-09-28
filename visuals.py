@@ -27,12 +27,6 @@ device = torch.device("cuda") if torch.cuda.is_available() else torch.device("cp
 with open("classes_to_poison.json", "r") as f:
     class_dataset_dict = json.load(f)
 
-logger = Logger(
-    args,
-    f"run_logs_{args.attack_type}_{args.df_size}_{class_dataset_dict[args.dataset]['class1']}_{class_dataset_dict[args.dataset]['class2']}",
-)
-logger.log_arguments(args)
-
 def export_data_for_vis(data, name, model, is_dr=False):
 
     # get model predictions
@@ -104,21 +98,19 @@ def train(load=False):
         )
 
         clean_trainer = Trainer(
-            clean_model, clean_data, optimizer, args.training_epochs
+            clean_model, clean_data, optimizer, args
         )
 
         if args.attack_type != "trigger":
             clean_trainer.evaluate()
-            forg, util = clean_trainer.get_score(
+            forg, util, _, _ = clean_trainer.get_score(
                 args.attack_type,
                 class1=class_dataset_dict[args.dataset]["class1"],
                 class2=class_dataset_dict[args.dataset]["class2"],
             )
 
             print(f"==OG Model==\nForget Ability: {forg}, Utility: {util}")
-            logger.log_result(
-                args.random_seed, "original", {"forget": forg, "utility": util}
-            )
+
 
         return clean_data
 
@@ -136,7 +128,7 @@ def train(load=False):
     optimizer = torch.optim.Adam(
         clean_model.parameters(), lr=args.train_lr, weight_decay=args.weight_decay
     )
-    clean_trainer = Trainer(clean_model, clean_data, optimizer, args.training_epochs)
+    clean_trainer = Trainer(clean_model, clean_data, optimizer, args)
     clean_trainer.train()
 
     if args.attack_type != "trigger":
@@ -149,9 +141,7 @@ def train(load=False):
         )
 
         print(f"==OG Model==\nForget Ability: {forg}, Utility: {util}")
-        logger.log_result(
-            args.random_seed, "original", {"forget": forg, "utility": util}
-        )
+
         # logger.log_result(
         #     args.random_seed, "original", {"utility": acc}
         # )
@@ -180,19 +170,16 @@ def poison(clean_data=None):
             weight_decay=args.weight_decay,
         )
         poisoned_trainer = Trainer(
-            poisoned_model, poisoned_data, optimizer, args.training_epochs
+            poisoned_model, poisoned_data, optimizer, args
         )
         poisoned_trainer.evaluate()
 
-        forg, util = poisoned_trainer.get_score(
+        forg, util, _, _ = poisoned_trainer.get_score(
             args.attack_type,
             class1=class_dataset_dict[args.dataset]["class1"],
             class2=class_dataset_dict[args.dataset]["class2"],
         )
         print(f"==Poisoned Model==\nForget Ability: {forg}, Utility: {util}")
-        logger.log_result(
-            args.random_seed, "poisoned", {"forget": forg, "utility": util}
-        )
 
         # print(poisoned_trainer.calculate_PSR())
         return poisoned_data, poisoned_indices, poisoned_model
@@ -232,7 +219,7 @@ def poison(clean_data=None):
         poisoned_model.parameters(), lr=args.train_lr, weight_decay=args.weight_decay
     )
     poisoned_trainer = Trainer(
-        poisoned_model, poisoned_data, optimizer, args.training_epochs
+        poisoned_model, poisoned_data, optimizer, args
     )
     poisoned_trainer.train()
     acc, _, _ = poisoned_trainer.evaluate()
@@ -242,7 +229,6 @@ def poison(clean_data=None):
         class2=class_dataset_dict[args.dataset]["class2"],
     )
     print(f"==Poisoned Model==\nForget Ability: {forg}, Utility: {util}")
-    logger.log_result(args.random_seed, "poisoned", {"utility": acc, "forget": forg})
     # logger.log_result(args.random_seed, "poisoned", {"utility": acc})
     # print(f"PSR: {poisoned_trainer.calculate_PSR()}")
     return poisoned_data, poisoned_indices, poisoned_model
@@ -314,12 +300,7 @@ def unlearn(poisoned_data, poisoned_indices, poisoned_model):
     print(
         f"==Unlearned Model==\nForget Ability: {forg}, Utility: {util}, Time Taken: {time_taken}"
     )
-    logger.log_result(
-        args.random_seed,
-        args.unlearning_model,
-        {"forget": forg, "utility": util, "time_taken": time_taken},
-        # {"utility": acc, "time_taken": time_taken},
-    )
+
     print("==UNLEARNING DONE==")
     return unlearn_model
 
@@ -333,7 +314,7 @@ if __name__ == "__main__":
 
     poisoned_data, poisoned_indices, poisoned_model = poison()
 
-    export_data_for_vis(poisoned_data, f"{args.attack_type}_{args.dataset}_poisoned", poisoned_model, is_dr=False)
+    export_data_for_vis(clean_data, f"{args.attack_type}_{args.dataset}_poisoned", poisoned_model, is_dr=False)
     print("==POISONING DONE==")
     exit()
 

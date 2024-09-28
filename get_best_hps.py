@@ -48,12 +48,9 @@ if __name__=="__main__":
         # create the data object if it doesn't exist
         if args.unlearning_model not in data:
             data[args.unlearning_model] = {}
-        if args.attack_type not in data[args.unlearning_model]:
-            data[args.unlearning_model][args.attack_type] = {}
-        if args.dataset not in data[args.unlearning_model][args.attack_type]:
-            data[args.unlearning_model][args.attack_type][args.dataset] = {}
-        
+        if args.experiment_name not in data[args.unlearning_model]:
+            data[args.unlearning_model][args.experiment_name] = {}
         # update the data object for the unlearning model, attack type and dataset key
-        data[args.unlearning_model][args.attack_type][args.dataset] = params
+        data[args.unlearning_model][args.experiment_name] = params
         
         json.dump(data, f, indent=4)
