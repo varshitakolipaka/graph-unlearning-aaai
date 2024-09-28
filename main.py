@@ -25,6 +25,10 @@ device = torch.device("cuda") if torch.cuda.is_available() else torch.device("cp
 with open("classes_to_poison.json", "r") as f:
     class_dataset_dict = json.load(f)
 
+
+with open("model_seeds.json") as f:
+    model_seeds = json.load(f)
+
 logger = Logger(
     args,
     f"run_logs_{args.attack_type}_{args.df_size}_{class_dataset_dict[args.dataset]['class1']}_{class_dataset_dict[args.dataset]['class2']}",
@@ -35,22 +39,23 @@ logger.log_arguments(args)
 def train(load=False):
     if load:
         clean_data = utils.get_original_data(args.dataset)
+        # utils.train_test_split(
+        #     clean_data, args.random_seed, args.train_ratio, args.val_ratio
+        # )
         utils.train_test_split(
-            clean_data, args.random_seed, args.train_ratio, args.val_ratio
+            clean_data, model_seeds[args.dataset], args.train_ratio, args.val_ratio
         )
         utils.prints_stats(clean_data)
 
         clean_model = torch.load(
-            f"{args.data_dir}/{args.gnn}_{args.dataset}_{args.attack_type}_{args.df_size}_{args.random_seed}_clean_model.pt"
+            f"{args.data_dir}/{args.gnn}_{args.dataset}_{args.attack_type}_{args.df_size}_{model_seeds[args.dataset]}_clean_model.pt"
         )
 
         optimizer = torch.optim.Adam(
             clean_model.parameters(), lr=args.train_lr, weight_decay=args.weight_decay
         )
 
-        clean_trainer = Trainer(
-            clean_model, clean_data, optimizer, args.training_epochs
-        )
+        clean_trainer = Trainer(clean_model, clean_data, optimizer, args)
 
         if args.attack_type != "trigger":
             clean_trainer.evaluate()
@@ -60,9 +65,18 @@ def train(load=False):
                 class2=class_dataset_dict[args.dataset]["class2"],
             )
 
-            print(f"==OG Model==\nForg Accuracy: {forg}, Util Accuracy: {util}, Forg F1: {forget_f1}, Util F1: {util_f1}")
+            print(
+                f"==OG Model==\nForg Accuracy: {forg}, Util Accuracy: {util}, Forg F1: {forget_f1}, Util F1: {util_f1}"
+            )
             logger.log_result(
-                args.random_seed, "original", {"forget": forg, "utility": util, "forget_f1": forget_f1, "utility_f1": util_f1}
+                args.random_seed,
+                "original",
+                {
+                    "forget": forg,
+                    "utility": util,
+                    "forget_f1": forget_f1,
+                    "utility_f1": util_f1,
+                },
             )
 
         return clean_data
@@ -93,9 +107,18 @@ def train(load=False):
             class2=class_dataset_dict[args.dataset]["class2"],
         )
 
-        print(f"==OG Model==\nForg Accuracy: {forg}, Util Accuracy: {util}, Forg F1: {forget_f1}, Util F1: {util_f1}")
+        print(
+            f"==OG Model==\nForg Accuracy: {forg}, Util Accuracy: {util}, Forg F1: {forget_f1}, Util F1: {util_f1}"
+        )
         logger.log_result(
-            args.random_seed, "original", {"forget": forg, "utility": util, "forget_f1": forget_f1, "utility_f1": util_f1}
+            args.random_seed,
+            "original",
+            {
+                "forget": forg,
+                "utility": util,
+                "forget_f1": forget_f1,
+                "utility_f1": util_f1,
+            },
         )
         # logger.log_result(
         #     args.random_seed, "original", {"utility": acc}
@@ -108,10 +131,10 @@ def poison(clean_data=None):
     if clean_data is None:
         # load the poisoned data and model and indices from np file
         poisoned_data = torch.load(
-            f"{args.data_dir}/{args.dataset}_{args.attack_type}_{args.df_size}_{args.random_seed}_poisoned_data.pt"
+            f"{args.data_dir}/{args.dataset}_{args.attack_type}_{args.df_size}_{model_seeds[args.dataset]}_poisoned_data.pt"
         )
         poisoned_model = torch.load(
-            f"{args.data_dir}/{args.gnn}_{args.dataset}_{args.attack_type}_{args.df_size}_{args.random_seed}_poisoned_model.pt"
+            f"{args.data_dir}/{args.gnn}_{args.dataset}_{args.attack_type}_{args.df_size}_{model_seeds[args.dataset]}_poisoned_model.pt"
         )
 
         if args.attack_type == "edge":
@@ -124,9 +147,7 @@ def poison(clean_data=None):
             lr=args.train_lr,
             weight_decay=args.weight_decay,
         )
-        poisoned_trainer = Trainer(
-            poisoned_model, poisoned_data, optimizer, args.training_epochs
-        )
+        poisoned_trainer = Trainer(poisoned_model, poisoned_data, optimizer, args)
         poisoned_trainer.evaluate()
 
         forg, util, forget_f1, util_f1 = poisoned_trainer.get_score(
@@ -135,9 +156,18 @@ def poison(clean_data=None):
             class2=class_dataset_dict[args.dataset]["class2"],
         )
 
-        print(f"==Poisoned Model==\nForg Accuracy: {forg}, Util Accuracy: {util}, Forg F1: {forget_f1}, Util F1: {util_f1}")
+        print(
+            f"==Poisoned Model==\nForg Accuracy: {forg}, Util Accuracy: {util}, Forg F1: {forget_f1}, Util F1: {util_f1}"
+        )
         logger.log_result(
-            args.random_seed, "poisoned", {"forget": forg, "utility": util, "forget_f1": forget_f1, "utility_f1": util_f1}
+            args.random_seed,
+            "poisoned",
+            {
+                "forget": forg,
+                "utility": util,
+                "forget_f1": forget_f1,
+                "utility_f1": util_f1,
+            },
         )
 
         # print(poisoned_trainer.calculate_PSR())
@@ -164,9 +194,13 @@ def poison(clean_data=None):
         poisoned_data.poisoned_nodes = poisoned_indices
     elif args.attack_type == "trigger":
         poisoned_data, poisoned_indices = trigger_attack(
-            clean_data, args.df_size, args.random_seed, victim_class=args.victim_class, target_class=args.target_class, trigger_size=args.trigger_size
+            clean_data,
+            args.df_size,
+            args.random_seed,
+            victim_class=args.victim_class,
+            target_class=args.target_class,
+            trigger_size=args.trigger_size,
         )
-        
 
     poisoned_data = poisoned_data.to(device)
 
@@ -188,9 +222,18 @@ def poison(clean_data=None):
         class2=class_dataset_dict[args.dataset]["class2"],
     )
 
-    print(f"==Poisoned Model==\nForg Accuracy: {forg}, Util Accuracy: {util}, Forg F1: {forget_f1}, Util F1: {util_f1}")
+    print(
+        f"==Poisoned Model==\nForg Accuracy: {forg}, Util Accuracy: {util}, Forg F1: {forget_f1}, Util F1: {util_f1}"
+    )
     logger.log_result(
-        args.random_seed, "poisoned", {"forget": forg, "utility": util, "forget_f1": forget_f1, "utility_f1": util_f1}
+        args.random_seed,
+        "poisoned",
+        {
+            "forget": forg,
+            "utility": util,
+            "forget_f1": forget_f1,
+            "utility_f1": util_f1,
+        },
     )
     # logger.log_result(args.random_seed, "poisoned", {"utility": acc})
     # print(f"PSR: {poisoned_trainer.calculate_PSR()}")
@@ -261,9 +304,19 @@ def unlearn(poisoned_data, poisoned_indices, poisoned_model):
         class2=class_dataset_dict[args.dataset]["class2"],
     )
 
-    print(f"==Unlearned Model==\nForg Accuracy: {forg}, Util Accuracy: {util}, Forg F1: {forget_f1}, Util F1: {util_f1}")
+    print(
+        f"==Unlearned Model==\nForg Accuracy: {forg}, Util Accuracy: {util}, Forg F1: {forget_f1}, Util F1: {util_f1}"
+    )
     logger.log_result(
-        args.random_seed, args.unlearning_model, {"forget": forg, "utility": util, "forget_f1": forget_f1, "utility_f1": util_f1}
+        args.random_seed,
+        args.unlearning_model,
+        {
+            "forget": forg,
+            "utility": util,
+            "forget_f1": forget_f1,
+            "utility_f1": util_f1,
+            "time_taken": time_taken,
+        },
     )
     print("==UNLEARNING DONE==")
     return unlearn_model
@@ -284,9 +337,16 @@ if __name__ == "__main__":
 
     if args.corrective_frac < 1:
         print("==POISONING CORRECTIVE==")
+        if args.attack_type == "edge":
+            poisoned_indices = poisoned_data.poisoned_edge_indices
+        else:
+            poisoned_indices = poisoned_data.poisoned_nodes
         print(f"No. of poisoned nodes: {len(poisoned_indices)}")
-        poisoned_indices = utils.sample_poison_data(poisoned_data, args.corrective_frac)
-        poisoned_data.poisoned_nodes = poisoned_indices
+        poisoned_indices = utils.sample_poison_data(poisoned_indices, args.corrective_frac)
+        if args.attack_type == "edge":
+            poisoned_data.poisoned_edge_indices = poisoned_indices
+        else:
+            poisoned_data.poisoned_nodes = poisoned_indices
         print(f"No. of poisoned nodes after corrective: {len(poisoned_indices)}")
 
     try:

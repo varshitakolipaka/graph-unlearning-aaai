@@ -75,7 +75,7 @@ class LinearLR(_LRScheduler):
 
 class YAUMTrainer(Trainer):
     def __init__(self, model, poisoned_dataset, optimizer, opt):
-        super().__init__(model, poisoned_dataset, optimizer)
+        super().__init__(model, poisoned_dataset, optimizer, opt)
         self.opt = opt
         self.opt.unlearn_iters = opt.unlearn_iters
         self.best_model = None
@@ -162,7 +162,6 @@ class YAUMTrainer(Trainer):
         forget_mask = self.poisoned_dataset.node_df_mask
         print("summmmmmm:", self.poisoned_dataset.val_mask.sum())
         print("MEOW MEH: ", forget_mask.shape)
-        start_time = time.time()
 
         # Create separate optimizers for ascent and descent
         ascent_optimizer = torch.optim.Adam(self.model.parameters(), lr=self.opt.ascent_lr)
@@ -172,9 +171,13 @@ class YAUMTrainer(Trainer):
         ascent_scheduler = LinearLR(ascent_optimizer, T=self.opt.unlearn_iters*1.25, warmup_epochs=self.opt.unlearn_iters//100)
         descent_scheduler = LinearLR(descent_optimizer, T=self.opt.unlearn_iters*1.25, warmup_epochs=self.opt.unlearn_iters//100)
 
+        
+        self.start_time = time.time()
+        self.best_model_time = time.time()
+    
         while self.curr_step < self.opt.unlearn_iters:
             print("UNLEARNING STEP: ", self.curr_step, end='\r')
-            
+            iter_start_time = time.time()
             self.model.train()
 
             # Ascent step (forgetting)
@@ -198,7 +201,11 @@ class YAUMTrainer(Trainer):
 
             self.curr_step += 1
             
-            self.save_best()
+            # save best model
+            self.unlearning_time += time.time() - iter_start_time
+            cutoff = self.save_best()
+            if cutoff:
+                break
 
             # if self.curr_step % 1 == 0:
             #     train_acc, msc_rate, f1 = self.evaluate()
@@ -216,7 +223,7 @@ class YAUMTrainer(Trainer):
         self.load_best()
         
         train_acc, msc_rate, f1 = self.evaluate(is_dr=True, use_val=True)
-        return train_acc, msc_rate, self.best_model_time - start_time
+        return train_acc, msc_rate, self.best_model_time
 
     def train(self):
         return self.unlearn_nc_lf()

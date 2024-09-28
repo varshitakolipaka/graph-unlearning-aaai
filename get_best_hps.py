@@ -14,7 +14,7 @@ if __name__=="__main__":
             direction="maximize",
             study_name=f"{args.gnn}_{args.dataset}_{args.attack_type}_{args.df_size}_{args.unlearning_model}_{args.random_seed}_{class_dataset_dict[args.dataset]['class1']}_{class_dataset_dict[args.dataset]['class2']}",
             load_if_exists=True,
-            storage=f"sqlite:///hp_tuning/{args.db_name}.db",
+            storage=f"sqlite:///hp_tuning/new/{args.db_name}.db",
         )
     
     trials = study.get_trials()

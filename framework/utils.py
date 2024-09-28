@@ -330,14 +330,17 @@ def plot_embeddings(args, model, data, class1, class2, is_dr=False, mask="test",
     plt.savefig(f"./plots/{args.dataset}_{args.attack_type}_{args.df_size}_{args.random_seed}_{name}_embeddings.png")
     plt.show()
 
-def sample_poison_data(data, frac):
-    assert frac <= 1.0 and frac >= 0.0, "frac must be between 0 and 1"
-    # randomly sample frac of the poisoned indices to be exposed to unlearning methods
-    poisoned_indices = data.poisoned_nodes.cpu().numpy()
-
-    num_to_sample = int(frac * len(poisoned_indices))
-
-    return torch.tensor(np.random.choice(poisoned_indices, num_to_sample, replace=False))
+def sample_poison_data(poisoned_indices, frac):
+    assert frac <= 1.0, "frac must be between 0 and 1"
+    if frac <= 0.0:
+        num_to_sample = 1
+    else:
+        num_to_sample = int(frac * len(poisoned_indices))
+        
+    sampled_nodes =  torch.tensor(np.random.choice(poisoned_indices.cpu().numpy(), num_to_sample, replace=False))
+    print("Sampling for Corrective")
+    print(sampled_nodes)
+    return sampled_nodes
 
 def get_closest_classes(classes, counts):
     '''

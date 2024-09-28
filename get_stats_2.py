@@ -73,7 +73,7 @@ def create_subplots(df_combined, fname):
 
 if __name__ == "__main__":
     # Load data from JSON
-    dir = "logs"
+    dir = "logs/corrective"
 
     file_paths = []
     # get all files in dir and subdirs

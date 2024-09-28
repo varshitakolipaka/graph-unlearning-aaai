@@ -101,8 +101,7 @@ def distill_kl_loss(y_s, y_t, T, reduction="sum"):
 
 class ContrastiveAscentNoLinkTrainer(Trainer):
     def __init__(self, model, data, optimizer, args):
-        super().__init__(model, data, optimizer)
-        self.args = args
+        super().__init__(model, data, optimizer, args)
         self.attacked_idx = data.attacked_idx
         self.embeddings = None
         self.criterion = torch.nn.CrossEntropyLoss()
@@ -577,28 +576,26 @@ class ContrastiveAscentNoLinkTrainer(Trainer):
             self.model.parameters(), lr=args.descent_lr
         )
 
-        best_score = 0
         # attacked idx must be a list of nodes
         for epoch in trange(args.steps, desc="Unlearning"):
             self.save_best()
             for i in range(args.contrastive_epochs_1 + args.contrastive_epochs_2):
-
+                iter_start_time = time.time()
                 self.model.train()
 
                 self.embeddings = self.model(
                     self.data.x, self.data.edge_index
                 )
                 if i < args.contrastive_epochs_1:
+                    optimizer.zero_grad()
                     # pos_dist, neg_dist = self.get_distances_batch()
                     # loss = self.contrastive_loss(
                     #     pos_dist, neg_dist, margin=args.contrastive_margin
                     # )
                     loss = self.run_sage_batch()
 
-                    optimizer.zero_grad()
                     loss.backward()
                     optimizer.step()
-
                 else:
                     ascent_optimizer.zero_grad()
 
@@ -626,7 +623,11 @@ class ContrastiveAscentNoLinkTrainer(Trainer):
                     # descent_scheduler.step()
                     
                 # save best model
-                self.save_best()
+                self.unlearning_time += time.time() - iter_start_time
+                cutoff = self.save_best()
+                if cutoff:
+                    self.load_best()
+                    return
         
         # load best model
         self.load_best()
@@ -644,6 +645,7 @@ class ContrastiveAscentNoLinkTrainer(Trainer):
 
         for epoch in trange(args.steps, desc="Unlearning"):
             for i in range(args.contrastive_epochs_1 + args.contrastive_epochs_2):
+                iter_start_time = time.time()
                 self.model.train()
                 optimizer.zero_grad()
 
@@ -686,9 +688,12 @@ class ContrastiveAscentNoLinkTrainer(Trainer):
                     finetune_loss.backward()
                     descent_optimizer.step()
                     # descent_scheduler.step()
-                    
+
+                self.unlearning_time += time.time() - iter_start_time
                 # save best model
-                self.save_best()
+                cutoff = self.save_best()
+                if cutoff:
+                    break
         
         # load best model
         self.load_best()
@@ -700,7 +705,8 @@ class ContrastiveAscentNoLinkTrainer(Trainer):
         self.get_sample_points()
         self.store_subset()
 
-        start_time = time.time()
+        self.start_time = time.time()
+        self.best_model_time = self.start_time
         if self.args.request == "node":
             self.train_node()
         elif self.args.request == "edge":
@@ -708,8 +714,8 @@ class ContrastiveAscentNoLinkTrainer(Trainer):
         
         train_acc, msc_rate, f1 = self.evaluate(is_dr=True, use_val=True)
 
-        print(f"Training time: {self.best_model_time - start_time}, Train Acc: {train_acc}, Msc Rate: {msc_rate}, F1: {f1}")
+        print(f"Training time: {self.best_model_time}, Train Acc: {train_acc}, Msc Rate: {msc_rate}, F1: {f1}")
         forg, util, forg_f1, util_f1 = self.get_score(self.args.attack_type, class1=class_dataset_dict[self.args.dataset]["class1"], class2=class_dataset_dict[self.args.dataset]["class2"])
         print(f"Forgotten: {forg}, Util: {util}, Forg F1: {forg_f1}, Util F1: {util_f1}")        
 
-        return train_acc, msc_rate, self.best_model_time - start_time
+        return train_acc, msc_rate, self.best_model_time

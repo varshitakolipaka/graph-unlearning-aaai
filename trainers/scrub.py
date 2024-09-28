@@ -75,7 +75,9 @@ class LinearLR(_LRScheduler):
 
 class ScrubTrainer(Trainer):
     def __init__(self, model, poisoned_dataset, optimizer, opt):
-        super().__init__(model, poisoned_dataset, optimizer)
+        print("IOPTOOOPTS")
+        print(opt)
+        super().__init__(model, poisoned_dataset, optimizer, opt)
         self.opt = opt
         self.opt.unlearn_iters = opt.unlearn_iters
         self.best_model = None
@@ -143,9 +145,6 @@ class ScrubTrainer(Trainer):
             self.scheduler.step()
             # print(self.scheduler.get_lr())
             self.curr_step += 1
-        
-        self.save_best()
-
         return
 
     def forward_pass(self, data, mask):
@@ -167,22 +166,29 @@ class ScrubTrainer(Trainer):
         forget_mask = self.poisoned_dataset.node_df_mask
         print("MEOW MEH: ", forget_mask.shape)
         self.maximize=False
-        start_time = time.time()
+        self.start_time = time.time()
+        self.best_model_time = time.time()
         while self.curr_step < self.opt.unlearn_iters:
             print("UNLEARNING STEP: ", self.curr_step, end='\r')
+            iter_start_time = time.time()
             if self.curr_step < self.opt.msteps:
                 self.maximize=True
                 self.train_one_epoch(data=self.poisoned_dataset, mask=forget_mask)
 
             self.maximize=False
             self.train_one_epoch(data=self.poisoned_dataset, mask=self.poisoned_dataset.node_dr_mask)
+            # save best model
+            self.unlearning_time += time.time() - iter_start_time
+            cutoff = self.save_best()
+            if cutoff:
+                break
             # print(f'Test Acc: {train_acc}, Misclassification: {msc_rate},  F1 Score: {f1}')
             # print(f"==Unlearned Model==\nForget Ability: {forg}, Utility: {util}")
         end_time = time.time()
         # load best model
         self.load_best()
         train_acc, msc_rate, f1 = self.evaluate(is_dr=True)
-        return train_acc, msc_rate, self.best_model_time - start_time
+        return train_acc, msc_rate, self.best_model_time
 
     def train(self):
         return self.unlearn_nc_lf()

@@ -10,48 +10,48 @@
 
 # python eval_script.py --yaum --dataset CS --attack_type edge
 
-python run_hp_tune.py --dataset Amazon --df_size 0.5 --random_seed 1 --data_dir /scratch/akshit.sinha/data --attack_type label --db_name cf_hp_tuning_0.25 --gnn gcn --cf 0.25 --cacdc
+# python run_hp_tune.py --dataset Amazon --df_size 0.5 --random_seed 1 --data_dir /scratch/akshit.sinha/data --attack_type label --db_name cf_hp_tuning_0.25_cacdc --gnn gcn --cf 0.25 --cacdc
 
-python eval_script.py --dataset Amazon --attack_type label --cf 0.25 --cacdc --yaum
+# python eval_script.py --dataset Amazon --attack_type label --cf 0.25 --cacdc
 
-# python run_hp_tune.py --dataset Cora --df_size 0.5 --random_seed 1 --data_dir /scratch/akshit.sinha/data --attack_type label --db_name cf_hp_tuning_0.25 --gnn gcn  --cf 0.10 --cacdc --yaum
+python run_hp_tune.py --dataset Cora --df_size 0.5 --random_seed 1 --data_dir /scratch/akshit.sinha/data --attack_type label --db_name cf_hp_tuning_0.25 --gnn gcn  --cf 0.25 --cacdc
 
-# python eval_script.py  --dataset Cora --attack_type label --cf 0.10 --cacdc --yaum
+python eval_script.py  --dataset Cora --attack_type label --cf 0.25 --cacdc
 
-python run_hp_tune.py --dataset CS --df_size 0.5 --random_seed 1 --data_dir /scratch/akshit.sinha/data --attack_type label --db_name cf_hp_tuning_0.25 --gnn gcn  --cf 0.25 --cacdc --yaum
+python run_hp_tune.py --dataset CS --df_size 0.5 --random_seed 1 --data_dir /scratch/akshit.sinha/data --attack_type label --db_name cf_hp_tuning_0.25 --gnn gcn  --cf 0.25 --cacdc
 
-python eval_script.py  --dataset CS --attack_type label --cf 0.25 --cacdc --yaum
+python eval_script.py  --dataset CS --attack_type label --cf 0.25 --cacdc
 
-python run_hp_tune.py --dataset Amazon --df_size 0.5 --random_seed 1 --data_dir /scratch/akshit.sinha/data --attack_type label --db_name cf_hp_tuning_0.5 --gnn gcn --cf 0.50 --cacdc --yaum
+python run_hp_tune.py --dataset Amazon --df_size 0.5 --random_seed 1 --data_dir /scratch/akshit.sinha/data --attack_type label --db_name cf_hp_tuning_0.5 --gnn gcn --cf 0.50 --cacdc
 
-python eval_script.py --dataset Amazon --attack_type label --cf 0.50 --cacdc --yaum
+python eval_script.py --dataset Amazon --attack_type label --cf 0.50 --cacdc
 
-# python run_hp_tune.py --dataset Cora --df_size 0.5 --random_seed 1 --data_dir /scratch/akshit.sinha/data --attack_type label --db_name cf_hp_tuning_0.5 --gnn gcn  --cf 0.15 --cacdc --yaum
+python run_hp_tune.py --dataset Cora --df_size 0.5 --random_seed 1 --data_dir /scratch/akshit.sinha/data --attack_type label --db_name cf_hp_tuning_0.5 --gnn gcn  --cf 0.5 --cacdc
 
-# python eval_script.py  --dataset Cora --attack_type label --cf 0.15 --cacdc --yaum
+python eval_script.py  --dataset Cora --attack_type label --cf 0.5 --cacdc
 
-python run_hp_tune.py --dataset CS --df_size 0.5 --random_seed 1 --data_dir /scratch/akshit.sinha/data --attack_type label --db_name cf_hp_tuning_0.5 --gnn gcn  --cf 0.50 --cacdc --yaum
+python run_hp_tune.py --dataset CS --df_size 0.5 --random_seed 1 --data_dir /scratch/akshit.sinha/data --attack_type label --db_name cf_hp_tuning_0.5 --gnn gcn  --cf 0.50 --cacdc
 
-python eval_script.py  --dataset CS --attack_type label --cf 0.50 --cacdc --yaum
+python eval_script.py  --dataset CS --attack_type label --cf 0.50 --cacdc
 
 
-python run_hp_tune.py --dataset Amazon --df_size 0.5 --random_seed 1 --data_dir /scratch/akshit.sinha/data --attack_type label --db_name cf_hp_tuning_0.75 --gnn gcn --cf 0.75 --cacdc --yaum
+python run_hp_tune.py --dataset Amazon --df_size 0.5 --random_seed 1 --data_dir /scratch/akshit.sinha/data --attack_type label --db_name cf_hp_tuning_0.75 --gnn gcn --cf 0.75 --cacdc
 
-python eval_script.py --dataset Amazon --attack_type label --cf 0.75 --cacdc --yaum
+python eval_script.py --dataset Amazon --attack_type label --cf 0.75 --cacdc
 
-# python run_hp_tune.py --dataset Cora --df_size 0.5 --random_seed 1 --data_dir /scratch/akshit.sinha/data --attack_type label --db_name cf_hp_tuning_0.75 --gnn gcn  --cf 0.15 --cacdc --yaum
+python run_hp_tune.py --dataset Cora --df_size 0.5 --random_seed 1 --data_dir /scratch/akshit.sinha/data --attack_type label --db_name cf_hp_tuning_0.75 --gnn gcn  --cf 0.75 --cacdc
 
-# python eval_script.py  --dataset Cora --attack_type label --cf 0.15 --cacdc --yaum
+python eval_script.py  --dataset Cora --attack_type label --cf 0.75 --cacdc
 
-python run_hp_tune.py --dataset CS --df_size 0.5 --random_seed 1 --data_dir /scratch/akshit.sinha/data --attack_type label --db_name cf_hp_tuning_0.75 --gnn gcn  --cf 0.75 --cacdc --yaum
+python run_hp_tune.py --dataset CS --df_size 0.5 --random_seed 1 --data_dir /scratch/akshit.sinha/data --attack_type label --db_name cf_hp_tuning_0.75 --gnn gcn  --cf 0.75 --cacdc
 
-python eval_script.py  --dataset CS --attack_type label --cf 0.75 --cacdc --yaum
+python eval_script.py  --dataset CS --attack_type label --cf 0.75 --cacdc
 
 sh get_stats.sh
 
 # python eval_script.py --gnndelete --dataset Cora --attack_type label
 
-# python run_hp_tune.py --dataset Cora --df_size 0.5 --random_seed 1 --data_dir /scratch/akshit.sinha/data --attack_type label --cf 0.5  --db_name cf_hp_tuning_0.5 --gnn gcn --cacdc --yaum --scrub 
+# python run_hp_tune.py --dataset Cora --df_size 0.5 --random_seed 1 --data_dir /scratch/akshit.sinha/data --attack_type label --cf 0.5  --db_name cf_hp_tuning_0.5_cacdc --gnn gcn --cacdc --yaum --scrub 
 
 # python eval_script.py --cacdc --yaum --scrub --dataset Cora --attack_type label --cf 0.5
 

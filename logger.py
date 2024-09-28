@@ -26,10 +26,10 @@ class Logger():
     '''
     
     def __init__(self, args, filename):
-        os.makedirs(f'logs/corrective/{args.dataset}', exist_ok=True)
+        os.makedirs(f'logs/new_final/{args.dataset}', exist_ok=True)
         if args.corrective_frac < 1.0:
             filename += f"_cf_{args.corrective_frac}"
-        self.filename = f"logs/corrective/{args.dataset}/{filename}.json"
+        self.filename = f"logs/new_final/{args.dataset}/{filename}.json"
         
         # we are appending to the file, so get the old logs to append to
         try:

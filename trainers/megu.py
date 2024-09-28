@@ -283,6 +283,7 @@ class MeguTrainer(Trainer):
         self.neighbor_khop = self.neighbor_select(self.data.x)
         
         for epoch in trange(self.args.unlearning_epochs):
+            iter_start_time = time.time()
             self.model.train()
             operator.train()
             optimizer.zero_grad()
@@ -302,7 +303,10 @@ class MeguTrainer(Trainer):
             loss.backward()
             optimizer.step()
             
-            self.save_best()
+            self.unlearning_time += time.time() - iter_start_time
+            cutoff = self.save_best()
+            if cutoff:
+                break
 
         unlearn_time = self.best_model_time - start_time
         self.load_best()

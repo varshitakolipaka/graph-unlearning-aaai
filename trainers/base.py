@@ -1,3 +1,4 @@
+import json
 import os
 import time
 import torch
@@ -47,26 +48,42 @@ def plot_loss_vs_epochs(loss_values):
 
 device = torch.device("cuda") if torch.cuda.is_available() else torch.device("cpu")
 
+with open("classes_to_poison.json", "r") as f:
+    class_dataset_dict = json.load(f)
+
 
 class Trainer:
-    def __init__(self, model, data, optimizer, num_epochs=50):
+    def __init__(self, model, data, optimizer, args):
+        print(args)
         self.model = model.to(device)
         self.data = data.to(device)
         self.optimizer = optimizer
-        self.num_epochs = num_epochs
-
+        self.num_epochs = 50
+        self.args = args
         self.best_state_dict = None
         self.best_val_score = 0
 
-        if hasattr(data, "class1") and hasattr(data, "class2"):
-            self.class1 = data.class1
-            self.class2 = data.class2
-        else:
-            self.class1 = None
-            self.class2 = None
+        self.start_time = 0
+        self.unlearning_time = 0
+        self.best_model_time = 0
 
-        if hasattr(data, "poisoned_nodes"):    
-            self.og_preds = self.get_df_outputs()
+        self.TIME_THRESHOLD = 3 # 3 seconds
+
+        self.class1 = class_dataset_dict[args.dataset]["class1"]
+        self.class2 = class_dataset_dict[args.dataset]["class2"]
+
+        self.poisoned_classes = [self.class1, self.class2]
+        self.clean_classes = []
+        for i in range(self.data.num_classes):
+            if i not in self.poisoned_classes:
+                self.clean_classes.append(i)
+
+        # create a mask for the poisoned class nodes in test set
+        self.poison_test_mask_class1 = self.data.y == self.class1 & self.data.test_mask
+        self.poison_test_mask_class2 = self.data.y == self.class2 & self.data.test_mask
+
+        self.poison_test_mask = self.poison_test_mask_class1 | self.poison_test_mask_class2
+        self.clean_test_mask = ~self.poison_test_mask & self.data.test_mask
 
     def train(self):
         losses = []
@@ -106,13 +123,8 @@ class Trainer:
         print(f"Overall Accuracy: {accs_clean}")
 
     def subset_acc(self, class1=None, class2=None):
-        if class1 is None or class2 is None:
-            class1 = self.class1
-            class2 = self.class2
 
-        poisoned_classes = [class1, class2]
-
-        print(f"Poisoned classes: {poisoned_classes}")
+        poisoned_classes = [self.class1, self.class2]
 
         true_labels = self.true.to(device)
         pred_labels = self.pred.to(device)
@@ -133,19 +145,8 @@ class Trainer:
         for poisoned_class in poisoned_classes:
             poisoned_indices = true_labels == poisoned_class
             
-            # create binary mask for correct class and all wrong classes
-            binary_preds = torch.zeros_like(pred_labels)
-            binary_preds[pred_labels == poisoned_class] = 1
-            
-            binary_trues = torch.zeros_like(true_labels)
-            binary_trues[true_labels == poisoned_class] = 1
-            
-            f1_poisoned.append(
-                f1_score(
-                    binary_trues[poisoned_indices].cpu(),
-                    binary_preds[poisoned_indices].cpu(),
-                )
-            )
+            if poisoned_indices.sum() == 0:
+                continue
             
             accs_poisoned.append(
                 accuracy_score(
@@ -158,32 +159,20 @@ class Trainer:
             if clean_indices.sum() == 0:
                 continue
             
-            binary_trues = torch.zeros_like(true_labels)
-            binary_trues[true_labels == clean_class] = 1
-            
-            binary_preds = torch.zeros_like(pred_labels)
-            binary_preds[pred_labels == clean_class] = 1
-            
-            f1_clean.append(
-                f1_score(
-                    binary_trues[clean_indices].cpu(), binary_preds[clean_indices].cpu()
-                )
-            )
-            
             accs_clean.append(
                 accuracy_score(
                     true_labels[clean_indices].cpu(), pred_labels[clean_indices].cpu()
                 )
             )
 
-        print(f"Poisoned class: {class1} -> {class2}")
-
         # take average of the accs
         accs_poisoned = sum(accs_poisoned) / len(accs_poisoned)
         accs_clean = sum(accs_clean) / len(accs_clean)
         
-        f1_poisoned = sum(f1_poisoned) / len(f1_poisoned)
-        f1_clean = sum(f1_clean) / len(f1_clean)
+        # f1_poisoned = sum(f1_poisoned) / len(f1_poisoned)
+        # f1_clean = sum(f1_clean) / len(f1_clean)
+        f1_poisoned = 0
+        f1_clean = 0
 
         # auc_poisoned = sum(roc_aucs_poisoned) / len(roc_aucs_poisoned)
         # auc_clean = sum(roc_aucs_clean) / len(roc_aucs_clean)
@@ -249,15 +238,15 @@ class Trainer:
                 mask = self.data.test_mask
 
             loss = F.nll_loss(z[mask], self.data.y[mask]).cpu().item()
-            pred = torch.argmax(z[mask], dim=1).cpu()
-            acc = accuracy_score(self.data.y[mask].cpu(), pred)
-            f1 = f1_score(self.data.y[mask].cpu(), pred, average="macro")
-            msc_rate = self.misclassification_rate(self.data.y[mask].cpu(), pred)
+            pred = torch.argmax(z, dim=1)
+            acc = accuracy_score(self.data.y[mask].cpu(), pred[mask].cpu())
+            f1 = f1_score(self.data.y[mask].cpu(), pred[mask].cpu(), average="macro")
+            # msc_rate = self.misclassification_rate(self.data.y[mask].cpu(), pred[mask].cpu())
 
+        self.pred = pred[mask]
         self.true = self.data.y[mask].cpu()
-        self.pred = pred
 
-        return acc, msc_rate, f1
+        return acc, -1, f1
 
     def calculate_PSR(self):
         z = self.model(self.data.x, self.data.edge_index)
@@ -272,6 +261,9 @@ class Trainer:
             forget_ability, utility, forget_f1, utility_f1 = self.subset_acc(class1, class2)
             return forget_ability, utility, forget_f1, utility_f1
         elif attack_type == "trigger":
+            utility, _, _ = self.evaluate()
+            forget_ability = self.calculate_PSR()
+        elif attack_type == "clean_label":
             utility, _, _ = self.evaluate()
             forget_ability = self.calculate_PSR()
         elif attack_type == "random":
@@ -292,26 +284,40 @@ class Trainer:
 
     def validate(self, is_dr=True):
         val_acc, _, _ = self.evaluate(use_val=True, is_dr=is_dr)
-        # label_change_rate = self.get_label_change()
 
-        return val_acc
+        # label_change_rate = self.get_label_change()
+        forg, util, forget_f1, util_f1 = self.get_score(
+            self.args.attack_type,
+            class1=class_dataset_dict[self.args.dataset]["class1"],
+            class2=class_dataset_dict[self.args.dataset]["class2"],
+        )
+
+        score = (forg + util) / 2
+
+        return score
 
     def save_best(self, is_dr=True):
+        curr_time = time.time()
         score = self.validate(is_dr)
-        if score > self.best_val_score:
-            # record  the time
-            self.best_model_time = time.time()
-
-            self.best_val_score = score
-            print(f"Saving best model with score: {self.best_val_score}")
-            self.best_state_dict = self.model.state_dict()
-            # Assuming 'model' is your neural network
-            torch.save(self.model.state_dict(), 'model_state_temp.pth')
+        if self.unlearning_time > self.TIME_THRESHOLD:
+            print(f"Model took more than {self.TIME_THRESHOLD} seconds to train. Not saving the model.")
             return True
+
+        if score > self.best_val_score:
+                self.best_model_time = self.unlearning_time
+                self.best_val_score = score
+                print(f"Saving best model with score: {self.best_val_score}, and time: {self.best_model_time}")
+                self.best_state_dict = self.model.state_dict()
+                # Assuming 'model' is your neural network
+                torch.save(self.model.state_dict(), 'model_state_temp.pth')
+
         return False
 
     def load_best(self):
-        self.model.load_state_dict(torch.load('model_state_temp.pth'))
-        # delete the model state file
-        os.remove('model_state_temp.pth')
+        try:
+            self.model.load_state_dict(torch.load('model_state_temp.pth'))
+            # delete the model state file
+            os.remove('model_state_temp.pth')
+        except:
+            print("Model state file not found.")
         return self.best_val_score

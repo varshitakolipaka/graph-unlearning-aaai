@@ -110,6 +110,7 @@ class GNNDeleteNodeembTrainer(Trainer):
 
 
         for epoch in trange(self.args.unlearning_epochs, desc='Unlearning'):
+            iter_start_time = time.time()
             self.model.train()
 
             neg_edge = negative_sampling(
@@ -236,7 +237,10 @@ class GNNDeleteNodeembTrainer(Trainer):
             else:
                 raise NotImplementedError
             
-            self.save_best()
+            self.unlearning_time += time.time() - iter_start_time
+            cutoff = self.save_best()
+            if cutoff:
+                break
 
             # end_time = time.time()
             # epoch_time = end_time - start_time

@@ -1,7 +1,7 @@
 import os
 import pandas as pd
 
-dir = 'logs/'
+dir = 'logs/corrective'
 
 # get all subdirectories
 subdirs = [f.path for f in os.scandir(dir) if f.is_dir()]
