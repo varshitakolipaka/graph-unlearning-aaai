@@ -1,86 +1,56 @@
-PSR=0.6423937007874015 utility=0.5711961803384981
-df_size=0.25, seed=0, victim_class=50, target_class=47, trigger_size=15
-
-PSR=0.6383307086614173 utility=0.573793172106905
-df_size=0.25, seed=0, victim_class=50, target_class=47, trigger_size=50
-
-PSR=0.6264566929133859 utility=0.5730084952941382
-df_size=0.25, seed=0, victim_class=50, target_class=47, trigger_size=100
-
-PSR=0.6423937007874015 utility=0.571876541531986
-df_size=0.25, seed=0, victim_class=69, target_class=68, trigger_size=15
-
-PSR=0.6423307086614173 utility=0.5740830457034735
-df_size=0.25, seed=0, victim_class=69, target_class=68, trigger_size=50
-
-PSR=0.642267716535433 utility=0.5719365410458548
-df_size=0.25, seed=0, victim_class=69, target_class=68, trigger_size=100
-
-PSR=0.6423307086614173 utility=0.5738213345730089
-df_size=0.25, seed=0, victim_class=19, target_class=15, trigger_size=15
-
-PSR=0.6423307086614173 utility=0.5711118840508955
-df_size=0.25, seed=0, victim_class=19, target_class=15, trigger_size=50
-
-PSR=0.6344566929133858 utility=0.5723933445893156
-df_size=0.25, seed=0, victim_class=19, target_class=15, trigger_size=100
-
-PSR=0.38485039370078744 utility=0.5760788766047877
-df_size=0.5, seed=0, victim_class=50, target_class=47, trigger_size=15
-
-PSR=0.37285039370078743 utility=0.5720799087807157
-df_size=0.5, seed=0, victim_class=50, target_class=47, trigger_size=50
-
-PSR=0.3765984251968504 utility=0.5738346646434359
-df_size=0.5, seed=0, victim_class=50, target_class=47, trigger_size=100
-
-PSR=0.3844094488188976 utility=0.5750505130864348
-df_size=0.5, seed=0, victim_class=69, target_class=68, trigger_size=15
-
-PSR=0.3804094488188976 utility=0.5841633320483496
-df_size=0.5, seed=0, victim_class=69, target_class=68, trigger_size=50
-
-PSR=0.37278740157480317 utility=0.5704607021748479
-df_size=0.5, seed=0, victim_class=69, target_class=68, trigger_size=100
-
-PSR=0.36903937007874016 utility=0.5810895653933758
-df_size=0.5, seed=0, victim_class=19, target_class=15, trigger_size=15
-
-PSR=0.3883464566929134 utility=0.5749021206113134
-df_size=0.5, seed=0, victim_class=19, target_class=15, trigger_size=50
-
-PSR=0.3924724409448819 utility=0.5770886141510446
-df_size=0.5, seed=0, victim_class=19, target_class=15, trigger_size=100
-
-PSR=0.40034645669291336 utility=0.577818290357233
-df_size=1.0, seed=0, victim_class=50, target_class=47, trigger_size=15
-
-PSR=0.3925984251968504 utility=0.5775852634037982
-df_size=1.0, seed=0, victim_class=50, target_class=47, trigger_size=50
-
-PSR=0.39228346456692914 utility=0.5763124714914685
-df_size=1.0, seed=0, victim_class=50, target_class=47, trigger_size=100
-
-PSR=0.39266141732283466 utility=0.5724839833197116
-df_size=1.0, seed=0, victim_class=69, target_class=68, trigger_size=15
-
-PSR=0.3767244094488189 utility=0.5736439842858537
-df_size=1.0, seed=0, victim_class=69, target_class=68, trigger_size=50
-
-PSR=0.3880944881889764 utility=0.569311235146001
-df_size=1.0, seed=0, victim_class=69, target_class=68, trigger_size=100
-
-PSR=0.36847244094488185 utility=0.574338953251199
-df_size=1.0, seed=0, victim_class=19, target_class=15, trigger_size=15
-
-PSR=0.38422047244094487 utility=0.5712653374769446
-df_size=1.0, seed=0, victim_class=19, target_class=15, trigger_size=50
-
-PSR=0.3767244094488189 utility=0.5689955054147539
-df_size=1.0, seed=0, victim_class=19, target_class=15, trigger_size=100
-
-PSR=0.668523013946404 utility=0.59656268224566
-df_size=0.25, seed=1, victim_class=50, target_class=47, trigger_size=15
-
-PSR=0.6756152125279642 utility=0.5962373547738901
-df_size=0.25, seed=1, victim_class=50, target_class=47, trigger_size=50
+{'PSR': 0.21428571428571427, 'utility': 0.5748348768390567, 'df_size': 0.1, 'seed': 0, 'victim_class': 69, 'target_class': 68, 'trigger_size': 15, 'dataset': 'Cora'}
+{'PSR': 0.0, 'utility': 0.5842575528559306, 'df_size': 0.1, 'seed': 1, 'victim_class': 69, 'target_class': 68, 'trigger_size': 15, 'dataset': 'Cora'}
+{'PSR': 0.3333333333333333, 'utility': 0.5623759576754255, 'df_size': 0.1, 'seed': 2, 'victim_class': 69, 'target_class': 68, 'trigger_size': 15, 'dataset': 'Cora'}
+{'PSR': 0.14285714285714285, 'utility': 0.5737025009356012, 'df_size': 0.25, 'seed': 0, 'victim_class': 69, 'target_class': 68, 'trigger_size': 15, 'dataset': 'Cora'}
+{'PSR': 0.0, 'utility': 0.5933437035957693, 'df_size': 0.25, 'seed': 1, 'victim_class': 69, 'target_class': 68, 'trigger_size': 15, 'dataset': 'Cora'}
+{'PSR': 0.0, 'utility': 0.5876174788176918, 'df_size': 0.5, 'seed': 0, 'victim_class': 69, 'target_class': 68, 'trigger_size': 15, 'dataset': 'Cora'}
+{'PSR': 0.0, 'utility': 0.5921084040905857, 'df_size': 0.5, 'seed': 1, 'victim_class': 69, 'target_class': 68, 'trigger_size': 15, 'dataset': 'Cora'}
+{'PSR': 0.0, 'utility': 0.5907324125859759, 'df_size': 1.0, 'seed': 0, 'victim_class': 69, 'target_class': 68, 'trigger_size': 15, 'dataset': 'Cora'}
+{'PSR': 0.0, 'utility': 0.5883460169348357, 'df_size': 1.0, 'seed': 1, 'victim_class': 69, 'target_class': 68, 'trigger_size': 15, 'dataset': 'Cora'}
+{'PSR': 0.07142857142857142, 'utility': 0.5921794181779335, 'df_size': 1.0, 'seed': 0, 'victim_class': 69, 'target_class': 68, 'trigger_size': 100, 'dataset': 'Cora'}
+{'PSR': 0.0, 'utility': 0.5846637227542858, 'df_size': 1.0, 'seed': 1, 'victim_class': 69, 'target_class': 68, 'trigger_size': 100, 'dataset': 'Cora'}
+{'PSR': 0.32857142857142857, 'utility': 0.567694881784226, 'df_size': 1.0, 'seed': 0, 'victim_class': 19, 'target_class': 15, 'trigger_size': 100, 'dataset': 'Cora'}
+{'PSR': 0.36538461538461536, 'utility': 0.5779841622061155, 'df_size': 1.0, 'seed': 1, 'victim_class': 19, 'target_class': 15, 'trigger_size': 100, 'dataset': 'Cora'}
+{'PSR': 0.4327485380116959, 'utility': 0.5553031595317023, 'df_size': 1.0, 'seed': 2, 'victim_class': 19, 'target_class': 15, 'trigger_size': 100, 'dataset': 'Cora'}
+{'PSR': 0.425, 'utility': 0.5642845373535502, 'df_size': 0.25, 'seed': 0, 'victim_class': 19, 'target_class': 15, 'trigger_size': 15, 'dataset': 'Cora'}
+{'PSR': 0.44871794871794873, 'utility': 0.5786539805737182, 'df_size': 0.25, 'seed': 1, 'victim_class': 19, 'target_class': 15, 'trigger_size': 15, 'dataset': 'Cora'}
+{'PSR': 0.5142857142857142, 'utility': 0.5721736115013697, 'df_size': 0.1, 'seed': 0, 'victim_class': 19, 'target_class': 15, 'trigger_size': 15, 'dataset': 'Cora'}
+{'PSR': 0.4871794871794872, 'utility': 0.5729790306804483, 'df_size': 0.1, 'seed': 1, 'victim_class': 19, 'target_class': 15, 'trigger_size': 15, 'dataset': 'Cora'}
+{'PSR': 0.5789473684210527, 'utility': 0.563978818266486, 'df_size': 0.1, 'seed': 2, 'victim_class': 19, 'target_class': 15, 'trigger_size': 15, 'dataset': 'Cora'}
+{'PSR': 0.6035714285714285, 'utility': 0.5787612238678853, 'df_size': 0.05, 'seed': 0, 'victim_class': 19, 'target_class': 15, 'trigger_size': 15, 'dataset': 'Cora'}
+{'PSR': 0.5705128205128205, 'utility': 0.5786975291754345, 'df_size': 0.05, 'seed': 1, 'victim_class': 19, 'target_class': 15, 'trigger_size': 15, 'dataset': 'Cora'}
+{'PSR': 0.5752923976608187, 'utility': 0.5595578275871042, 'df_size': 0.05, 'seed': 2, 'victim_class': 19, 'target_class': 15, 'trigger_size': 15, 'dataset': 'Cora'}
+{'PSR': 0.6281800391389432, 'utility': 0.5748901722512487, 'df_size': 0.05, 'seed': 3, 'victim_class': 19, 'target_class': 15, 'trigger_size': 15, 'dataset': 'Cora'}
+{'PSR': 0.5464285714285715, 'utility': 0.5671302550316528, 'df_size': 0.01, 'seed': 0, 'victim_class': 19, 'target_class': 15, 'trigger_size': 15, 'dataset': 'Cora'}
+{'PSR': 0.5961538461538461, 'utility': 0.585059291401153, 'df_size': 0.01, 'seed': 1, 'victim_class': 19, 'target_class': 15, 'trigger_size': 15, 'dataset': 'Cora'}
+{'PSR': 0.6136363636363636, 'utility': 0.5750332318388879, 'df_size': 0.1, 'seed': 0, 'victim_class': 5, 'target_class': 63, 'trigger_size': 15, 'dataset': 'Cora'}
+{'PSR': 0.7427101200686106, 'utility': 0.5750554324436618, 'df_size': 0.1, 'seed': 1, 'victim_class': 5, 'target_class': 63, 'trigger_size': 15, 'dataset': 'Cora'}
+{'PSR': 0.5672619047619047, 'utility': 0.5600288335514954, 'df_size': 0.1, 'seed': 2, 'victim_class': 5, 'target_class': 63, 'trigger_size': 15, 'dataset': 'Cora'}
+{'PSR': 0.5723522167487685, 'utility': 0.5800903001085344, 'df_size': 0.1, 'seed': 3, 'victim_class': 5, 'target_class': 63, 'trigger_size': 15, 'dataset': 'Cora'}
+{'PSR': 0.6229148375768218, 'utility': 0.5649655339027069, 'df_size': 0.1, 'seed': 4, 'victim_class': 5, 'target_class': 63, 'trigger_size': 15, 'dataset': 'Cora'}
+{'PSR': 0.6136363636363636, 'utility': 0.574070577140777, 'df_size': 0.1, 'seed': 0, 'victim_class': 5, 'target_class': 63, 'trigger_size': 100, 'dataset': 'Cora'}
+{'PSR': 0.7427101200686106, 'utility': 0.5770223242479489, 'df_size': 0.1, 'seed': 1, 'victim_class': 5, 'target_class': 63, 'trigger_size': 100, 'dataset': 'Cora'}
+{'PSR': 0.5583333333333333, 'utility': 0.5645494532668429, 'df_size': 0.1, 'seed': 2, 'victim_class': 5, 'target_class': 63, 'trigger_size': 100, 'dataset': 'Cora'}
+{'PSR': 0.7303555030827757, 'utility': 0.5858628729065656, 'df_size': 0.1, 'seed': 0, 'victim_class': 7, 'target_class': 53, 'trigger_size': 15, 'dataset': 'Cora'}
+{'PSR': 0.6948094417028361, 'utility': 0.5649774793705041, 'df_size': 0.1, 'seed': 1, 'victim_class': 7, 'target_class': 53, 'trigger_size': 15, 'dataset': 'Cora'}
+{'PSR': 0.7556914712878016, 'utility': 0.5516765317859171, 'df_size': 0.1, 'seed': 2, 'victim_class': 7, 'target_class': 53, 'trigger_size': 15, 'dataset': 'Cora'}
+{'PSR': 0.739409123446346, 'utility': 0.5749089152685796, 'df_size': 0.1, 'seed': 3, 'victim_class': 7, 'target_class': 53, 'trigger_size': 15, 'dataset': 'Cora'}
+{'PSR': 0.7648821766468825, 'utility': 0.5631576876998865, 'df_size': 0.1, 'seed': 4, 'victim_class': 7, 'target_class': 53, 'trigger_size': 15, 'dataset': 'Cora'}
+{'PSR': 0.7220910402728584, 'utility': 0.5888689288473772, 'df_size': 0.1, 'seed': 0, 'victim_class': 7, 'target_class': 53, 'trigger_size': 100, 'dataset': 'Cora'}
+{'PSR': 0.6912123194006778, 'utility': 0.5700247273665536, 'df_size': 0.1, 'seed': 1, 'victim_class': 7, 'target_class': 53, 'trigger_size': 100, 'dataset': 'Cora'}
+{'PSR': 0.7556914712878016, 'utility': 0.5519068833144098, 'df_size': 0.1, 'seed': 2, 'victim_class': 7, 'target_class': 53, 'trigger_size': 100, 'dataset': 'Cora'}
+{'PSR': 0.7433461313203618, 'utility': 0.5754475194653362, 'df_size': 0.1, 'seed': 3, 'victim_class': 7, 'target_class': 53, 'trigger_size': 100, 'dataset': 'Cora'}
+{'PSR': 0.7424928013163308, 'utility': 0.5558644506809278, 'df_size': 0.1, 'seed': 4, 'victim_class': 7, 'target_class': 53, 'trigger_size': 100, 'dataset': 'Cora'}
+{'PSR': 0.689689098780008, 'utility': 0.5791401164916611, 'df_size': 0.25, 'seed': 0, 'victim_class': 7, 'target_class': 53, 'trigger_size': 15, 'dataset': 'Cora'}
+{'PSR': 0.756859756097561, 'utility': 0.5643892982574603, 'df_size': 0.1, 'seed': 0, 'victim_class': 27, 'target_class': 57, 'trigger_size': 15, 'dataset': 'Cora'}
+{'PSR': 0.7856970740103271, 'utility': 0.57735649463823, 'df_size': 0.1, 'seed': 1, 'victim_class': 27, 'target_class': 57, 'trigger_size': 15, 'dataset': 'Cora'}
+{'PSR': 0.7834580654228593, 'utility': 0.5516347957545833, 'df_size': 0.1, 'seed': 2, 'victim_class': 27, 'target_class': 57, 'trigger_size': 15, 'dataset': 'Cora'}
+{'PSR': 0.8437014600807704, 'utility': 0.5423019021004755, 'df_size': 0.1, 'seed': 3, 'victim_class': 27, 'target_class': 57, 'trigger_size': 15, 'dataset': 'Cora'}
+{'PSR': 0.7663031129288798, 'utility': 0.5559348376689682, 'df_size': 0.1, 'seed': 4, 'victim_class': 27, 'target_class': 57, 'trigger_size': 15, 'dataset': 'Cora'}
+{'PSR': 0.7386220769424189, 'utility': 0.5665848066692801, 'df_size': 0.1, 'seed': 0, 'victim_class': 33, 'target_class': 57, 'trigger_size': 15, 'dataset': 'Cora'}
+{'PSR': 0.7880578919451391, 'utility': 0.5632506188953627, 'df_size': 0.1, 'seed': 1, 'victim_class': 33, 'target_class': 57, 'trigger_size': 15, 'dataset': 'Cora'}
+{'PSR': 0.7360663818600066, 'utility': 0.5447034019892654, 'df_size': 0.1, 'seed': 2, 'victim_class': 33, 'target_class': 57, 'trigger_size': 15, 'dataset': 'Cora'}
+{'PSR': 0.7804063084736701, 'utility': 0.5659218706340298, 'df_size': 0.1, 'seed': 3, 'victim_class': 33, 'target_class': 57, 'trigger_size': 15, 'dataset': 'Cora'}
+{'PSR': 0.3567073170731707, 'utility': 0.5714389898432553, 'df_size': 0.1, 'seed': 0, 'victim_class': 68, 'target_class': 57, 'trigger_size': 15, 'dataset': 'Cora'}
+{'PSR': 0.39156626506024095, 'utility': 0.5652923847988022, 'df_size': 0.1, 'seed': 1, 'victim_class': 68, 'target_class': 57, 'trigger_size': 15, 'dataset': 'Cora'}
+{'PSR': 0.3597560975609756, 'utility': 0.569062313660284, 'df_size': 0.1, 'seed': 0, 'victim_class': 57, 'target_class': 68, 'trigger_size': 15, 'dataset': 'Cora'}

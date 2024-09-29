@@ -93,7 +93,7 @@ def trigger_attack(data, epsilon, seed, victim_class, target_class=69, trigger_s
     ]
 
     # Apply the poison to a fraction of victim class test nodes
-    num_victim_test_nodes = len(victim_test_indices)
+    num_victim_test_nodes = (test_poison_fraction*len(victim_test_indices))
     # print("vicky", num_victim_test_nodes)
     if num_victim_test_nodes > 0:
         num_test_poison = num_victim_test_nodes

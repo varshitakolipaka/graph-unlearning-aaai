@@ -53,6 +53,8 @@ def get_original_data(d):
     data = dataset[0]
 
     data.num_classes= dataset.num_classes
+    transform = T.LargestConnectedComponents()
+    data = transform(data)
     return data
 
 def get_model(args, in_dim, hidden_dim, out_dim, mask_1hop=None, mask_2hop=None, mask_3hop=None):

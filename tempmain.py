@@ -9,14 +9,13 @@ from trainers.base import Trainer
 from attacks.edge_attack import edge_attack_specific_nodes
 from attacks.label_flip import label_flip_attack
 from attacks.feature_attack import trigger_attack
+
 args = parse_args()
 
 
 utils.seed_everything(args.random_seed)
 device = torch.device("cuda") if torch.cuda.is_available() else torch.device("cpu")
 
-with open('classes_to_poison_exp.json', 'r') as f:
-    class_dataset_dict = json.load(f)
 
 def poison(clean_data=None, load=True):
     if clean_data is None:
@@ -27,7 +26,7 @@ def poison(clean_data=None, load=True):
 
     if args.attack_type == "label":
         poisoned_data, poisoned_indices = label_flip_attack(
-            clean_data, args.df_size, args.random_seed, class_dataset_dict[args.dataset]["class1"], class_dataset_dict[args.dataset]["class2"]
+            clean_data, args.df_size, args.random_seed, args.victim_class, args.target_class
         )
     elif args.attack_type == "edge":
         poisoned_data, poisoned_indices = edge_attack_specific_nodes(
@@ -41,7 +40,8 @@ def poison(clean_data=None, load=True):
         poisoned_data.poisoned_nodes = poisoned_indices
     elif args.attack_type == "trigger":
         poisoned_data, poisoned_indices = trigger_attack(
-                clean_data, args.df_size, args.random_seed, victim_class=args.victim_class, target_class=args.target_class, trigger_size=args.trigger_size
+                clean_data, args.df_size, args.random_seed, victim_class=args.victim_class, target_class=args.target_class, trigger_size=args.trigger_size,
+                test_poison_fraction=0.2
         )
 
     poisoned_data = poisoned_data.to(device)
@@ -63,12 +63,28 @@ def poison(clean_data=None, load=True):
 
     forg, util = poisoned_trainer.get_score(
         args.attack_type,
-        class1=class_dataset_dict[args.dataset]["class1"],
-        class2=class_dataset_dict[args.dataset]["class2"],
+        class1= args.victim_class,
+        class2= args.target_class,
     )
-    with open("./report.txt", "a") as f:
-        text= f"PSR={forg} utility={util}\ndf_size={args.df_size}, seed={args.random_seed}, victim_class={args.victim_class}, target_class={args.target_class}, trigger_size={args.trigger_size}\n\n"
-        f.write(text)
+
+    log_val = {
+        "PSR": forg,
+        "utility": util,
+        "df_size": args.df_size,
+        "seed": args.random_seed,
+        "victim_class": args.victim_class,
+        "target_class": args.target_class,
+        "trigger_size": args.trigger_size,
+        "dataset": args.dataset
+    }
+    log_val_str= str(log_val)
+
+    try:
+        with open("./report.txt", "a") as f:
+            f.write(f"{log_val_str}\n")
+    except:
+        with open("./error_logs.txt", "a") as f:
+            f.write(f"{log_val_str}\n")
 
     print(f"==Poisoned Model==\nForget Ability: {forg}, Utility: {util}")
     return poisoned_data, poisoned_indices, poisoned_model
