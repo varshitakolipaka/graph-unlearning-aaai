@@ -179,8 +179,8 @@ class YAUMTrainer(Trainer):
 
             # Ascent step (forgetting)
             ascent_optimizer.zero_grad()
-            # output_forget = self.model(self.poisoned_dataset.x, self.poisoned_dataset.edge_index[:, self.poisoned_dataset.dr_mask])
-            output_forget = self.model(self.poisoned_dataset.x, self.poisoned_dataset.edge_index)
+            output_forget = self.model(self.poisoned_dataset.x, self.poisoned_dataset.edge_index[:, self.poisoned_dataset.dr_mask])
+            # output_forget = self.model(self.poisoned_dataset.x, self.poisoned_dataset.edge_index)
             
             forget_loss = F.cross_entropy(output_forget[forget_mask], self.poisoned_dataset.y[forget_mask])
             
@@ -202,9 +202,10 @@ class YAUMTrainer(Trainer):
             
             # save best model
             self.unlearning_time += time.time() - iter_start_time
-            cutoff = self.save_best(is_dr=True)
-            if cutoff:
-                break
+            if self.curr_step % 10 == 0:
+                cutoff = self.save_best(is_dr=True)
+                if cutoff:
+                    break
 
             # if self.curr_step % 1 == 0:
             #     train_acc, msc_rate, f1 = self.evaluate()

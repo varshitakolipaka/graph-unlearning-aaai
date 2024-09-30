@@ -75,7 +75,7 @@ def train(load=False):
     optimizer = torch.optim.Adam(
         clean_model.parameters(), lr=args.train_lr, weight_decay=args.weight_decay
     )
-    clean_trainer = Trainer(clean_model, clean_data, optimizer, args.training_epochs)
+    clean_trainer = Trainer(clean_model, clean_data, optimizer, args)
     clean_trainer.train()
 
     if args.attack_type != "trigger":
@@ -90,7 +90,7 @@ def train(load=False):
     os.makedirs(args.data_dir, exist_ok=True)
     torch.save(
         clean_model,
-        f"{args.data_dir}/{args.gnn}_{args.dataset}_{args.attack_type}_{args.df_size}_{args.random_seed}_clean_model.pt",
+        f"{args.data_dir}/{args.gnn}_{args.dataset}_{args.attack_type}_{args.df_size}_{model_seeds[args.dataset]}_clean_model.pt",
     )
 
     return clean_data
@@ -167,8 +167,8 @@ def poison(clean_data=None):
             clean_data,
             args.df_size,
             args.random_seed,
-            victim_class=args.victim_class,
-            target_class=args.target_class,
+            victim_class=class_dataset_dict[args.dataset]["victim_class"],
+            target_class=class_dataset_dict[args.dataset]["target_class"],
             trigger_size=args.trigger_size,
         )
     poisoned_data = poisoned_data.to(device)
@@ -187,7 +187,7 @@ def poison(clean_data=None):
         poisoned_model.parameters(), lr=args.train_lr, weight_decay=args.weight_decay
     )
     poisoned_trainer = Trainer(
-        poisoned_model, poisoned_data, optimizer, args.training_epochs
+        poisoned_model, poisoned_data, optimizer, args
     )
     poisoned_trainer.train()
 
@@ -196,12 +196,12 @@ def poison(clean_data=None):
 
     torch.save(
         poisoned_model,
-        f"{args.data_dir}/{args.gnn}_{args.dataset}_{args.attack_type}_{args.df_size}_{args.random_seed}_poisoned_model.pt",
+        f"{args.data_dir}/{args.gnn}_{args.dataset}_{args.attack_type}_{args.df_size}_{model_seeds[args.dataset]}_poisoned_model.pt",
     )
 
     torch.save(
         poisoned_data,
-        f"{args.data_dir}/{args.dataset}_{args.attack_type}_{args.df_size}_{args.random_seed}_poisoned_data.pt",
+        f"{args.data_dir}/{args.dataset}_{args.attack_type}_{args.df_size}_{model_seeds[args.dataset]}_poisoned_data.pt",
     )
 
     forg, util, forget_f1, util_f1 = poisoned_trainer.get_score(
@@ -278,16 +278,18 @@ hp_tuning_params_dict = {
         "k_hop": (1, 2, "int"),
     },
     "contra_2": {
-        "contrastive_epochs_1": (1, 5, "int"),
+        "contrastive_epochs_1": (1, 10, "int"),
         "contrastive_epochs_2": (1, 30, "int"),
-        "steps": (1, 15, "int"),
+        "steps": (1, 10, "int"),
         # "maximise_epochs": (5, 30, "int"),
-        "unlearn_lr": (1e-5, 1e-1, "log"),
-        "weight_decay": (1e-5, 1e-1, "log"),
-        "contrastive_margin": (1, 1e3, "log"),
+        "unlearn_lr": (1e-4, 1e-1, "log"),
+        # "contrastive_margin": (1, 10, "log"),
         # "contrastive_lambda": (0.0, 1.0, "float"),
-        "contrastive_frac": (0.01, 0.4, "float"),
-        "k_hop": (1, 2, "int"),
+        "contrastive_frac": (0.02, 0.3, "float"),
+        "k_hop": (1, 3, "int"),
+        # "ascent_lr": (1e-6, 1e-3, "log"),
+        "descent_lr": (1e-4, 1e-1, "log"),
+        # "scrubAlpha": (1e-6, 10, "log"),
     },
     "contrascent": {
         "contrastive_epochs_1": (1, 5, "int"),
@@ -298,7 +300,7 @@ hp_tuning_params_dict = {
         "contrastive_margin": (1, 10, "log"),
         # "contrastive_lambda": (0.0, 1.0, "float"),
         "contrastive_frac": (0.01, 0.2, "float"),
-        # "k_hop": (1, 2, "int"),
+        "k_hop": (1, 3, "int"),
         "ascent_lr": (1e-5, 1e-3, "log"),
         "descent_lr": (1e-5, 1e-1, "log"),
         "scrubAlpha": (1e-6, 10, "log"),
@@ -312,7 +314,7 @@ hp_tuning_params_dict = {
         # "contrastive_margin": (1, 10, "log"),
         # "contrastive_lambda": (0.0, 1.0, "float"),
         "contrastive_frac": (0.02, 0.3, "float"),
-        # "k_hop": (1, 2, "int"),
+        "k_hop": (1, 3, "int"),
         "ascent_lr": (1e-6, 1e-3, "log"),
         "descent_lr": (1e-4, 1e-1, "log"),
         # "scrubAlpha": (1e-6, 10, "log"),
@@ -416,7 +418,7 @@ if __name__ == "__main__":
     clean_data = train(load=True)
     # clean_data = train()
     poisoned_data, poisoned_indices, poisoned_model = poison()
-
+    
     if args.corrective_frac < 1:
         print("==POISONING CORRECTIVE==")
         if args.attack_type == "edge":
@@ -424,10 +426,13 @@ if __name__ == "__main__":
         else:
             poisoned_indices = poisoned_data.poisoned_nodes
         print(f"No. of poisoned nodes: {len(poisoned_indices)}")
-        poisoned_indices = utils.sample_poison_data(poisoned_indices, args.corrective_frac)
+        
         if args.attack_type == "edge":
+            poisoned_indices, poisoned_nodes = utils.sample_poison_data_edges(poisoned_data, args.corrective_frac)
             poisoned_data.poisoned_edge_indices = poisoned_indices
+            poisoned_data.poisoned_nodes = poisoned_nodes
         else:
+            poisoned_indices = utils.sample_poison_data(poisoned_indices, args.corrective_frac)
             poisoned_data.poisoned_nodes = poisoned_indices
         print(f"No. of poisoned nodes after corrective: {len(poisoned_indices)}")
 
@@ -484,7 +489,7 @@ if __name__ == "__main__":
     if args.unlearning_model == "utu":
         study.optimize(objective_func, n_trials=1)
     elif args.unlearning_model == "retrain":
-        study.optimize(objective_func, n_trials=15)
+        study.optimize(objective_func, n_trials=30)
     # elif args.unlearning_model == "contrastive" or args.unlearning_model == "contra_2":
     #     study.optimize(objective_func, n_trials=200)
     else:

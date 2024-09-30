@@ -177,9 +177,10 @@ class ScrubTrainer(Trainer):
             self.train_one_epoch(data=self.poisoned_dataset, mask=self.poisoned_dataset.node_dr_mask)
             # save best model
             self.unlearning_time += time.time() - iter_start_time
-            cutoff = self.save_best(is_dr=True)
-            if cutoff:
-                break
+            if self.curr_step % 10 == 0:
+                cutoff = self.save_best(is_dr=True)
+                if cutoff:
+                    break
             # print(f'Test Acc: {train_acc}, Misclassification: {msc_rate},  F1 Score: {f1}')
             # print(f"==Unlearned Model==\nForget Ability: {forg}, Utility: {util}")
         end_time = time.time()

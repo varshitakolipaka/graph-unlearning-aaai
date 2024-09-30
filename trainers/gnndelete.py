@@ -237,9 +237,10 @@ class GNNDeleteNodeembTrainer(Trainer):
                 raise NotImplementedError
             
             self.unlearning_time += time.time() - iter_start_time
-            cutoff = self.save_best()
-            if cutoff:
-                break
+            if epoch % 5 == 0:
+                cutoff = self.save_best()
+                if cutoff:
+                    break
 
             # end_time = time.time()
             # epoch_time = end_time - start_time

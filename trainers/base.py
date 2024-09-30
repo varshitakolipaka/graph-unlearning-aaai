@@ -57,7 +57,7 @@ class Trainer:
         self.model = model.to(device)
         self.data = data.to(device)
         self.optimizer = optimizer
-        self.num_epochs = 50
+        self.num_epochs = args.training_epochs
         self.args = args
         self.best_state_dict = None
         self.best_val_score = 0
@@ -248,10 +248,14 @@ class Trainer:
         return acc, -1, f1
 
     def calculate_PSR(self):
-        z = self.model(self.data.x, self.data.edge_index)
+        z = F.log_softmax(self.model(self.data.x, self.data.edge_index), dim=1)
         pred = torch.argmax(z[self.data.poison_test_mask], dim=1).cpu()
         psr = sum(pred == self.data.target_class) / len(pred)
-        return psr.item()
+        
+        pred_clean = torch.argmax(z[self.clean_test_mask], dim=1).cpu()
+        util = accuracy_score(self.data.y[self.clean_test_mask].cpu(), pred_clean)
+        psr = 1 - psr
+        return psr.item(), util
 
     def get_score(self, attack_type, class1=None, class2=None):
         forget_ability = None
@@ -260,14 +264,13 @@ class Trainer:
             forget_ability, utility, forget_f1, utility_f1 = self.subset_acc(class1, class2)
             return forget_ability, utility, forget_f1, utility_f1
         elif attack_type == "trigger":
-            utility, _, _ = self.evaluate()
-            forget_ability = self.calculate_PSR()
+            forget_ability, utility = self.calculate_PSR()
         elif attack_type == "clean_label":
             utility, _, _ = self.evaluate()
             forget_ability = self.calculate_PSR()
         elif attack_type == "random":
             utility, _, f1 = self.evaluate()
-        return forget_ability, utility
+        return forget_ability, utility, 0, 0
 
     def get_df_outputs(self):
         self.model.eval()

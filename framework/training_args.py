@@ -12,8 +12,8 @@ num_edge_type_mapping = {
 def parse_args():
     parser = argparse.ArgumentParser()
 
-    parser.add_argument('--train_ratio', type=float, default=0.7, help='train ratio')
-    parser.add_argument('--val_ratio', type=float, default=0.1, help='train ratio')
+    parser.add_argument('--train_ratio', type=float, default=0.6, help='train ratio')
+    parser.add_argument('--val_ratio', type=float, default=0.2, help='train ratio')
     parser.add_argument('--attack_type', type=str, default='label', help='attack type', choices=["label", "edge", "random", "trigger", 'label_strong'])
     parser.add_argument('--unlearning_model', type=str, default='scrub', help='unlearning method', choices=["original", "gradient_ascent", "gnndelete", "gnndelete_ni", "gif", "utu", "contrastive", "retrain", "scrub", "megu", "contra_2", "ssd", "grub", "yaum", 'contrascent', 'cacdc', 'scrub_no_kl_combined', 'scrub_no_kl'])
     parser.add_argument('--gnn', type=str, default='gcn', help='GNN architecture', choices=['gcn', 'gat', 'gin'])
@@ -34,9 +34,9 @@ def parse_args():
     parser.add_argument('--test_poison_fraction', type=float, default=0.2, help='Test Poisoning Fraction')
     parser.add_argument('--dataset', type=str, default='Cora', help='dataset')
     parser.add_argument('--random_seed', type=int, default=0, help='random seed')
-    parser.add_argument('--trigger_size', type=int, default=15, help='Poison Tensor Size')
-    parser.add_argument('--victim_class', type=int, default=69, help='class to add trigger to')
-    parser.add_argument('--target_class', type=int, default=68, help='class to add trigger to')
+    parser.add_argument('--trigger_size', type=int, default=200, help='Poison Tensor Size')
+    parser.add_argument('--victim_class', type=int, default=0, help='class to add trigger to')
+    parser.add_argument('--target_class', type=int, default=1, help='class to add trigger to')
     # parser.add_argument('--batch_size', type=int, default=2048, help='batch size for GraphSAINTRandomWalk sampler')
     # parser.add_argument('--walk_length', type=int, default=2, help='random walk length for GraphSAINTRandomWalk sampler')
     # parser.add_argument('--num_steps', type=int, default=32, help='number of steps for GraphSAINTRandomWalk sampler')
@@ -122,6 +122,8 @@ def parse_args():
     
     # CORRECTIVE UNLEARNING
     parser.add_argument('--corrective_frac', type=float, default=1, help='fraction of nodes to sample for corrective unlearning (by default all nodes)')
+    
+    parser.add_argument('--log_name', type=str, default='default', help='log name')
 
     args = parser.parse_args()
     args.experiment_name = f"{args.dataset}_{args.attack_type}_{args.unlearning_model}_{args.gnn}_{args.corrective_frac}_{args.db_name}"

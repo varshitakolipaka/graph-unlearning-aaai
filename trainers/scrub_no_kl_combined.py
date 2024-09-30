@@ -67,7 +67,7 @@ class LinearLR(_LRScheduler):
 
 class ScrubTrainer2(Trainer):
     def __init__(self, model, poisoned_dataset, optimizer, opt):
-        super().__init__(model, poisoned_dataset, optimizer)
+        super().__init__(model, poisoned_dataset, optimizer, opt)
         self.opt = opt
         self.opt.unlearn_iters = opt.unlearn_iters
         self.best_model = None
@@ -163,8 +163,9 @@ class ScrubTrainer2(Trainer):
         scheduler = LinearLR(self.optimizer, T=self.opt.unlearn_iters*1.25, warmup_epochs=self.opt.unlearn_iters//100)
 
         while self.curr_step < self.opt.unlearn_iters:
-            print("UNLEARNING STEP: ", self.curr_step, end='\r')
             
+            print("UNLEARNING STEP: ", self.curr_step, end='\r')
+            iter_start_time = time.time()
             self.model.train()
 
             # Compute the ascent (forgetting) loss
@@ -186,7 +187,11 @@ class ScrubTrainer2(Trainer):
 
             self.curr_step += 1
             
-            self.save_best()
+            self.unlearning_time += time.time() - iter_start_time
+            if self.curr_step % 10 == 0:
+                cutoff = self.save_best(is_dr=True)
+                if cutoff:
+                    break
 
             # if self.curr_step % 1 == 0:
             #     train_acc, msc_rate, f1 = self.evaluate()

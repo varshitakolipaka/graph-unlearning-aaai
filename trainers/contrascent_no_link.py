@@ -694,10 +694,11 @@ class ContrastiveAscentNoLinkTrainer(Trainer):
 
                 self.unlearning_time += time.time() - iter_start_time
                 # save best model
-                cutoff = self.save_best()
-                if cutoff:
-                    break
-        
+                if i % 2 == 0:
+                    cutoff = self.save_best()
+                    if cutoff:
+                        break
+            
         # load best model
         self.load_best()
 

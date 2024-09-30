@@ -1,6 +1,7 @@
 import json
 import numpy as np
 import os
+import argparse
 
 def process_json_file(file_path):
     # Load the data from the JSON file
@@ -59,10 +60,13 @@ def process_json_file(file_path):
 
 # Example usage
 if __name__ == "__main__":
-    dir = 'logs'
+    parser = argparse.ArgumentParser(description='Process JSON files to calculate averages and standard deviations')
+    parser.add_argument('--dir', type=str, default='logs/trigger_logs', help='Directory containing JSON files')
+    
+    args = parser.parse_args()
     
     # get all json files in dir and subdirectories
-    for root, dirs, files in os.walk(dir):
+    for root, dirs, files in os.walk(args.dir):
         for file in files:
             if file.endswith('.json'):
                 if "new_metric" in file:

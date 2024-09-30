@@ -10,7 +10,7 @@ from torch_geometric.nn import GCNConv
 import torch.nn.functional as F
 import copy
 
-def apply_poison(data, samples, trigger_size, poisoned_feature_indices=None, target_class=2):
+def apply_poison(data, samples, trigger_size, poisoned_feature_indices=None, target_class=2, is_test=False):
     poisoned_data = data.clone()
     if poisoned_feature_indices is None:
         poisoned_feature_indices = [i for i in range(trigger_size) ]
@@ -23,8 +23,8 @@ def apply_poison(data, samples, trigger_size, poisoned_feature_indices=None, tar
     for node in samples:
         # Apply the trigger by setting selected features to a high value (e.g., 12345)
         poisoned_data.x[node, poisoned_feature_indices] = 1  # Adjust this value based on feature scaling
-        poisoned_data.y[node] = target_class          # Change label to target class
-        print(sum(poisoned_data.x[node][:trigger_size]))
+        if not is_test:
+            poisoned_data.y[node] = target_class          # Change label to target class
 
     return poisoned_data, poisoned_feature_indices
 
@@ -36,6 +36,8 @@ def trigger_attack(data, epsilon, seed, victim_class=68, target_class=69, trigge
     data.victim_class = victim_class
     data.target_class = target_class
     
+    print(f"Victim class: {victim_class}, Target class: {target_class}")
+
     # Get all nodes of the victim class
 
     train_mask = data.train_mask
@@ -74,43 +76,53 @@ def trigger_attack(data, epsilon, seed, victim_class=68, target_class=69, trigge
 
 
     poisoned_indices = torch.tensor(poisoned_nodes, dtype=torch.long)
-    
 
-    # Create and apply the trigger to the selected nodes
+
+    # [TRAINING DATA MANIPULATION] Create and apply the trigger to the selected nodes
     poisoned_data, poisoned_feature_indices = apply_poison(
-        data, 
-        poisoned_indices, 
-        trigger_size, 
-        target_class=target_class
+        data,
+        poisoned_indices,
+        trigger_size,
+        target_class=target_class,
+        is_test=False
     )
     poisoned_data.poisoned_feature_indices = poisoned_feature_indices
 
     # Now handle test set poisoning (victim class only)
     test_mask = poisoned_data.test_mask
     victim_test_indices = [
-        i for i in range(poisoned_data.num_nodes) 
+        i for i in range(poisoned_data.num_nodes)
         if test_mask[i] and poisoned_data.y[i] == victim_class  # Poison only victim class nodes in test
     ]
+    clean_test_indices = [
+        i for i in range(poisoned_data.num_nodes)
+        if test_mask[i] and poisoned_data.y[i] != victim_class  # Clean nodes in the test set
+    ]
+    
+    clean_test_mask = torch.zeros(poisoned_data.num_nodes, dtype=torch.bool)
+    clean_test_mask[clean_test_indices] = True
+    data.clean_test_mask = clean_test_mask
 
     # Apply the poison to a fraction of victim class test nodes
-    num_victim_test_nodes = len(victim_test_indices)
+    num_victim_test_nodes = int(test_poison_fraction*len(victim_test_indices))
     print("meow check", num_victim_test_nodes)
     if num_victim_test_nodes > 0:
         num_test_poison = num_victim_test_nodes
         poisoned_test_nodes = random.sample(victim_test_indices, num_test_poison)
         print(f"Poisoning {len(poisoned_test_nodes)} test nodes out of {num_victim_test_nodes} victim class nodes.")
-        
+
         # Create a binary mask for poisoned test nodes
         poison_test_mask = torch.zeros(poisoned_data.num_nodes, dtype=torch.bool)
         poison_test_mask[poisoned_test_nodes] = True
-        
-        # Apply the same trigger to the poisoned test nodes
+
+        # [TEST DATA MANIPULATION] Apply the same trigger to the poisoned test nodes, do not change labels
         poisoned_data, _ = apply_poison(
-            poisoned_data, 
-            poisoned_test_nodes, 
-            trigger_size, 
+            poisoned_data,
+            poisoned_test_nodes,
+            trigger_size,
             target_class=target_class,
-            poisoned_feature_indices=poisoned_feature_indices
+            poisoned_feature_indices=poisoned_feature_indices,
+            is_test=True
         )
         poisoned_data.poison_test_mask = poison_test_mask
     else:

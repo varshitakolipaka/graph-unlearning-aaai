@@ -346,6 +346,50 @@ def sample_poison_data(poisoned_indices, frac):
     # exit(0)
     return sampled_nodes
 
+def sample_poison_data_edges(data, frac):
+    assert 0.0 <= frac <= 1.0, "frac must be between 0 and 1"
+    poisoned_indices = data.poisoned_edge_indices.cpu().numpy()
+    
+    total_edges_poisoned = len(poisoned_indices) // 2
+    num_to_sample = int(frac * total_edges_poisoned)
+    
+    edge_dict = {}
+    unique_edges = []
+    cnt = 0
+    for i in poisoned_indices:
+        edge = (data.edge_index[0][i].item(), data.edge_index[1][i].item())
+        reverse_edge = (data.edge_index[1][i].item(), data.edge_index[0][i].item())
+
+        if edge not in edge_dict and reverse_edge not in edge_dict:
+            unique_edges.append(i)
+
+        if reverse_edge in edge_dict:
+            cnt += 1
+        
+        edge_dict[edge] = i
+    
+    sampled_edges = torch.tensor(np.random.choice(unique_edges, num_to_sample, replace=False))
+    
+    # print("hello")
+    # print(len(sampled_edges))
+    # for i in sampled_edges:
+    #     print((data.edge_index[0][i], data.edge_index[1][i]))
+    # print((data.edge_index[1][sampled_edges[i]], data.edge_index[0][sampled_edges[i]]) for i in range(len(sampled_edges)))
+    
+
+    reverse_edges = [edge_dict[(data.edge_index[1][i].item(), data.edge_index[0][i].item())] 
+                     for i in sampled_edges]
+    
+    sampled_edges = torch.cat((sampled_edges, torch.tensor(reverse_edges)))    
+    # get the unique endpoints of sampled edges as poisoned nodes in tensor
+
+    sampled_nodes = torch.unique(data.edge_index[:, sampled_edges].flatten())
+    # print("Sampling for Corrective")
+    # print(sampled_nodes.shape)
+
+    # print(len(sampled_edges))
+    return sampled_edges, sampled_nodes
+
 def get_closest_classes(classes, counts):
     '''
     returns the two classes with the closest number of samples in the training set
@@ -359,4 +403,3 @@ def get_closest_classes(classes, counts):
     pairwise_diffs = sorted(pairwise_diffs, key=lambda x: x[2])
 
     return pairwise_diffs
-

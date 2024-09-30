@@ -67,7 +67,7 @@ class LinearLR(_LRScheduler):
 
 class ScrubTrainer1(Trainer):
     def __init__(self, model, poisoned_dataset, optimizer, opt):
-        super().__init__(model, poisoned_dataset, optimizer)
+        super().__init__(model, poisoned_dataset, optimizer, opt)
         self.opt = opt
         self.opt.unlearn_iters = opt.unlearn_iters
         self.best_model = None
@@ -160,6 +160,7 @@ class ScrubTrainer1(Trainer):
         self.maximize=False
         start_time = time.time()
         while self.curr_step < self.opt.unlearn_iters:
+            iter_start_time = time.time()
             print("UNLEARNING STEP: ", self.curr_step, end='\r')
             if self.curr_step < self.opt.msteps:
                 self.maximize=True
@@ -167,7 +168,14 @@ class ScrubTrainer1(Trainer):
 
             self.maximize=False
             self.train_one_epoch(data=self.poisoned_dataset, mask=self.poisoned_dataset.node_dr_mask)
-            train_acc, msc_rate, f1 = self.evaluate()
+
+
+            self.unlearning_time += time.time() - iter_start_time
+            if self.curr_step % 10 == 0:
+                cutoff = self.save_best(is_dr=True)
+                if cutoff:
+                    break
+            
             # print(f'Test Acc: {train_acc}, Misclassification: {msc_rate},  F1 Score: {f1}')
             # print(f"==Unlearned Model==\nForget Ability: {forg}, Utility: {util}")
         end_time = time.time()

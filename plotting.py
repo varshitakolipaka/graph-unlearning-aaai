@@ -12,7 +12,7 @@ def load_csv_files(folder, frac_sizes):
     csv_files = {}
     try:
         for file in os.listdir(folder):
-            if 'run_logs_label_0.5_' in file and file.endswith('.csv'):
+            if ('run_logs_label_0.5_' in file or 'run_logs_edge' in file) and file.endswith('.csv'):
                 frac_size = get_frac_size_from_filename(file)
                 if frac_size in frac_sizes:
                     csv_files[frac_size] = pd.read_csv(os.path.join(folder, file))
@@ -103,26 +103,26 @@ def plot_forget_scores(df, folder):
             palette=assign_method_color(df['method'].unique()),
             style='method',
             markers=True,
-            dashes=False,
+            dashes=False
         )
         
         # add error bars
-        for method in df['method'].unique():
-            method_data = df[df['method'] == method]
-            plt.errorbar(
-                method_data['frac_size'],
-                method_data['forget_mean'],
-                yerr=method_data['forget_std'],
-                fmt='none',
-                c=assign_method_color(df['method'].unique())[method],
-                capsize=2
-            )
+        # for method in df['method'].unique():
+        #     method_data = df[df['method'] == method]
+        #     plt.errorbar(
+        #         method_data['frac_size'],
+        #         method_data['forget_mean'],
+        #         yerr=method_data['forget_std'],
+        #         fmt='none',
+        #         c=assign_method_color(df['method'].unique())[method],
+        #         capsize=2
+        #     )
         
 
         plt.xlabel('Fraction Size')
         plt.ylabel('Forget Score')
         plt.title(f'Forget Scores: {folder.split("/")[-1]}')
-        plt.legend(title='Method')
+        plt.legend(title='Method', bbox_to_anchor=(1.05, 1), loc='upper left')
         plt.tight_layout()
         # plt.show()
         plt.savefig(os.path.join(folder, 'forget_scores.png'))

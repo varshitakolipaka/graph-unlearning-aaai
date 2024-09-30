@@ -303,9 +303,10 @@ class MeguTrainer(Trainer):
             optimizer.step()
             
             self.unlearning_time += time.time() - iter_start_time
-            cutoff = self.save_best()
-            if cutoff:
-                break
+            if epoch % 5 == 0:
+                cutoff = self.save_best()
+                if cutoff:
+                    break
 
         unlearn_time = self.best_model_time - start_time
         self.load_best()

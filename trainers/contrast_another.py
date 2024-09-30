@@ -597,14 +597,6 @@ class ContrastiveUnlearnTrainer_NEW(Trainer):
                     loss.backward()
                     optimizer.step()
                 else:
-                    ascent_optimizer.zero_grad()
-
-                    ascent_loss = self.ascent_loss(self.data.poison_mask)
-
-                    ascent_loss.backward()
-                    ascent_optimizer.step()
-                    # ascent_scheduler.step()
-
                     descent_optimizer.zero_grad()
 
                     self.embeddings = self.model(
@@ -624,10 +616,11 @@ class ContrastiveUnlearnTrainer_NEW(Trainer):
                     
                 # save best model
                 self.unlearning_time += time.time() - iter_start_time
-                cutoff = self.save_best()
-                if cutoff:
-                    self.load_best()
-                    return
+                if i % 2 == 0:
+                    cutoff = self.save_best()
+                    if cutoff:
+                        self.load_best()
+                        return
         
         # load best model
         self.load_best()
@@ -643,6 +636,7 @@ class ContrastiveUnlearnTrainer_NEW(Trainer):
 
         for epoch in trange(args.steps, desc="Unlearning"):
             for i in range(args.contrastive_epochs_1 + args.contrastive_epochs_2):
+                iter_start_time = time.time()
                 self.model.train()
                 optimizer.zero_grad()
 
@@ -678,11 +672,14 @@ class ContrastiveUnlearnTrainer_NEW(Trainer):
                     descent_optimizer.step()
                     # descent_scheduler.step()
                     
+                self.unlearning_time += time.time() - iter_start_time
                 # save best model
-                cutoff = self.save_best()
-                if cutoff:
-                    break
-        
+                if i % 2 == 0:
+                    cutoff = self.save_best()
+                    if cutoff:
+                        self.load_best()
+                        return
+
         # load best model
         self.load_best()
 

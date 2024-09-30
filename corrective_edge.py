@@ -184,7 +184,7 @@ def poison(clean_data=None):
         )
     elif args.attack_type == "edge":
         poisoned_data, poisoned_indices = edge_attack_specific_nodes(
-            clean_data, args.df_size, args.random_seed
+            clean_data, args.df_size, args.random_seed, 13, 53
         )
     elif args.attack_type == "random":
         poisoned_data = copy.deepcopy(clean_data)
@@ -328,10 +328,14 @@ if __name__ == "__main__":
     print("\n\n\n")
 
     print(args.dataset, args.attack_type)
-    clean_data = train(load=True)
+    clean_data = train(load=False)
     # clean_data = train()
-
-    poisoned_data, poisoned_indices, poisoned_model = poison()
+    # print data information
+    poisoned_data, poisoned_indices, poisoned_model = poison(clean_data)
+    # print("==POISONING DONE==")
+    # print("Number of edges added: ", len(poisoned_indices))
+    # print(utils.prints_stats(poisoned_data))
+    # exit()
     # load best params file
     with open("best_params.json", "r") as f:
         d = json.load(f)
@@ -347,12 +351,14 @@ if __name__ == "__main__":
         if args.attack_type == "edge":
             poisoned_indices, poisoned_nodes = utils.sample_poison_data_edges(poisoned_data, args.corrective_frac)
             poisoned_data.poisoned_edge_indices = poisoned_indices
-            poisoned_data.poisoned_nodes = poisoned_nodes
+            poisoned_data.poisond_nodes = poisoned_nodes
         else:
             poisoned_indices = utils.sample_poison_data(poisoned_indices, args.corrective_frac)
             poisoned_data.poisoned_nodes = poisoned_indices
         print(f"No. of poisoned nodes after corrective: {len(poisoned_indices)}")
 
+    exit()
+    
     try:
         params = d[args.unlearning_model][args.experiment_name]
     except:
