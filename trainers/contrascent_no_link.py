@@ -677,9 +677,14 @@ class ContrastiveAscentNoLinkTrainer(Trainer):
 
                     descent_optimizer.zero_grad()
 
-                    self.embeddings = self.model(
-                        self.data.x, self.data.edge_index[:, self.data.dr_mask]
-                    )
+                    if self.args.linked:
+                        self.embeddings = self.model(
+                            self.data.x, self.data.edge_index
+                        )
+                    else:
+                        self.embeddings = self.model(
+                            self.data.x, self.data.edge_index[:, self.data.dr_mask]
+                        )
 
                     finetune_loss = F.cross_entropy(
                         self.embeddings[self.data.retain_mask],
@@ -695,9 +700,12 @@ class ContrastiveAscentNoLinkTrainer(Trainer):
                 self.unlearning_time += time.time() - iter_start_time
                 # save best model
                 if i % 2 == 0:
-                    cutoff = self.save_best()
-                    if cutoff:
-                        break
+                    if self.args.linked:
+                        cutoff = self.save_best(is_dr=False)
+                    else:
+                        cutoff = self.save_best()
+                        if cutoff:
+                            break
             
         # load best model
         self.load_best()
@@ -716,7 +724,11 @@ class ContrastiveAscentNoLinkTrainer(Trainer):
         elif self.args.request == "edge":
             self.train_edge()
         
-        train_acc, msc_rate, f1 = self.evaluate(is_dr=True, use_val=True)
+        if self.args.linked:
+            is_dr = False
+        else:
+            is_dr = True
+        train_acc, msc_rate, f1 = self.evaluate(is_dr=is_dr, use_val=True)
 
         print(f"Training time: {self.best_model_time}, Train Acc: {train_acc}, Msc Rate: {msc_rate}, F1: {f1}")
         forg, util, forg_f1, util_f1 = self.get_score(self.args.attack_type, class1=class_dataset_dict[self.args.dataset]["class1"], class2=class_dataset_dict[self.args.dataset]["class2"])

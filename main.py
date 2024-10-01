@@ -297,7 +297,11 @@ def unlearn(poisoned_data, poisoned_indices, poisoned_model):
         )
 
     _, _, time_taken = unlearn_trainer.train()
-    acc, _, _ = unlearn_trainer.evaluate(is_dr=True) # REAL
+    
+    if args.linked:
+        acc, _, _ = unlearn_trainer.evaluate(is_dr=False) # REAL
+    else:
+        acc, _, _ = unlearn_trainer.evaluate(is_dr=True) # REAL
     # acc, _, _ = unlearn_trainer.evaluate(is_dr=False)  # TEST
     print(acc)
     forg, util, forget_f1, util_f1 = unlearn_trainer.get_score(

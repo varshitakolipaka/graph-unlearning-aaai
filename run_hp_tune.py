@@ -1,14 +1,18 @@
 import argparse
 import os
 
-def run_hp_tuning(unlearning_models, df_size, random_seed, dataset, attack_type, data_dir, db_name, gnn, cf, log_name):
+def run_hp_tuning(unlearning_models, df_size, random_seed, dataset, attack_type, data_dir, db_name, gnn, cf, log_name, linked=False):
     cf_str = ""
     if cf < 1.0:
         cf_str = f"--corrective_frac {cf}"
+        
+    link_str = ""
+    if linked:
+        link_str = "--linked"
     
     for model in unlearning_models:
         if attack_type == "label" or attack_type == "random" or attack_type == "trigger":
-            cmd = f"python hp_tune.py --unlearning_model {model} --dataset {dataset} --df_size {df_size} --random_seed {random_seed} --data_dir {data_dir} --attack_type {attack_type} --db_name {db_name} --gnn {gnn} {cf_str} --log_name {log_name}"
+            cmd = f"python hp_tune.py --unlearning_model {model} --dataset {dataset} --df_size {df_size} --random_seed {random_seed} --data_dir {data_dir} --attack_type {attack_type} --db_name {db_name} --gnn {gnn} {cf_str} --log_name {log_name} {link_str}"
             
             print(f"Running command: {cmd}")
             os.system(cmd)
@@ -19,7 +23,7 @@ def run_hp_tuning(unlearning_models, df_size, random_seed, dataset, attack_type,
             os.system(cmd)
             
         elif attack_type == "edge":
-            cmd = f"python hp_tune.py --unlearning_model {model} --dataset {dataset} --df_size {df_size} --random_seed {random_seed} --data_dir {data_dir} --attack_type {attack_type} --request edge --db_name {db_name} --gnn {gnn} {cf_str} --log_name {log_name}"
+            cmd = f"python hp_tune.py --unlearning_model {model} --dataset {dataset} --df_size {df_size} --random_seed {random_seed} --data_dir {data_dir} --attack_type {attack_type} --request edge --db_name {db_name} --gnn {gnn} {cf_str} --log_name {log_name} {link_str}"
             
             print(f"Running command: {cmd}")
             os.system(cmd)
@@ -43,6 +47,7 @@ if __name__ == "__main__":
     parser.add_argument('--db_name', type=str, default=None, help='Database name (only for contra_2 model)')
     parser.add_argument('--cf', type=float, default=1.0, help='Corrective fraction')
     parser.add_argument('--log_name', type=str, default='default', help='Log name')
+    parser.add_argument('--linked', action='store_true', help='Run HP tuning for linked model')
     
     parser.add_argument('--contra_2', action='store_true', help='Run HP tuning for contra_2 model')
     parser.add_argument('--contrastive', action='store_true', help='Run HP tuning for contra_2 model')
@@ -94,4 +99,4 @@ if __name__ == "__main__":
     if args.scrub_no_kl_combined:
         unlearning_models.append('scrub_no_kl_combined')
     
-    run_hp_tuning(unlearning_models, args.df_size, args.random_seed, args.dataset, args.attack_type, args.data_dir, args.db_name, args.gnn, args.cf, args.log_name)
+    run_hp_tuning(unlearning_models, args.df_size, args.random_seed, args.dataset, args.attack_type, args.data_dir, args.db_name, args.gnn, args.cf, args.log_name, linked=args.linked)

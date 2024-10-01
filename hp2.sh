@@ -26,13 +26,22 @@
 
 # python eval_script.py --dataset CS --attack_type label --df_size 0.5 --start_seed 0 --end_seed 5 --megu --gnndelete --retrain --scrub --cacdc --yaum --gif --utu --contra_2 --db_name label_main
 
-# python run_hp_tune.py --dataset Cora --df_size 0.5 --random_seed 0 --data_dir /scratch/akshit.sinha/data --attack_type label --db_name label_main --gnn gat --cacdc --contra_2
+# python run_hp_tune.py --dataset Cora --df_size 0.5 --random_seed 1 --data_dir /scratch/akshit.sinha/data3 --attack_type label --db_name label_gat_main --gnn gat --cacdc --scrub --yaum --contra_2 --megu --utu --gif --retrain --gnndelete
 
-python eval_script.py --gnn gat --dataset Cora --attack_type label --db_name label_main --log_name label_gat_logs --start_seed 0 --end_seed 5 --cacdc --scrub --yaum --contra_2 --megu --utu --gif --retrain --gnndelete
+# python eval_script.py --gnn gat --dataset Cora --attack_type label --db_name label_gat_main --log_name label_gat_logs --start_seed 0 --end_seed 5 --cacdc --scrub --yaum --contra_2 --megu --utu --gif --retrain --gnndelete
 
-# python run_hp_tune.py --dataset Cora --df_size 0.5 --random_seed 0 --data_dir /scratch/akshit.sinha/data --attack_type label --db_name label_cf_0.05 --cf 0.05 --gnn gat --cacdc --contra_2 
+python run_hp_tune.py --dataset Cora --df_size 0.5 --random_seed 1 --data_dir /scratch/akshit.sinha/data3 --attack_type label --db_name label_gat_cf_0.05 --cf 0.05 --gnn gat --cacdc --scrub --yaum --contra_2 --megu --utu --gif --retrain --gnndelete 
 
-python eval_script.py --gnn gat --dataset Cora --attack_type label --db_name label_cf_0.05 --log_name label_gat_logs --cf 0.05 --start_seed 0 --end_seed 5 --cacdc --scrub --yaum --contra_2 --megu --utu --gif --retrain --gnndelete
+python eval_script.py --gnn gat --dataset Cora --attack_type label --db_name label_gat_cf_0.05 --log_name label_gat_logs --cf 0.05 --start_seed 0 --end_seed 5 --cacdc --scrub --yaum --contra_2 --megu --utu --gif --retrain --gnndelete
+
+python run_hp_tune.py --dataset Cora --df_size 0.5 --random_seed 1 --data_dir /scratch/akshit.sinha/data3 --attack_type label --db_name label_gat_cf_0.5 --cf 0.5 --gnn gat --cacdc --scrub --yaum --contra_2 --megu --utu --gif --retrain --gnndelete 
+
+python eval_script.py --gnn gat --dataset Cora --attack_type label --db_name label_gat_cf_0.5 --log_name label_gat_logs --cf 0.5 --start_seed 0 --end_seed 5 --cacdc --scrub --yaum --contra_2 --megu --utu --gif --retrain --gnndelete
+
+python run_hp_tune.py --dataset Cora --df_size 0.5 --random_seed 1 --data_dir /scratch/akshit.sinha/data3 --attack_type label --db_name label_gat_cf_0.75 --cf 0.75 --gnn gat --cacdc --scrub --yaum --contra_2 --megu --utu --gif --retrain --gnndelete 
+
+python eval_script.py --gnn gat --dataset Cora --attack_type label --db_name label_gat_cf_0.75 --log_name label_gat_logs --cf 0.75 --start_seed 0 --end_seed 5 --cacdc --scrub --yaum --contra_2 --megu --utu --gif --retrain --gnndelete
+
 
 
 
@@ -49,6 +58,8 @@ python eval_script.py --gnn gat --dataset Cora --attack_type label --db_name lab
 # python eval_script.py --dataset Amazon --attack_type label --cf 0.25 --start_seed 0 --end_seed 5 --scrub --cacdc --yaum
 
 # python run_hp_tune.py --dataset Amazon --df_size 0.5 --random_seed 0 --data_dir /scratch/akshit.sinha/data --attack_type label --db_name label_cf_linked_0.5 --cf 0.5 --gnn gcn --cacdc --scrub --yaum
+
+
 
 # python eval_script.py --dataset Amazon --attack_type label --cf 0.5 --start_seed 0 --end_seed 5 --scrub --cacdc --yaum
 

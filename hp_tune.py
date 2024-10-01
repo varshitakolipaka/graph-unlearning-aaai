@@ -31,7 +31,6 @@ with open("classes_to_poison.json", "r") as f:
 with open("model_seeds.json") as f:
     model_seeds = json.load(f)
 
-
 def train(load=False):
     if load:
         clean_data = utils.get_original_data(args.dataset)
@@ -54,7 +53,7 @@ def train(load=False):
         clean_trainer = Trainer(clean_model, clean_data, optimizer, args)
 
         if args.attack_type != "trigger":
-            clean_trainer.evaluate()
+            print("ACC__ : ", clean_trainer.evaluate())
             forg, util, forget_f1, util_f1 = clean_trainer.get_score(
                 args.attack_type,
                 class1=class_dataset_dict[args.dataset]["class1"],
@@ -89,7 +88,7 @@ def train(load=False):
     print("==TRAINING==")
     clean_data = utils.get_original_data(args.dataset)
     utils.train_test_split(
-        clean_data, args.random_seed, args.train_ratio, args.val_ratio
+        clean_data, model_seeds[args.dataset], args.train_ratio, args.val_ratio
     )
     utils.prints_stats(clean_data)
     clean_model = utils.get_model(
@@ -103,6 +102,7 @@ def train(load=False):
     clean_trainer.train()
 
     if args.attack_type != "trigger":
+        print("ACC__ : ", clean_trainer.evaluate())
         forg, util, forget_f1, util_f1 = clean_trainer.get_score(
             args.attack_type,
             class1=class_dataset_dict[args.dataset]["class1"],
@@ -418,8 +418,11 @@ def objective(trial, model, data):
 
     _, _, time_taken = trainer.train()
 
-    obj = trainer.validate(is_dr=True)  # REAL
-    # obj = trainer.validate(is_dr=False)
+    if args.linked:
+        obj = trainer.validate(is_dr=False)  # REAL
+    else:
+        obj = trainer.validate(is_dr=True)  # REAL
+
     forget_acc, util_acc, forget_f1, util_f1 = trainer.get_score(
         args.attack_type,
         class1=class_dataset_dict[args.dataset]["class1"],
