@@ -15,6 +15,8 @@ import optuna
 from optuna.samplers import TPESampler
 from functools import partial
 from logger import Logger
+import torch.nn.functional as F
+from sklearn.metrics import accuracy_score
 
 args = parse_args()
 
@@ -28,6 +30,7 @@ with open("classes_to_poison.json", "r") as f:
 
 with open("model_seeds.json") as f:
     model_seeds = json.load(f)
+
 
 def train(load=False):
     if load:
@@ -48,9 +51,7 @@ def train(load=False):
             clean_model.parameters(), lr=args.train_lr, weight_decay=args.weight_decay
         )
 
-        clean_trainer = Trainer(
-            clean_model, clean_data, optimizer, args
-        )
+        clean_trainer = Trainer(clean_model, clean_data, optimizer, args)
 
         if args.attack_type != "trigger":
             clean_trainer.evaluate()
@@ -60,7 +61,28 @@ def train(load=False):
                 class2=class_dataset_dict[args.dataset]["class2"],
             )
 
-            print(f"==OG Model==\nForg Accuracy: {forg}, Util Accuracy: {util}, Forg F1: {forget_f1}, Util F1: {util_f1}")
+            print(
+                f"==OG Model==\nForg Accuracy: {forg}, Util Accuracy: {util}, Forg F1: {forget_f1}, Util F1: {util_f1}"
+            )
+        else:
+            # check accuracy on the poisoned test samples
+            victim_class = class_dataset_dict[args.dataset]["victim_class"]
+            # get the indices of the poisoned nodes
+            poisoned_data = torch.load(
+                f"{args.data_dir}/{args.dataset}_{args.attack_type}_{args.df_size}_{model_seeds[args.dataset]}_poisoned_data.pt"
+            )
+            poisoned_test_mask = poisoned_data.poison_test_mask
+
+            # check the accuracy of the model on the poisoned test samples
+            z = F.log_softmax(clean_model(clean_data.x, clean_data.edge_index), dim=-1)
+            pred = z.argmax(dim=-1)
+            acc = accuracy_score(
+                pred[poisoned_test_mask].cpu().numpy(),
+                clean_data.y[poisoned_test_mask].cpu().numpy(),
+            )
+
+            print(f"==OG Model==\nAccuracy on victim class test samples: {acc}")
+
         return clean_data
 
     # dataset
@@ -70,7 +92,9 @@ def train(load=False):
         clean_data, args.random_seed, args.train_ratio, args.val_ratio
     )
     utils.prints_stats(clean_data)
-    clean_model = GCN(clean_data.num_features, args.hidden_dim, clean_data.num_classes)
+    clean_model = utils.get_model(
+        args, clean_data.num_features, args.hidden_dim, clean_data.num_classes
+    )
 
     optimizer = torch.optim.Adam(
         clean_model.parameters(), lr=args.train_lr, weight_decay=args.weight_decay
@@ -85,7 +109,9 @@ def train(load=False):
             class2=class_dataset_dict[args.dataset]["class2"],
         )
 
-        print(f"==OG Model==\nForg Accuracy: {forg}, Util Accuracy: {util}, Forg F1: {forget_f1}, Util F1: {util_f1}")
+        print(
+            f"==OG Model==\nForg Accuracy: {forg}, Util Accuracy: {util}, Forg F1: {forget_f1}, Util F1: {util_f1}"
+        )
     # save the clean model
     os.makedirs(args.data_dir, exist_ok=True)
     torch.save(
@@ -106,6 +132,8 @@ def poison(clean_data=None):
             f"{args.data_dir}/{args.gnn}_{args.dataset}_{args.attack_type}_{args.df_size}_{model_seeds[args.dataset]}_poisoned_model.pt"
         )
 
+        print(poisoned_model.state_dict().keys())
+
         if args.attack_type == "edge":
             poisoned_indices = poisoned_data.poisoned_edge_indices
         else:
@@ -116,18 +144,18 @@ def poison(clean_data=None):
             lr=args.train_lr,
             weight_decay=args.weight_decay,
         )
-        poisoned_trainer = Trainer(
-            poisoned_model, poisoned_data, optimizer, args
-        )
+        poisoned_trainer = Trainer(poisoned_model, poisoned_data, optimizer, args)
         poisoned_trainer.evaluate()
 
         forg, util, forget_f1, util_f1 = poisoned_trainer.get_score(
-                args.attack_type,
-                class1=class_dataset_dict[args.dataset]["class1"],
-                class2=class_dataset_dict[args.dataset]["class2"],
-            )
+            args.attack_type,
+            class1=class_dataset_dict[args.dataset]["class1"],
+            class2=class_dataset_dict[args.dataset]["class2"],
+        )
 
-        print(f"==Poisoned Model==\nForg Accuracy: {forg}, Util Accuracy: {util}, Forg F1: {forget_f1}, Util F1: {util_f1}")
+        print(
+            f"==Poisoned Model==\nForg Accuracy: {forg}, Util Accuracy: {util}, Forg F1: {forget_f1}, Util F1: {util_f1}"
+        )
         # print(poisoned_trainer.calculate_PSR())
         return poisoned_data, poisoned_indices, poisoned_model
 
@@ -173,22 +201,14 @@ def poison(clean_data=None):
         )
     poisoned_data = poisoned_data.to(device)
 
-    if "gnndelete" in args.unlearning_model:
-        # poisoned_model = GCNDelete(poisoned_data.num_features, args.hidden_dim, poisoned_data.num_classes)
-        poisoned_model = GCN(
-            poisoned_data.num_features, args.hidden_dim, poisoned_data.num_classes
-        )
-    else:
-        poisoned_model = GCN(
-            poisoned_data.num_features, args.hidden_dim, poisoned_data.num_classes
-        )
+    poisoned_model = utils.get_model(
+        args, poisoned_data.num_features, args.hidden_dim, poisoned_data.num_classes
+    )
 
     optimizer = torch.optim.Adam(
         poisoned_model.parameters(), lr=args.train_lr, weight_decay=args.weight_decay
     )
-    poisoned_trainer = Trainer(
-        poisoned_model, poisoned_data, optimizer, args
-    )
+    poisoned_trainer = Trainer(poisoned_model, poisoned_data, optimizer, args)
     poisoned_trainer.train()
 
     # save the poisoned data and model and indices to np file
@@ -210,7 +230,10 @@ def poison(clean_data=None):
         class2=class_dataset_dict[args.dataset]["class2"],
     )
 
-    print(f"==Poisoned Model==\nForg Accuracy: {forg}, Util Accuracy: {util}, Forg F1: {forget_f1}, Util F1: {util_f1}")
+    print(
+        f"==Poisoned Model==\nForg Accuracy: {forg}, Util Accuracy: {util}, Forg F1: {forget_f1}, Util F1: {util_f1}"
+    )
+
     # print(f"PSR: {poisoned_trainer.calculate_PSR()}")
     return poisoned_data, poisoned_indices, poisoned_model
 
@@ -395,7 +418,7 @@ def objective(trial, model, data):
 
     _, _, time_taken = trainer.train()
 
-    obj = trainer.validate(is_dr=True) # REAL
+    obj = trainer.validate(is_dr=True)  # REAL
     # obj = trainer.validate(is_dr=False)
     forget_acc, util_acc, forget_f1, util_f1 = trainer.get_score(
         args.attack_type,
@@ -418,7 +441,7 @@ if __name__ == "__main__":
     clean_data = train(load=True)
     # clean_data = train()
     poisoned_data, poisoned_indices, poisoned_model = poison()
-    
+
     if args.corrective_frac < 1:
         print("==POISONING CORRECTIVE==")
         if args.attack_type == "edge":
@@ -426,13 +449,17 @@ if __name__ == "__main__":
         else:
             poisoned_indices = poisoned_data.poisoned_nodes
         print(f"No. of poisoned nodes: {len(poisoned_indices)}")
-        
+
         if args.attack_type == "edge":
-            poisoned_indices, poisoned_nodes = utils.sample_poison_data_edges(poisoned_data, args.corrective_frac)
+            poisoned_indices, poisoned_nodes = utils.sample_poison_data_edges(
+                poisoned_data, args.corrective_frac
+            )
             poisoned_data.poisoned_edge_indices = poisoned_indices
             poisoned_data.poisoned_nodes = poisoned_nodes
         else:
-            poisoned_indices = utils.sample_poison_data(poisoned_indices, args.corrective_frac)
+            poisoned_indices = utils.sample_poison_data(
+                poisoned_indices, args.corrective_frac
+            )
             poisoned_data.poisoned_nodes = poisoned_indices
         print(f"No. of poisoned nodes after corrective: {len(poisoned_indices)}")
 

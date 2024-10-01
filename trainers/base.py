@@ -67,6 +67,8 @@ class Trainer:
         self.best_model_time = 0
 
         self.TIME_THRESHOLD = 3 # 3 seconds
+        
+        self.is_trigg_val = False
 
         self.class1 = class_dataset_dict[args.dataset]["class1"]
         self.class2 = class_dataset_dict[args.dataset]["class2"]
@@ -242,20 +244,35 @@ class Trainer:
             f1 = f1_score(self.data.y[mask].cpu(), pred[mask].cpu(), average="macro")
             # msc_rate = self.misclassification_rate(self.data.y[mask].cpu(), pred[mask].cpu())
 
+        self.z = z
         self.pred = pred[mask]
         self.true = self.data.y[mask].cpu()
+        
+        self.is_trigg_val = use_val
 
         return acc, -1, f1
 
     def calculate_PSR(self):
-        z = F.log_softmax(self.model(self.data.x, self.data.edge_index), dim=1)
-        pred = torch.argmax(z[self.data.poison_test_mask], dim=1).cpu()
-        psr = sum(pred == self.data.target_class) / len(pred)
+        z = self.z
+        if self.is_trigg_val:
+            # mask = self.data.poison_val_mask
+            util_mask = self.data.clean_val_mask
+            poisoned_nodes = self.data.poisoned_nodes
+            mask = torch.zeros(self.data.num_nodes, dtype=torch.bool)
+            mask[poisoned_nodes] = True
+        else:
+            mask = self.data.poison_test_mask
+            util_mask = self.data.clean_test_mask
+        pred = torch.argmax(z[mask], dim=1).cpu()
         
-        pred_clean = torch.argmax(z[self.clean_test_mask], dim=1).cpu()
-        util = accuracy_score(self.data.y[self.clean_test_mask].cpu(), pred_clean)
-        psr = 1 - psr
-        return psr.item(), util
+        if self.is_trigg_val:
+            forg = 1 - accuracy_score(self.data.y[mask].cpu(), pred)
+        else:
+            forg = accuracy_score(self.data.y[mask].cpu(), pred)
+        
+        pred_clean = torch.argmax(z[util_mask], dim=1).cpu()
+        util = accuracy_score(self.data.y[util_mask].cpu(), pred_clean)
+        return forg, util
 
     def get_score(self, attack_type, class1=None, class2=None):
         forget_ability = None

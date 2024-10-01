@@ -33,15 +33,18 @@ class GAT(nn.Module):
     def __init__(self, in_dim, hidden_dim, out_dim):
         super().__init__()
         self.conv1 = GATConv(in_dim, hidden_dim)
-        self.conv2 = GATConv(hidden_dim, out_dim)
+        self.conv2 = GATConv(hidden_dim, hidden_dim)
+        self.conv3 = GATConv(hidden_dim, out_dim)
 
     def forward(self, x, edge_index, return_all_emb=False):
         x1 = self.conv1(x, edge_index)
-        x = F.relu(x1)
-        x2 = self.conv2(x, edge_index)
+        x1 = F.relu(x1)
+        x2 = self.conv2(x1, edge_index)
+        x2 = F.relu(x2)
+        x3 = self.conv3(x2, edge_index)
         if return_all_emb:
-            return x1, x2
-        return x2
+            return x1, x2, x3
+        return x3
 
     def decode(self, z, pos_edge_index, neg_edge_index=None):
         if neg_edge_index is not None:

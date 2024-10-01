@@ -99,9 +99,22 @@ def trigger_attack(data, epsilon, seed, victim_class=68, target_class=69, trigge
         if test_mask[i] and poisoned_data.y[i] != victim_class  # Clean nodes in the test set
     ]
     
+    victim_val_indices = [
+        i for i in range(poisoned_data.num_nodes)
+        if poisoned_data.val_mask[i] and poisoned_data.y[i] == victim_class  # Poison only victim class nodes in test
+    ]
+    clean_val_indices = [
+        i for i in range(poisoned_data.num_nodes)
+        if poisoned_data.val_mask[i] and poisoned_data.y[i] != victim_class  # Clean nodes in the test set
+    ]
+    
     clean_test_mask = torch.zeros(poisoned_data.num_nodes, dtype=torch.bool)
     clean_test_mask[clean_test_indices] = True
-    data.clean_test_mask = clean_test_mask
+    poisoned_data.clean_test_mask = clean_test_mask
+    
+    clean_val_mask = torch.zeros(poisoned_data.num_nodes, dtype=torch.bool)
+    clean_val_mask[clean_val_indices] = True
+    poisoned_data.clean_val_mask = clean_val_mask
 
     # Apply the poison to a fraction of victim class test nodes
     num_victim_test_nodes = int(test_poison_fraction*len(victim_test_indices))
@@ -128,6 +141,27 @@ def trigger_attack(data, epsilon, seed, victim_class=68, target_class=69, trigge
     else:
         print("No victim class nodes found in the test set.")
         poisoned_data.poison_test_mask = torch.zeros(data.num_nodes, dtype=torch.bool)
+        
+    num_victim_val_nodes = int(test_poison_fraction*len(victim_val_indices))
+    if num_victim_val_nodes > 0:
+        num_val_poison = num_victim_val_nodes
+        poisoned_val_nodes = random.sample(victim_val_indices, num_val_poison)
+        print(f"Poisoning {len(poisoned_val_nodes)} val nodes out of {num_victim_val_nodes} victim class nodes.")
+
+        # Create a binary mask for poisoned test nodes
+        poison_val_mask = torch.zeros(poisoned_data.num_nodes, dtype=torch.bool)
+        poison_val_mask[poisoned_val_nodes] = True
+
+        # [TEST DATA MANIPULATION] Apply the same trigger to the poisoned test nodes, do not change labels
+        poisoned_data, _ = apply_poison(
+            poisoned_data,
+            poisoned_val_nodes,
+            trigger_size,
+            target_class=target_class,
+            poisoned_feature_indices=poisoned_feature_indices,
+            is_test=True
+        )
+        poisoned_data.poison_val_mask = poison_val_mask
 
     poisoned_data.poisoned_nodes = poisoned_indices
     return poisoned_data, poisoned_indices

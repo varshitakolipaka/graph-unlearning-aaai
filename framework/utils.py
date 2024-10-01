@@ -10,6 +10,7 @@ import torch_geometric.transforms as T
 import matplotlib.pyplot as plt
 import seaborn as sns
 from sklearn.manifold import TSNE
+from torch_geometric.utils import subgraph
 
 
 from trainers.contrascent import ContrastiveAscentTrainer
@@ -88,6 +89,17 @@ def train_test_split(data, seed, train_ratio=0.1, val_ratio=0.1):
     data.test_mask[test_idx] = True
 
     return data, train_idx, test_idx
+
+def inductive_graph_split(data):
+    train_edge_index, _ = subgraph(data.train_mask, data.edge_index)
+    data.edge_index = train_edge_index
+
+    val_edge_index, _ = subgraph(data.val_mask, data.edge_index)
+    data.val_edge_index = val_edge_index
+
+    test_edge_index, _ = subgraph(data.test_mask, data.edge_index)
+    data.test_edge_index = test_edge_index
+
 
 def seed_everything(seed):
     random.seed(seed)
