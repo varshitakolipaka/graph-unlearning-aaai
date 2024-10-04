@@ -53,7 +53,7 @@ def train(load=False):
         clean_trainer = Trainer(clean_model, clean_data, optimizer, args)
 
         if args.attack_type != "trigger":
-            print("ACC__ : ", clean_trainer.evaluate())
+            print("Acc__ : ", clean_trainer.evaluate())
             forg, util, forget_f1, util_f1 = clean_trainer.get_score(
                 args.attack_type,
                 class1=class_dataset_dict[args.dataset]["class1"],
@@ -87,6 +87,9 @@ def train(load=False):
     # dataset
     print("==TRAINING==")
     clean_data = utils.get_original_data(args.dataset)
+    # utils.train_test_split(
+    #     clean_data, args.random_seed, args.train_ratio, args.val_ratio
+    # )
     utils.train_test_split(
         clean_data, model_seeds[args.dataset], args.train_ratio, args.val_ratio
     )
@@ -118,9 +121,7 @@ def train(load=False):
         clean_model,
         f"{args.data_dir}/{args.gnn}_{args.dataset}_{args.attack_type}_{args.df_size}_{model_seeds[args.dataset]}_clean_model.pt",
     )
-
     return clean_data
-
 
 def poison(clean_data=None):
     if clean_data is None:
@@ -441,8 +442,8 @@ def objective(trial, model, data):
 if __name__ == "__main__":
     print("\n\n\n")
     print(args.dataset, args.attack_type)
-    clean_data = train(load=True)
     # clean_data = train()
+    clean_data = train(load=True)
     poisoned_data, poisoned_indices, poisoned_model = poison()
 
     if args.corrective_frac < 1:

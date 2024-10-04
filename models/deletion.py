@@ -48,7 +48,7 @@ class GCNDelete(GCN):
         self.conv2.requires_grad = False
         self.conv3.requires_grad = False
 
-    def forward(self, x, edge_index, mask_1hop=None, mask_2hop=None, mask_3hop=None, return_all_emb=False):
+    def forward(self, x, edge_index, mask_1hop=None, mask_2hop=None, mask_3hop=None, return_all_emb=False, get_pre_final=False):
         x1 = self.conv1(x, edge_index)
         x1 = self.deletion1(x1, mask_1hop)
         x1 = F.relu(x1)
@@ -62,6 +62,8 @@ class GCNDelete(GCN):
 
         if return_all_emb:
             return x1, x2, x3
+        if(get_pre_final):
+            return x2
         return x3
 
     def get_original_embeddings(self, x, edge_index, return_all_emb=False):

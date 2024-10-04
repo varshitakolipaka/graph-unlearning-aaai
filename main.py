@@ -79,13 +79,26 @@ def train(load=False):
                 },
             )
 
+        # utils.plot_embeddings(
+        #     args,
+        #     clean_model,
+        #     clean_data,
+        #     class1=class_dataset_dict[args.dataset]["class1"],
+        #     class2=class_dataset_dict[args.dataset]["class2"],
+        #     is_dr=False,
+        #     name=f"clean_other",
+        # )
+
         return clean_data
 
     # dataset
     print("==TRAINING==")
     clean_data = utils.get_original_data(args.dataset)
+    # utils.train_test_split(
+    #     clean_data, args.random_seed, args.train_ratio, args.val_ratio
+    # )
     utils.train_test_split(
-        clean_data, args.random_seed, args.train_ratio, args.val_ratio
+        clean_data, model_seeds[args.dataset], args.train_ratio, args.val_ratio
     )
     utils.prints_stats(clean_data)
     clean_model = utils.get_model(
@@ -171,6 +184,17 @@ def poison(clean_data=None):
         )
 
         # print(poisoned_trainer.calculate_PSR())
+
+        # utils.plot_embeddings(
+        #     args,
+        #     poisoned_model,
+        #     poisoned_data,
+        #     class1=class_dataset_dict[args.dataset]["class1"],
+        #     class2=class_dataset_dict[args.dataset]["class2"],
+        #     is_dr=False,
+        #     name=f"poison_other",
+        # )
+
         return poisoned_data, poisoned_indices, poisoned_model
 
     print("==POISONING==")
@@ -334,8 +358,11 @@ if __name__ == "__main__":
     print(args.dataset, args.attack_type)
     clean_data = train(load=True)
     # clean_data = train()
-
+    
+    
     poisoned_data, poisoned_indices, poisoned_model = poison()
+    # exit()
+
     # load best params file
     with open("best_params.json", "r") as f:
         d = json.load(f)
@@ -376,5 +403,15 @@ if __name__ == "__main__":
     #     class1=class_dataset_dict[args.dataset]["class1"],
     #     class2=class_dataset_dict[args.dataset]["class2"],
     #     is_dr=True,
-    #     name=f"unlearned_{args.unlearning_model}_2",
+    #     name=f"{args.unlearning_model}",
+    # )
+
+    # utils.plot_embeddings(
+    #     args,
+    #     unlearnt_model,
+    #     poisoned_data,
+    #     class1=class_dataset_dict[args.dataset]["class1"],
+    #     class2=class_dataset_dict[args.dataset]["class2"],
+    #     is_dr=True,
+    #     name=f"{args.unlearning_model}_other",
     # )

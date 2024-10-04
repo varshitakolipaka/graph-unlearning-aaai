@@ -11,7 +11,7 @@ import matplotlib.pyplot as plt
 import seaborn as sns
 from sklearn.manifold import TSNE
 from torch_geometric.utils import subgraph
-
+from scipy.spatial import ConvexHull
 
 from trainers.contrascent import ContrastiveAscentTrainer
 from trainers.contrascent_no_link import ContrastiveAscentNoLinkTrainer
@@ -264,6 +264,23 @@ def prints_stats(data):
     for i in range(data.num_classes):
         print(f"Number of nodes in class {i}: {counts[i]}")
 
+def rotate_embeddings(embeddings, angle):
+    """
+    Rotates the 2D embeddings by a specified angle.
+    
+    Args:
+    embeddings (numpy.ndarray): The 2D embeddings to be rotated.
+    angle (float): The angle (in degrees) by which to rotate the embeddings.
+    
+    Returns:
+    numpy.ndarray: The rotated embeddings.
+    """
+    theta = np.radians(angle)
+    rotation_matrix = np.array([[np.cos(theta), -np.sin(theta)], 
+                                [np.sin(theta), np.cos(theta)]])
+    
+    return np.dot(embeddings, rotation_matrix)
+
 def plot_embeddings(args, model, data, class1, class2, is_dr=False, mask="test", name=""):
     # Set the model to evaluation mode
     model.eval()
@@ -271,16 +288,15 @@ def plot_embeddings(args, model, data, class1, class2, is_dr=False, mask="test",
     # Forward pass: get embeddings
     with torch.no_grad():
         if is_dr and args.unlearning_model != "scrub":
-            embeddings = model(data.x, data.edge_index[:, data.dr_mask])
+            pre_embeddings = model(data.x, data.edge_index[:, data.dr_mask], get_pre_final=True)
         else:
-            embeddings = model(data.x, data.edge_index)
+            pre_embeddings = model(data.x, data.edge_index, get_pre_final=True)
 
     # If embeddings have more than 2 dimensions, apply t-SNE
-    print("Embeddings shape:", embeddings.shape)
-    if embeddings.shape[1] > 2:
-        embeddings = TSNE(n_components=2).fit_transform(embeddings.cpu())
-        embeddings = torch.tensor(embeddings).to(device)
-    print("Embeddings shape after t-SNE:", embeddings.shape)
+    if pre_embeddings.shape[1] > 2:
+        pre_embeddings = TSNE(n_components=2).fit_transform(pre_embeddings.cpu())
+        pre_embeddings = torch.tensor(pre_embeddings).to(device)
+
     # Get the mask (either test, train, or val)
     if mask == "test":
         mask = data.test_mask
@@ -290,73 +306,188 @@ def plot_embeddings(args, model, data, class1, class2, is_dr=False, mask="test",
         mask = data.val_mask
 
     # Filter embeddings and labels based on the mask
-    embeddings = embeddings[mask]
+    pre_embeddings = pre_embeddings[mask]
     labels = data.y[mask]
 
+    # Convert embeddings to numpy for processing
+    pre_embeddings = pre_embeddings.cpu().numpy()
+    pre_embeddings = rotate_embeddings(pre_embeddings, 270)
+    # # Flip embeddings vertically by multiplying the y-dimension (2nd column) by -1
+    # pre_embeddings[:, 0] = -pre_embeddings[:, 0]
+
     # Create masks for class1, class2, and other classes
-    class1_mask = (labels == class1)
-    class2_mask = (labels == class2)
+    class1_mask = (labels == class1).cpu().numpy()
+    class2_mask = (labels == class2).cpu().numpy()
 
-    # convert masks to numpy
-    class1_mask = class1_mask.cpu().numpy()
-    class2_mask = class2_mask.cpu().numpy()
+    # Get unique class labels (excluding class1 and class2)
+    unique_classes = torch.unique(labels).cpu().numpy()
+    other_classes = [c for c in unique_classes if c != class1 and c != class2]
 
-    # give a color map to the other classes
-    class_masks = {}
-    for i in range(data.num_classes):
-        if i != class1 and i != class2:
-            class_masks[i] = (labels == i).cpu().numpy()
-
-    colors = sns.color_palette("dark", data.num_classes)
-    color_map = {}
-    for i in range(data.num_classes):
-        if i == class1:
-            color_map[i] = 'blue'
-        elif i == class2:
-            color_map[i] = 'red'
-        else:
-            color_map[i] = colors[i]
-
-    # Prepare the plot
-    plt.figure(figsize=(10, 8))
+    plt.figure(figsize=(8, 8), tight_layout=True)
     sns.set(style="whitegrid")
 
-    # convert to numpy
-    embeddings = embeddings.cpu().numpy()
+    plt.grid(True, linestyle='-', alpha=0.7)
+
+    # Convert labels to numpy for processing
     labels = labels.cpu().numpy()
 
-    # Plot class1
-    plt.scatter(embeddings[class1_mask, 0], embeddings[class1_mask, 1], label=f'Class {class1}', color='blue', alpha=0.6)
-    # Plot class2
-    plt.scatter(embeddings[class2_mask, 0], embeddings[class2_mask, 1], label=f'Class {class2}', color='red', alpha=0.6)
-    # Plot other classes
-    for i in class_masks:
-        plt.scatter(embeddings[class_masks[i], 0], embeddings[class_masks[i], 1], label=f'Class {i}', color=color_map[i], alpha=0.3)
+    # Generate a color palette for all classes
+    color_palette = sns.color_palette("pastel", len(unique_classes))
 
-    # Add legend to top right
-    plt.legend(loc='upper right')
-    plt.title(f"{args.dataset}-{name}")
-    plt.xlabel("Embedding Dimension 1")
-    plt.ylabel("Embedding Dimension 2")
+    # Plot each class with its unique color (non-poisoned classes will have reduced opacity)
+    for i, cls in enumerate(other_classes):
+        class_mask = (labels == cls)
+        plt.scatter(
+            pre_embeddings[class_mask, 0], 
+            pre_embeddings[class_mask, 1], 
+            color=color_palette[i], 
+            alpha=0.25,  # Slightly lower opacity for non-poisoned classes
+            s=50
+        )
+
+    # Plot class1 (poisoned class)
+    plt.scatter(
+        pre_embeddings[class1_mask, 0], 
+        pre_embeddings[class1_mask, 1], 
+        color='blue', 
+        alpha=0.6, 
+        s=120, 
+        edgecolors='black', 
+        linewidths=2  # Thicker borders
+    )
+
+    # Plot class2 (poisoned class)
+    plt.scatter(
+        pre_embeddings[class2_mask, 0], 
+        pre_embeddings[class2_mask, 1], 
+        color='red', 
+        alpha=0.6, 
+        s=120, 
+        edgecolors='black', 
+        linewidths=2  # Thicker borders
+    )
+
+    # Keep x-axis and y-axis ticks without labels and title
+    plt.xticks(ticks=plt.xticks()[0], labels=[''] * len(plt.xticks()[0]))  # Remove x-axis labels
+    plt.yticks(ticks=plt.yticks()[0], labels=[''] * len(plt.yticks()[0]))  # Remove y-axis labels
+    plt.title('')  # Remove title
+    plt.gca().legend().set_visible(False)  # Remove legend
+
+    # Ensure the grid is visible
+    plt.grid(True)
 
     # Save the plot
     os.makedirs("./plots", exist_ok=True)
-    plt.savefig(f"./plots/{args.dataset}_{args.attack_type}_{args.df_size}_{args.random_seed}_{name}_embeddings.png")
+    plt.savefig(f"./plots/{args.dataset}_{args.attack_type}_{args.df_size}_{args.random_seed}_{name}_embeddings_clean.png", format='png', bbox_inches='tight')
     plt.show()
 
-def sample_poison_data(poisoned_indices, frac):
-    assert frac <= 1.0, "frac must be between 0 and 1"
-    if frac <= 0.0:
-        num_to_sample = 1
+def remove_outliers(data, threshold=1.0):
+        # Calculate the convex hull of the data
+        hull = ConvexHull(data)
+        hull_points = data[hull.vertices]
+        # Calculate the center of the hull
+        center = np.mean(hull_points, axis=0)
+        # Calculate distances from the center
+        distances = np.linalg.norm(data - center, axis=1)
+        # Calculate the threshold for outliers
+        cutoff = np.percentile(distances, 100 * threshold)
+        # Return data points that are within the threshold
+        return data[distances <= cutoff]
+
+def plot_poisoned_classes_only(args, model, data, class1, class2, is_dr=False, mask="test", name=""):
+    # Set the model to evaluation mode
+    model.eval()
+
+    # Forward pass: get embeddings
+    with torch.no_grad():
+        if is_dr and args.unlearning_model != "scrub":
+            pre_embeddings = model(data.x, data.edge_index[:, data.dr_mask], get_pre_final=True)
+        else:
+            pre_embeddings = model(data.x, data.edge_index, get_pre_final=True)
+
+    # If embeddings have more than 2 dimensions, apply t-SNE
+    if pre_embeddings.shape[1] > 2:
+        pre_embeddings = TSNE(n_components=2).fit_transform(pre_embeddings.cpu())
+        pre_embeddings = torch.tensor(pre_embeddings).to(device)
+
+    # Get the mask (either test, train, or val)
+    if mask == "test":
+        mask = data.test_mask
+    elif mask == "train":
+        mask = data.train_mask
     else:
-        num_to_sample = int(frac * len(poisoned_indices))
+        mask = data.val_mask
 
-    sampled_nodes =  torch.tensor(np.random.choice(poisoned_indices.cpu().numpy(), num_to_sample, replace=False))
-    print("Sampling for Corrective")
+    # Filter embeddings and labels based on the mask
+    pre_embeddings = pre_embeddings[mask]
+    labels = data.y[mask]
 
-    print(sampled_nodes)
-    # exit(0)
-    return sampled_nodes
+    # Convert embeddings and labels to numpy for processing
+    pre_embeddings = pre_embeddings.cpu().numpy()
+    pre_embeddings = rotate_embeddings(pre_embeddings, 75)
+    labels = labels.cpu().numpy()
+
+    # Create masks for class1 and class2 (poisoned classes)
+    class1_mask = (labels == class1)
+    class2_mask = (labels == class2)
+
+    # Combine the embeddings for class1 and class2
+    poisoned_embeddings = np.concatenate([pre_embeddings[class1_mask], pre_embeddings[class2_mask]])
+
+    # shift_left_value = 50  # Adjust this value to control how far left the cluster moves
+    print("=====================================")
+    # print(poisoned_embeddings[:, 0])
+    # poisoned_embeddings[:, 0] -= shift_left_value
+    # poisoned_embeddings[:, 1] -= shift_left_value
+    # print("=====================================")
+    print(poisoned_embeddings[:, 1])
+
+    # Prepare the plot
+    plt.figure(figsize=(6, 6))
+    sns.set(style="whitegrid")
+
+    # Plot class1 (poisoned class) embeddings
+    plt.scatter(
+        poisoned_embeddings[:sum(class1_mask), 0], 
+        poisoned_embeddings[:sum(class1_mask), 1], 
+        color='blue', 
+        alpha=0.7, 
+        s=120, 
+        edgecolors='black', 
+        linewidths=2,  # Thicker borders
+        label=f'Class {class1}'
+    )
+
+    # Plot class2 (poisoned class) embeddings
+    plt.scatter(
+        poisoned_embeddings[sum(class1_mask):, 0], 
+        poisoned_embeddings[sum(class1_mask):, 1], 
+        color='red', 
+        alpha=0.7, 
+        s=120, 
+        edgecolors='black', 
+        linewidths=2,  # Thicker borders
+        label=f'Class {class2}'
+    )
+    # print("=====================================")
+    # print(poisoned_embeddings[:, 1])
+
+    # plt.xlim(50, 100)
+    plt.ylim(50, 110)
+
+    # Set the plot properties: no axis labels, grid, etc.
+    plt.xticks([])  # Remove x-axis labels
+    plt.yticks([])  # Remove y-axis labels
+    plt.title('')  # Remove title
+    plt.grid(True)
+
+    # Add a legend for the two poisoned classes
+    plt.gca().legend().set_visible(False)  # Remove legend
+
+    # Save the plot as PNG
+    os.makedirs("./plots", exist_ok=True)
+    plt.savefig(f"./plots/{args.dataset}_{args.attack_type}_{args.df_size}_{args.random_seed}_{name}_poisoned_classes_zoom.png", format='png', bbox_inches='tight')
+    plt.show()
 
 def sample_poison_data_edges(data, frac):
     assert 0.0 <= frac <= 1.0, "frac must be between 0 and 1"

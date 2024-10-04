@@ -10,7 +10,7 @@ class GCN(nn.Module):
         self.conv2 = GCNConv(hidden_dim, hidden_dim)
         self.conv3 = GCNConv(hidden_dim, out_dim)
 
-    def forward(self, x, edge_index, return_all_emb=False):
+    def forward(self, x, edge_index, return_all_emb=False, get_pre_final=False):
         x1 = self.conv1(x, edge_index)
         x1 = F.relu(x1)
         x2 = self.conv2(x1, edge_index)
@@ -18,6 +18,8 @@ class GCN(nn.Module):
         x3 = self.conv3(x2, edge_index)
         if return_all_emb:
             return x1, x2, x3
+        if get_pre_final:
+            return x2
         return x3
 
     def decode(self, z, pos_edge_index, neg_edge_index=None):
