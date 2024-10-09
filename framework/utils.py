@@ -491,6 +491,18 @@ def plot_poisoned_classes_only(args, model, data, class1, class2, is_dr=False, m
     plt.savefig(f"./plots/{args.dataset}_{args.attack_type}_{args.df_size}_{args.random_seed}_{name}_poisoned_classes_zoom.png", format='png', bbox_inches='tight')
     plt.show()
 
+def sample_poison_data(poisoned_indices, frac):
+    assert frac <= 1.0, "frac must be between 0 and 1"
+    if frac <= 0.0:
+        num_to_sample = 1
+    else:
+        num_to_sample = int(frac * len(poisoned_indices))
+    sampled_nodes =  torch.tensor(np.random.choice(poisoned_indices.cpu().numpy(), num_to_sample, replace=False))
+    print("Sampling for Corrective")
+    print(sampled_nodes)
+    # exit(0)
+    return sampled_nodes
+
 def sample_poison_data_edges(data, frac):
     assert 0.0 <= frac <= 1.0, "frac must be between 0 and 1"
     poisoned_indices = data.poisoned_edge_indices.cpu().numpy()
