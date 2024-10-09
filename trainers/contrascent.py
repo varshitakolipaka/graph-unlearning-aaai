@@ -99,7 +99,7 @@ def distill_kl_loss(y_s, y_t, T, reduction="sum"):
     return loss
 
 
-class ContrastiveAscentNoLinkTrainer(Trainer):
+class ContrastiveAscentTrainer(Trainer):
     def __init__(self, model, data, optimizer, args):
         super().__init__(model, data, optimizer, args)
         self.attacked_idx = data.attacked_idx
