@@ -309,7 +309,7 @@ hp_tuning_params_dict = {
         "unlearn_lr": (1e-4, 1e-1, "log"),
         # "contrastive_margin": (1, 10, "log"),
         # "contrastive_lambda": (0.0, 1.0, "float"),
-        "contrastive_frac": (0.02, 0.3, "float"),
+        "contrastive_frac": (0.02, 0.8, "float"),
         "k_hop": (1, 3, "int"),
         # "ascent_lr": (1e-6, 1e-3, "log"),
         "descent_lr": (1e-4, 1e-1, "log"),
@@ -330,14 +330,14 @@ hp_tuning_params_dict = {
         "scrubAlpha": (1e-6, 10, "log"),
     },
     "cacdc": {
-        "contrastive_epochs_1": (1, 6, "int"),
+        "contrastive_epochs_1": (1, 10, "int"),
         "contrastive_epochs_2": (1, 30, "int"),
         "steps": (1, 10, "int"),
         # "maximise_epochs": (5, 30, "int"),
         "unlearn_lr": (1e-4, 1e-1, "log"),
         # "contrastive_margin": (1, 10, "log"),
         # "contrastive_lambda": (0.0, 1.0, "float"),
-        "contrastive_frac": (0.02, 0.3, "float"),
+        "contrastive_frac": (0.02, 0.8, "float"),
         "k_hop": (1, 3, "int"),
         "ascent_lr": (1e-6, 1e-3, "log"),
         "descent_lr": (1e-4, 1e-1, "log"),
@@ -358,6 +358,14 @@ hp_tuning_params_dict = {
         "unlearn_lr": (1e-5, 1e-1, "log"),
         # "scrubAlpha": (1e-6, 10, "log"),
         "msteps": (10, 100, "int"),
+        # 'weight_decay': (1e-5, 1e-1, "log"),
+    },
+    "scrub_no_kl_2": {
+        "unlearn_iters": (110, 300, "int"),
+        # 'kd_T': (1, 10, "float"),
+        "unlearn_lr": (1e-5, 1e-1, "log"),
+        "scrubAlpha": (1e-6, 10, "log"),
+        "msteps": (10, 150, "int"),
         # 'weight_decay': (1e-5, 1e-1, "log"),
     },
     "scrub_no_kl_combined": {
@@ -442,8 +450,13 @@ def objective(trial, model, data):
 if __name__ == "__main__":
     print("\n\n\n")
     print(args.dataset, args.attack_type)
-    # clean_data = train()
+    if args.gnn == "gat":
+        args.train_lr = 0.06270178773628353
+        args.training_epochs = 1143
+        args.weight_decay = 0.00002
+
     clean_data = train(load=True)
+    # clean_data = train()
     poisoned_data, poisoned_indices, poisoned_model = poison()
 
     if args.corrective_frac < 1:

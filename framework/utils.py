@@ -23,6 +23,7 @@ from trainers.gradient_ascent import GradientAscentTrainer
 from trainers.gif import GIFTrainer
 from trainers.base import Trainer
 from trainers.scrub import ScrubTrainer
+from trainers.scrub_2_lrs_no_kl import ScrubTrainer3
 from trainers.scrub_no_kl import ScrubTrainer1
 from trainers.scrub_no_kl_combined import ScrubTrainer2
 from trainers.ssd import SSDTrainer
@@ -217,7 +218,8 @@ def get_trainer(args, poisoned_model, poisoned_data, optimizer_unlearn) -> Train
         "contrascent": ContrastiveAscentTrainer,
         'cacdc': ContrastiveAscentNoLinkTrainer,
         "scrub_no_kl": ScrubTrainer1,
-        "scrub_no_kl_combined": ScrubTrainer2
+        "scrub_no_kl_combined": ScrubTrainer2,
+        "scrub_no_kl_2": ScrubTrainer3
     }
 
     if args.unlearning_model in trainer_map:

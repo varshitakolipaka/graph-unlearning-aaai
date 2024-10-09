@@ -70,6 +70,7 @@ class Logger():
             print(f"method {method} not in logs")
             self.logs['results'][seed][method] = {}
         
+        print(f"logging {method} result for seed {seed} at location {self.filename}")
         for key, value in result.items():
             self.logs['results'][seed][method][key] = value
         

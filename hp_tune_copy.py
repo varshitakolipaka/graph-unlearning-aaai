@@ -15,89 +15,127 @@ import optuna
 from optuna.samplers import TPESampler
 from functools import partial
 from logger import Logger
+import torch.nn.functional as F
+from sklearn.metrics import accuracy_score
 
 args = parse_args()
 
 utils.seed_everything(args.random_seed)
 device = torch.device("cuda") if torch.cuda.is_available() else torch.device("cpu")
 
+print(f"Using device: {device}")
+
 with open("classes_to_poison.json", "r") as f:
     class_dataset_dict = json.load(f)
 
+with open("model_seeds.json") as f:
+    model_seeds = json.load(f)
 
 def train(load=False):
     if load:
         clean_data = utils.get_original_data(args.dataset)
+        # utils.train_test_split(
+        #     clean_data, args.random_seed, args.train_ratio, args.val_ratio
+        # )
         utils.train_test_split(
-            clean_data, args.random_seed, args.train_ratio, args.val_ratio
+            clean_data, model_seeds[args.dataset], args.train_ratio, args.val_ratio
         )
         utils.prints_stats(clean_data)
 
         clean_model = torch.load(
-            f"{args.data_dir}/{args.gnn}_{args.dataset}_{args.attack_type}_{args.df_size}_{args.random_seed}_clean_model.pt"
+            f"{args.data_dir}/{args.gnn}_{args.dataset}_{args.attack_type}_{args.df_size}_{model_seeds[args.dataset]}_clean_model.pt"
         )
 
         optimizer = torch.optim.Adam(
             clean_model.parameters(), lr=args.train_lr, weight_decay=args.weight_decay
         )
 
-        clean_trainer = Trainer(
-            clean_model, clean_data, optimizer, args.training_epochs
-        )
+        clean_trainer = Trainer(clean_model, clean_data, optimizer, args)
 
         if args.attack_type != "trigger":
-            clean_trainer.evaluate()
+            print("Acc__ : ", clean_trainer.evaluate())
             forg, util, forget_f1, util_f1 = clean_trainer.get_score(
                 args.attack_type,
                 class1=class_dataset_dict[args.dataset]["class1"],
                 class2=class_dataset_dict[args.dataset]["class2"],
             )
 
-            print(f"==OG Model==\nForg Accuracy: {forg}, Util Accuracy: {util}, Forg F1: {forget_f1}, Util F1: {util_f1}")
-        return clean_data
+            print(
+                f"==OG Model==\nForg Accuracy: {forg}, Util Accuracy: {util}, Forg F1: {forget_f1}, Util F1: {util_f1}"
+            )
+        else:
+            # check accuracy on the poisoned test samples
+            victim_class = class_dataset_dict[args.dataset]["victim_class"]
+            # get the indices of the poisoned nodes
+            poisoned_data = torch.load(
+                f"{args.data_dir}/{args.dataset}_{args.attack_type}_{args.df_size}_{model_seeds[args.dataset]}_poisoned_data.pt"
+            )
+            poisoned_test_mask = poisoned_data.poison_test_mask
+
+            # check the accuracy of the model on the poisoned test samples
+            z = F.log_softmax(clean_model(clean_data.x, clean_data.edge_index), dim=-1)
+            pred = z.argmax(dim=-1)
+            acc = accuracy_score(
+                pred[poisoned_test_mask].cpu().numpy(),
+                clean_data.y[poisoned_test_mask].cpu().numpy(),
+            )
+
+            print(f"==OG Model==\nAccuracy on victim class test samples: {acc}")
+
+        return clean_data, clean_model
 
     # dataset
     print("==TRAINING==")
     clean_data = utils.get_original_data(args.dataset)
+    # utils.train_test_split(
+    #     clean_data, args.random_seed, args.train_ratio, args.val_ratio
+    # )
     utils.train_test_split(
-        clean_data, args.random_seed, args.train_ratio, args.val_ratio
+        clean_data, model_seeds[args.dataset], args.train_ratio, args.val_ratio
     )
     utils.prints_stats(clean_data)
-    clean_model = GCN(clean_data.num_features, args.hidden_dim, clean_data.num_classes)
+    clean_model = utils.get_model(
+        args, clean_data.num_features, args.hidden_dim, clean_data.num_classes
+    )
+    
+    return clean_data, clean_model
 
     optimizer = torch.optim.Adam(
         clean_model.parameters(), lr=args.train_lr, weight_decay=args.weight_decay
     )
-    clean_trainer = Trainer(clean_model, clean_data, optimizer, args.training_epochs)
+    clean_trainer = Trainer(clean_model, clean_data, optimizer, args)
     clean_trainer.train()
 
     if args.attack_type != "trigger":
+        print("ACC__ : ", clean_trainer.evaluate())
         forg, util, forget_f1, util_f1 = clean_trainer.get_score(
             args.attack_type,
             class1=class_dataset_dict[args.dataset]["class1"],
             class2=class_dataset_dict[args.dataset]["class2"],
         )
 
-        print(f"==OG Model==\nForg Accuracy: {forg}, Util Accuracy: {util}, Forg F1: {forget_f1}, Util F1: {util_f1}")
+        print(
+            f"==OG Model==\nForg Accuracy: {forg}, Util Accuracy: {util}, Forg F1: {forget_f1}, Util F1: {util_f1}"
+        )
     # save the clean model
     os.makedirs(args.data_dir, exist_ok=True)
     torch.save(
         clean_model,
-        f"{args.data_dir}/{args.gnn}_{args.dataset}_{args.attack_type}_{args.df_size}_{args.random_seed}_clean_model.pt",
+        f"{args.data_dir}/{args.gnn}_{args.dataset}_{args.attack_type}_{args.df_size}_{model_seeds[args.dataset]}_clean_model.pt",
     )
-
-    return clean_data
-
+    return clean_data, clean_model
 
 def poison(clean_data=None):
     if clean_data is None:
         # load the poisoned data and model and indices from np file
         poisoned_data = torch.load(
-            f"{args.data_dir}/{args.dataset}_{args.attack_type}_{args.df_size}_{args.random_seed}_poisoned_data.pt"
+            f"{args.data_dir}/{args.dataset}_{args.attack_type}_{args.df_size}_{model_seeds[args.dataset]}_poisoned_data.pt"
         )
         poisoned_model = torch.load(
-            f"{args.data_dir}/{args.gnn}_{args.dataset}_{args.attack_type}_{args.df_size}_{args.random_seed}_poisoned_model.pt"
+            f"{args.data_dir}/{args.gnn}_{args.dataset}_{args.attack_type}_{args.df_size}_{model_seeds[args.dataset]}_poisoned_model.pt"
         )
+
+        print(poisoned_model.state_dict().keys())
 
         if args.attack_type == "edge":
             poisoned_indices = poisoned_data.poisoned_edge_indices
@@ -109,18 +147,18 @@ def poison(clean_data=None):
             lr=args.train_lr,
             weight_decay=args.weight_decay,
         )
-        poisoned_trainer = Trainer(
-            poisoned_model, poisoned_data, optimizer, args.training_epochs
-        )
+        poisoned_trainer = Trainer(poisoned_model, poisoned_data, optimizer, args)
         poisoned_trainer.evaluate()
 
         forg, util, forget_f1, util_f1 = poisoned_trainer.get_score(
-                args.attack_type,
-                class1=class_dataset_dict[args.dataset]["class1"],
-                class2=class_dataset_dict[args.dataset]["class2"],
-            )
+            args.attack_type,
+            class1=class_dataset_dict[args.dataset]["class1"],
+            class2=class_dataset_dict[args.dataset]["class2"],
+        )
 
-        print(f"==Poisoned Model==\nForg Accuracy: {forg}, Util Accuracy: {util}, Forg F1: {forget_f1}, Util F1: {util_f1}")
+        print(
+            f"==Poisoned Model==\nForg Accuracy: {forg}, Util Accuracy: {util}, Forg F1: {forget_f1}, Util F1: {util_f1}"
+        )
         # print(poisoned_trainer.calculate_PSR())
         return poisoned_data, poisoned_indices, poisoned_model
 
@@ -160,28 +198,20 @@ def poison(clean_data=None):
             clean_data,
             args.df_size,
             args.random_seed,
-            victim_class=args.victim_class,
-            target_class=args.target_class,
+            victim_class=class_dataset_dict[args.dataset]["victim_class"],
+            target_class=class_dataset_dict[args.dataset]["target_class"],
             trigger_size=args.trigger_size,
         )
     poisoned_data = poisoned_data.to(device)
 
-    if "gnndelete" in args.unlearning_model:
-        # poisoned_model = GCNDelete(poisoned_data.num_features, args.hidden_dim, poisoned_data.num_classes)
-        poisoned_model = GCN(
-            poisoned_data.num_features, args.hidden_dim, poisoned_data.num_classes
-        )
-    else:
-        poisoned_model = GCN(
-            poisoned_data.num_features, args.hidden_dim, poisoned_data.num_classes
-        )
+    poisoned_model = utils.get_model(
+        args, poisoned_data.num_features, args.hidden_dim, poisoned_data.num_classes
+    )
 
     optimizer = torch.optim.Adam(
         poisoned_model.parameters(), lr=args.train_lr, weight_decay=args.weight_decay
     )
-    poisoned_trainer = Trainer(
-        poisoned_model, poisoned_data, optimizer, args.training_epochs
-    )
+    poisoned_trainer = Trainer(poisoned_model, poisoned_data, optimizer, args)
     poisoned_trainer.train()
 
     # save the poisoned data and model and indices to np file
@@ -189,12 +219,12 @@ def poison(clean_data=None):
 
     torch.save(
         poisoned_model,
-        f"{args.data_dir}/{args.gnn}_{args.dataset}_{args.attack_type}_{args.df_size}_{args.random_seed}_poisoned_model.pt",
+        f"{args.data_dir}/{args.gnn}_{args.dataset}_{args.attack_type}_{args.df_size}_{model_seeds[args.dataset]}_poisoned_model.pt",
     )
 
     torch.save(
         poisoned_data,
-        f"{args.data_dir}/{args.dataset}_{args.attack_type}_{args.df_size}_{args.random_seed}_poisoned_data.pt",
+        f"{args.data_dir}/{args.dataset}_{args.attack_type}_{args.df_size}_{model_seeds[args.dataset]}_poisoned_data.pt",
     )
 
     forg, util, forget_f1, util_f1 = poisoned_trainer.get_score(
@@ -203,7 +233,10 @@ def poison(clean_data=None):
         class2=class_dataset_dict[args.dataset]["class2"],
     )
 
-    print(f"==Poisoned Model==\nForg Accuracy: {forg}, Util Accuracy: {util}, Forg F1: {forget_f1}, Util F1: {util_f1}")
+    print(
+        f"==Poisoned Model==\nForg Accuracy: {forg}, Util Accuracy: {util}, Forg F1: {forget_f1}, Util F1: {util_f1}"
+    )
+
     # print(f"PSR: {poisoned_trainer.calculate_PSR()}")
     return poisoned_data, poisoned_indices, poisoned_model
 
@@ -212,7 +245,7 @@ hp_tuning_params_dict = {
     "retrain": {
         "unlearn_lr": (1e-5, 1e-1, "log"),
         "weight_decay": (1e-5, 1e-1, "log"),
-        "unlearning_epochs": (600, 1000, "int"),
+        "unlearning_epochs": (600, 1400, "int"),
     },
     "gnndelete": {
         "unlearn_lr": (1e-5, 1e-1, "log"),
@@ -271,16 +304,18 @@ hp_tuning_params_dict = {
         "k_hop": (1, 2, "int"),
     },
     "contra_2": {
-        "contrastive_epochs_1": (1, 5, "int"),
+        "contrastive_epochs_1": (1, 10, "int"),
         "contrastive_epochs_2": (1, 30, "int"),
-        "steps": (1, 15, "int"),
+        "steps": (1, 10, "int"),
         # "maximise_epochs": (5, 30, "int"),
-        "unlearn_lr": (1e-5, 1e-1, "log"),
-        "weight_decay": (1e-5, 1e-1, "log"),
-        "contrastive_margin": (1, 1e3, "log"),
+        "unlearn_lr": (1e-4, 1e-1, "log"),
+        # "contrastive_margin": (1, 10, "log"),
         # "contrastive_lambda": (0.0, 1.0, "float"),
-        "contrastive_frac": (0.01, 0.1, "float"),
-        "k_hop": (1, 2, "int"),
+        "contrastive_frac": (0.02, 0.3, "float"),
+        "k_hop": (1, 3, "int"),
+        # "ascent_lr": (1e-6, 1e-3, "log"),
+        "descent_lr": (1e-4, 1e-1, "log"),
+        # "scrubAlpha": (1e-6, 10, "log"),
     },
     "contrascent": {
         "contrastive_epochs_1": (1, 5, "int"),
@@ -291,32 +326,32 @@ hp_tuning_params_dict = {
         "contrastive_margin": (1, 10, "log"),
         # "contrastive_lambda": (0.0, 1.0, "float"),
         "contrastive_frac": (0.01, 0.2, "float"),
-        # "k_hop": (1, 2, "int"),
+        "k_hop": (1, 3, "int"),
         "ascent_lr": (1e-5, 1e-3, "log"),
         "descent_lr": (1e-5, 1e-1, "log"),
         "scrubAlpha": (1e-6, 10, "log"),
     },
     "cacdc": {
-        "contrastive_epochs_1": (1, 3, "int"),
-        "contrastive_epochs_2": (1, 15, "int"),
+        "contrastive_epochs_1": (1, 6, "int"),
+        "contrastive_epochs_2": (1, 30, "int"),
         "steps": (1, 10, "int"),
         # "maximise_epochs": (5, 30, "int"),
         "unlearn_lr": (1e-4, 1e-1, "log"),
         # "contrastive_margin": (1, 10, "log"),
         # "contrastive_lambda": (0.0, 1.0, "float"),
-        "contrastive_frac": (0.02, 0.1, "float"),
-        # "k_hop": (1, 2, "int"),
-        # "ascent_lr": (1e-6, 1e-2, "log"),
+        "contrastive_frac": (0.02, 0.3, "float"),
+        "k_hop": (1, 3, "int"),
+        "ascent_lr": (1e-6, 1e-3, "log"),
         "descent_lr": (1e-4, 1e-1, "log"),
         # "scrubAlpha": (1e-6, 10, "log"),
     },
     "utu": {},
     "scrub": {
-        "unlearn_iters": (110, 200, "int"),
+        "unlearn_iters": (110, 300, "int"),
         # 'kd_T': (1, 10, "float"),
         "unlearn_lr": (1e-5, 1e-1, "log"),
         "scrubAlpha": (1e-6, 10, "log"),
-        "msteps": (10, 100, "int"),
+        "msteps": (10, 150, "int"),
         # 'weight_decay': (1e-5, 1e-1, "log"),
     },
     "scrub_no_kl": {
@@ -328,15 +363,15 @@ hp_tuning_params_dict = {
         # 'weight_decay': (1e-5, 1e-1, "log"),
     },
     "scrub_no_kl_combined": {
-        "unlearn_iters": (110, 200, "int"),
+        "unlearn_iters": (10, 50, "int"),
         # 'kd_T': (1, 10, "float"),
         "unlearn_lr": (1e-5, 1e-1, "log"),
         "scrubAlpha": (1e-6, 10, "log"),
-        "msteps": (10, 100, "int"),
+        "msteps": (1, 20, "int"),
         # 'weight_decay': (1e-5, 1e-1, "log"),
     },
     "yaum": {
-        "unlearn_iters": (110, 200, "int"),
+        "unlearn_iters": (10, 300, "int"),
         # 'kd_T': (1, 10, "float"),
         "ascent_lr": (1e-5, 1e-3, "log"),
         "descent_lr": (1e-5, 1e-1, "log"),
@@ -357,13 +392,16 @@ hp_tuning_params_dict = {
     "clean": {
         "train_lr": (1e-5, 1e-1, "log"),
         "weight_decay": (1e-5, 1e-1, "log"),
-        "training_epochs": (500, 3000, "int"),
+        "training_epochs": (500, 1600, "int"),
     },
 }
 
 
-def set_hp_tuning_params(trial):
-    hp_tuning_params = hp_tuning_params_dict[args.unlearning_model]
+def set_hp_tuning_params(trial, is_clean=False):
+    if is_clean:
+        hp_tuning_params = hp_tuning_params_dict["clean"]
+    else:
+        hp_tuning_params = hp_tuning_params_dict[args.unlearning_model]
     for hp, values in hp_tuning_params.items():
         if values[1] == "categorical":
             setattr(args, hp, trial.suggest_categorical(hp, values[0]))
@@ -386,12 +424,48 @@ def objective(trial, model, data):
 
     _, _, time_taken = trainer.train()
 
-    obj = trainer.validate(is_dr=True)
-    _, _, forget_f1, util_f1 = trainer.get_score(
+    if args.linked:
+        obj = trainer.validate(is_dr=False)  # REAL
+    else:
+        obj = trainer.validate(is_dr=True)  # REAL
+
+    forget_acc, util_acc, forget_f1, util_f1 = trainer.get_score(
         args.attack_type,
         class1=class_dataset_dict[args.dataset]["class1"],
         class2=class_dataset_dict[args.dataset]["class2"],
     )
+    trial.set_user_attr("forget_acc", forget_acc)
+    trial.set_user_attr("util_acc", util_acc)
+    trial.set_user_attr("forget_f1", forget_f1)
+    trial.set_user_attr("util_f1", util_f1)
+    trial.set_user_attr("time_taken", time_taken)
+
+    # We want to minimize misclassification rate and maximize accuracy
+    return obj
+
+def objective_clean(trial, model, data):
+    # Define the hyperparameters to tune
+    set_hp_tuning_params(trial, is_clean=True)
+
+    model_internal = copy.deepcopy(model)
+
+    optimizer = torch.optim.Adam(
+        model_internal.parameters(), lr=args.train_lr, weight_decay=args.weight_decay
+    )
+
+    trainer = Trainer(model_internal, data, optimizer, args)
+    _, _, time_taken = trainer.train()
+
+    obj, _, _ = trainer.evaluate(is_dr=False, use_val=True)  # REAL
+
+
+    forget_acc, util_acc, forget_f1, util_f1 = trainer.get_score(
+        args.attack_type,
+        class1=class_dataset_dict[args.dataset]["class1"],
+        class2=class_dataset_dict[args.dataset]["class2"],
+    )
+    trial.set_user_attr("forget_acc", forget_acc)
+    trial.set_user_attr("util_acc", util_acc)
     trial.set_user_attr("forget_f1", forget_f1)
     trial.set_user_attr("util_f1", util_f1)
     trial.set_user_attr("time_taken", time_taken)
@@ -403,60 +477,78 @@ def objective(trial, model, data):
 if __name__ == "__main__":
     print("\n\n\n")
     print(args.dataset, args.attack_type)
-    # clean_data = train(load=True)
-    clean_data = train()
-    poisoned_data, poisoned_indices, poisoned_model = poison(clean_data)
-    exit()
-    if args.corrective_frac < 1:
-        print("==POISONING CORRECTIVE==")
-        print(f"No. of poisoned nodes: {len(poisoned_indices)}")
-        poisoned_indices = utils.sample_poison_data(poisoned_data, args.corrective_frac)
-        poisoned_data.poisoned_nodes = poisoned_indices
-        print(f"No. of poisoned nodes after corrective: {len(poisoned_indices)}")
+    # clean_data = train()
+    clean_data, clean_model = train(load=False)
+    
+    # poisoned_data, poisoned_indices, poisoned_model = poison()
 
-    utils.find_masks(
-        poisoned_data, poisoned_indices, args, attack_type=args.attack_type
-    )
+    # if args.corrective_frac < 1:
+    #     print("==POISONING CORRECTIVE==")
+    #     if args.attack_type == "edge":
+    #         poisoned_indices = poisoned_data.poisoned_edge_indices
+    #     else:
+    #         poisoned_indices = poisoned_data.poisoned_nodes
+    #     print(f"No. of poisoned nodes: {len(poisoned_indices)}")
 
-    if "gnndelete" in args.unlearning_model:
-        # Create a partial function with additional arguments
-        model = utils.get_model(
-            args,
-            poisoned_data.num_features,
-            args.hidden_dim,
-            poisoned_data.num_classes,
-            mask_1hop=poisoned_data.sdf_node_1hop_mask,
-            mask_2hop=poisoned_data.sdf_node_2hop_mask,
-            mask_3hop=poisoned_data.sdf_node_3hop_mask,
-        )
+    #     if args.attack_type == "edge":
+    #         poisoned_indices, poisoned_nodes = utils.sample_poison_data_edges(
+    #             poisoned_data, args.corrective_frac
+    #         )
+    #         poisoned_data.poisoned_edge_indices = poisoned_indices
+    #         poisoned_data.poisoned_nodes = poisoned_nodes
+    #     else:
+    #         poisoned_indices = utils.sample_poison_data(
+    #             poisoned_indices, args.corrective_frac
+    #         )
+    #         poisoned_data.poisoned_nodes = poisoned_indices
+    #     print(f"No. of poisoned nodes after corrective: {len(poisoned_indices)}")
 
-        # copy the weights from the poisoned model
-        state_dict = poisoned_model.state_dict()
-        state_dict["deletion1.deletion_weight"] = model.deletion1.deletion_weight
-        state_dict["deletion2.deletion_weight"] = model.deletion2.deletion_weight
-        state_dict["deletion3.deletion_weight"] = model.deletion3.deletion_weight
+    # utils.find_masks(
+    #     poisoned_data, poisoned_indices, args, attack_type=args.attack_type
+    # )
 
-        model.load_state_dict(state_dict)
-    elif "retrain" in args.unlearning_model:
-        model = utils.get_model(
-            args, poisoned_data.num_features, args.hidden_dim, poisoned_data.num_classes
-        )
-    else:
-        model = utils.get_model(
-            args, poisoned_data.num_features, args.hidden_dim, poisoned_data.num_classes
-        )
-        model.load_state_dict(poisoned_model.state_dict())
+    # if "gnndelete" in args.unlearning_model:
+    #     # Create a partial function with additional arguments
+    #     model = utils.get_model(
+    #         args,
+    #         poisoned_data.num_features,
+    #         args.hidden_dim,
+    #         poisoned_data.num_classes,
+    #         mask_1hop=poisoned_data.sdf_node_1hop_mask,
+    #         mask_2hop=poisoned_data.sdf_node_2hop_mask,
+    #         mask_3hop=poisoned_data.sdf_node_3hop_mask,
+    #     )
 
-    objective_func = partial(objective, model=model, data=poisoned_data)
+    #     # copy the weights from the poisoned model
+    #     state_dict = poisoned_model.state_dict()
+    #     state_dict["deletion1.deletion_weight"] = model.deletion1.deletion_weight
+    #     state_dict["deletion2.deletion_weight"] = model.deletion2.deletion_weight
+    #     state_dict["deletion3.deletion_weight"] = model.deletion3.deletion_weight
+
+    #     model.load_state_dict(state_dict)
+    # elif "retrain" in args.unlearning_model:
+    #     model = utils.get_model(
+    #         args, poisoned_data.num_features, args.hidden_dim, poisoned_data.num_classes
+    #     )
+    # else:
+    #     model = utils.get_model(
+    #         args, poisoned_data.num_features, args.hidden_dim, poisoned_data.num_classes
+    #     )
+    #     model.load_state_dict(poisoned_model.state_dict())
+
+    # objective_func = partial(objective, model=model, data=poisoned_data)
+    
+    objective_func = partial(objective_clean, model=clean_model, data=clean_data)
 
     print("==HYPERPARAMETER TUNING==")
     # Create a study with TPE sampler
     study = optuna.create_study(
         sampler=TPESampler(seed=42),
         direction="maximize",
-        study_name=f"{args.gnn}_{args.dataset}_{args.attack_type}_{args.df_size}_{args.unlearning_model}_{args.random_seed}_{class_dataset_dict[args.dataset]['class1']}_{class_dataset_dict[args.dataset]['class2']}",
+        # study_name=f"{args.gnn}_{args.dataset}_{args.attack_type}_{args.df_size}_{args.unlearning_model}_{args.random_seed}_{class_dataset_dict[args.dataset]['class1']}_{class_dataset_dict[args.dataset]['class2']}",
+        study_name=f"{args.gnn}_{args.dataset}_{args.attack_type}_{args.df_size}_{args.random_seed}",
         load_if_exists=True,
-        storage=f"sqlite:///hp_tuning/{args.db_name}.db",
+        storage=f"sqlite:///hp_tuning/new/{args.db_name}.db",
     )
 
     print("==OPTIMIZING==")
@@ -467,8 +559,8 @@ if __name__ == "__main__":
     if args.unlearning_model == "utu":
         study.optimize(objective_func, n_trials=1)
     elif args.unlearning_model == "retrain":
-        study.optimize(objective_func, n_trials=15)
+        study.optimize(objective_func, n_trials=30)
     # elif args.unlearning_model == "contrastive" or args.unlearning_model == "contra_2":
     #     study.optimize(objective_func, n_trials=200)
     else:
-        study.optimize(objective_func, n_trials=100)
+        study.optimize(objective_func, n_trials=30)

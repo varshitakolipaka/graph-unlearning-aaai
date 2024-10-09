@@ -98,6 +98,8 @@ class Trainer:
             )
             loss.backward()
             losses.append(loss)
+            if epoch % 10 == 0:
+                print(f"Epoch: {epoch}, Loss: {loss.item()}")
             self.optimizer.step()
             self.optimizer.zero_grad()
         time_taken = time.time() - st

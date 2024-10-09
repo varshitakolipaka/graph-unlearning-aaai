@@ -15,7 +15,7 @@ def parse_args():
     parser.add_argument('--train_ratio', type=float, default=0.6, help='train ratio')
     parser.add_argument('--val_ratio', type=float, default=0.2, help='train ratio')
     parser.add_argument('--attack_type', type=str, default='label', help='attack type', choices=["label", "edge", "random", "trigger", 'label_strong'])
-    parser.add_argument('--unlearning_model', type=str, default='scrub', help='unlearning method', choices=["original", "gradient_ascent", "gnndelete", "gnndelete_ni", "gif", "utu", "contrastive", "retrain", "scrub", "megu", "contra_2", "ssd", "grub", "yaum", 'contrascent', 'cacdc', 'scrub_no_kl_combined', 'scrub_no_kl'])
+    parser.add_argument('--unlearning_model', type=str, default='scrub', help='unlearning method', choices=["original", "gradient_ascent", "gnndelete", "gnndelete_ni", "gif", "utu", "contrastive", "retrain", "scrub", "megu", "contra_2", "ssd", "grub", "yaum", 'contrascent', 'cacdc', 'scrub_no_kl_combined', 'scrub_no_kl', 'scrub_no_kl_2'])
     parser.add_argument('--gnn', type=str, default='gcn', help='GNN architecture', choices=['gcn', 'gat', 'gin'])
     # parser.add_argument('--in_dim', type=int, default=128, help='input dimension')
     parser.add_argument('--hidden_dim', type=int, default=64, help='hidden dimension')

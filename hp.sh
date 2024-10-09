@@ -1,6 +1,6 @@
-python run_hp_tune.py --dataset Cora --df_size 0.5 --random_seed 0 --data_dir /scratch/akshit.sinha/data3 --attack_type label --db_name label_gat_cf_0.05 --cf 0.05 --gnn gat --cacdc --contra_2 --scrub --gnndelete
+python run_hp_tune.py --dataset Cora --df_size 0.5 --random_seed 0 --data_dir /scratch/akshit.sinha/data3 --attack_type label --db_name label_cf_0.25 --cf 0.25 --gnn gcn --scrub_no_kl_2
 
-python eval_script.py --gnn gat --dataset Cora --attack_type label --db_name label_gat_cf_0.05 --log_name label_gat_logs --cf 0.05 --start_seed 0 --end_seed 5 --cacdc --contra_2 --scrub --gnndelete
+python eval_script.py --gnn gcn --dataset Cora --attack_type label --db_name label_cf_0.25 --cf 0.25 --log_name acdc_ablations --start_seed 0 --end_seed 5 --scrub_no_kl_2
 
 
 

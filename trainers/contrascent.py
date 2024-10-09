@@ -99,10 +99,9 @@ def distill_kl_loss(y_s, y_t, T, reduction="sum"):
     return loss
 
 
-class ContrastiveAscentTrainer(Trainer):
+class ContrastiveAscentNoLinkTrainer(Trainer):
     def __init__(self, model, data, optimizer, args):
-        super().__init__(model, data, optimizer)
-        self.args = args
+        super().__init__(model, data, optimizer, args)
         self.attacked_idx = data.attacked_idx
         self.embeddings = None
         self.criterion = torch.nn.CrossEntropyLoss()
@@ -224,6 +223,13 @@ class ContrastiveAscentTrainer(Trainer):
         neg_loss = F.relu(torch.mean((margin - neg_dist)))
         loss = pos_loss + neg_loss
         return loss
+    
+    def sage_loss(self, anchors, pos_embs, neg_embs):
+        pos_loss = F.logsigmoid((anchors*pos_embs).sum(-1)).mean()
+        neg_loss = F.logsigmoid(-(anchors*neg_embs).sum(-1)).mean()
+        
+        return -pos_loss - neg_loss
+        
 
     def kd_loss(self):
         with torch.no_grad():
@@ -364,6 +370,64 @@ class ContrastiveAscentTrainer(Trainer):
         # print(f"Average time taken to get distances: {(time.time() - st)/num_samples}")
 
         return pos_dist, neg_dist
+    
+    def run_sage_batch(self, batch_size=128):
+        st = time.time()
+
+        sample_indices = torch.where(self.data.sample_mask)[0]
+        num_samples = len(sample_indices)
+
+        attacked_set = set(self.attacked_idx.tolist())
+        attacked_list = list(attacked_set)
+
+        total_loss = 0
+        calc_time = 0
+
+        for i in range(0, num_samples, batch_size):
+            batch_indices = sample_indices[i : i + batch_size]
+            batch_size = len(batch_indices)
+
+            # Vectorize batch_positive_samples
+            batch_positive_samples = [
+                list(self.subset_dict[idx.item()] - attacked_set) 
+                for idx in batch_indices
+            ]
+            
+            # Max lengths can be computed once per loop iteration
+            max_pos = max(len(s) for s in batch_positive_samples)
+            max_neg = len(attacked_list)  # Always fixed since attacked_set size won't change
+
+            # Preallocate memory for tensors
+            batch_pos = torch.zeros((batch_size, max_pos), dtype=torch.long)
+            batch_neg = torch.zeros((batch_size, max_neg), dtype=torch.long)
+            mask_pos = torch.zeros((batch_size, max_pos), dtype=torch.float32)
+            mask_neg = torch.ones((batch_size, max_neg), dtype=torch.float32)  # Fixed
+
+            for idx, pos_samples in enumerate(batch_positive_samples):
+                pos_len = len(pos_samples)
+                batch_pos[idx, :pos_len] = torch.tensor(pos_samples)
+                mask_pos[idx, :pos_len] = 1.0
+
+            # Move everything to the correct device
+            device = self.embeddings.device
+            batch_pos, batch_neg = batch_pos.to(device), batch_neg.to(device)
+            mask_pos, mask_neg = mask_pos.to(device).unsqueeze(-1), mask_neg.to(device).unsqueeze(-1)
+
+            st_2 = time.time()
+            try:
+                anchor_embs = self.embeddings[batch_indices].unsqueeze(1)
+                pos_embs = self.embeddings[batch_pos] * mask_pos
+                neg_embs = self.embeddings[batch_neg] * mask_neg
+
+                batch_loss = self.sage_loss(anchor_embs, pos_embs, neg_embs)
+                calc_time += time.time() - st_2
+            except Exception as e:
+                continue
+
+            total_loss += batch_loss
+
+        return total_loss
+
 
     def get_distances_edge(self, batch_size=64):
         # attacked edge index contains all the edges that were maliciously added
@@ -417,7 +481,7 @@ class ContrastiveAscentTrainer(Trainer):
                     torch.tensor([1] * len(s) + [0] * (max_neg - len(s)))
                     for s in batch_negative_samples
                 ]
-            )
+            ).float().unsqueeze(-1).to(device)
 
             # st_2 = time.time()
             batch_pos_dist, batch_neg_dist = self.calc_distances(
@@ -429,6 +493,72 @@ class ContrastiveAscentTrainer(Trainer):
             neg_dist[batch_indices] = batch_neg_dist.to(neg_dist.device)
 
         return pos_dist, neg_dist
+    
+    def run_sage_batch_edge(self, batch_size=64):
+        # attacked edge index contains all the edges that were maliciously added
+        num_masks = len(self.data.train_mask)
+
+        sample_indices = torch.where(self.data.sample_mask)[0]
+        num_samples = len(sample_indices)
+
+        # Batchwise positive and negative samples created
+        total_loss = 0
+        for i in range(0, num_samples, batch_size):
+            batch_indices = sample_indices[i : i + batch_size]
+            batch_size = len(batch_indices)
+
+            batch_positive_samples = [
+                list(
+                    self.subset_dict[idx.item()] - self.negative_sample_dict[idx.item()]
+                )
+                for idx in batch_indices
+            ]
+            batch_negative_samples = [
+                list(self.negative_sample_dict[idx.item()]) for idx in batch_indices
+            ]
+            
+            # Pad and create dense batches
+            max_pos = max(len(s) for s in batch_positive_samples)
+            max_neg = max(len(s) for s in batch_negative_samples)
+
+            batch_pos = torch.stack(
+                [
+                    torch.tensor(s + [0] * (max_pos - len(s)))
+                    for s in batch_positive_samples
+                ]
+            )
+            batch_neg = torch.stack(
+                [
+                    torch.tensor(s + [0] * (max_neg - len(s)))
+                    for s in batch_negative_samples
+                ]
+            )
+            
+            self.mask_pos = torch.stack(
+                [
+                    torch.tensor([1] * len(s) + [0] * (max_pos - len(s)))
+                    for s in batch_positive_samples
+                ]
+            ).float().unsqueeze(-1).to(device)
+
+            self.mask_neg = torch.stack(
+                [
+                    torch.tensor([1] * len(s) + [0] * (max_neg - len(s)))
+                    for s in batch_negative_samples
+                ]
+            ).float().unsqueeze(-1).to(device)
+
+            try:
+                anchor_embs = self.embeddings[batch_indices].unsqueeze(1)
+                pos_embs = self.embeddings[batch_pos] * self.mask_pos
+                neg_embs = self.embeddings[batch_neg] * self.mask_neg
+                batch_loss = self.sage_loss(anchor_embs, pos_embs, neg_embs)
+            except:
+                continue
+            
+            total_loss += batch_loss
+
+        return total_loss
 
     @time_it
     def get_model_embeddings(self):
@@ -446,26 +576,26 @@ class ContrastiveAscentTrainer(Trainer):
             self.model.parameters(), lr=args.descent_lr
         )
 
-        best_score = 0
         # attacked idx must be a list of nodes
         for epoch in trange(args.steps, desc="Unlearning"):
+            self.save_best()
             for i in range(args.contrastive_epochs_1 + args.contrastive_epochs_2):
-
+                iter_start_time = time.time()
                 self.model.train()
 
                 self.embeddings = self.model(
-                    self.data.x, self.data.edge_index[:, self.data.dr_mask]
+                    self.data.x, self.data.edge_index
                 )
                 if i < args.contrastive_epochs_1:
-                    pos_dist, neg_dist = self.get_distances_batch()
-                    loss = self.contrastive_loss(
-                        pos_dist, neg_dist, margin=args.contrastive_margin
-                    )
-
                     optimizer.zero_grad()
+                    # pos_dist, neg_dist = self.get_distances_batch()
+                    # loss = self.contrastive_loss(
+                    #     pos_dist, neg_dist, margin=args.contrastive_margin
+                    # )
+                    loss = self.run_sage_batch()
+
                     loss.backward()
                     optimizer.step()
-
                 else:
                     ascent_optimizer.zero_grad()
 
@@ -480,20 +610,27 @@ class ContrastiveAscentTrainer(Trainer):
                     self.embeddings = self.model(
                         self.data.x, self.data.edge_index[:, self.data.dr_mask]
                     )
-
+                    # self.embeddings = self.model(
+                    #     self.data.x, self.data.edge_index # TESTING
+                    # )
+                    
                     finetune_loss = F.cross_entropy(
                         self.embeddings[self.data.retain_mask],
                         self.data.y[self.data.retain_mask],
                     )
-                    kd_loss = self.kd_loss()
-                    descent_loss = finetune_loss + kd_loss
+                    # kd_loss = self.kd_loss()
+                    descent_loss = finetune_loss
 
                     descent_loss.backward()
                     descent_optimizer.step()
                     # descent_scheduler.step()
                     
                 # save best model
-                self.save_best()
+                self.unlearning_time += time.time() - iter_start_time
+                cutoff = self.save_best(is_dr=True)
+                if cutoff:
+                    self.load_best()
+                    return
         
         # load best model
         self.load_best()
@@ -511,18 +648,20 @@ class ContrastiveAscentTrainer(Trainer):
 
         for epoch in trange(args.steps, desc="Unlearning"):
             for i in range(args.contrastive_epochs_1 + args.contrastive_epochs_2):
+                iter_start_time = time.time()
                 self.model.train()
                 optimizer.zero_grad()
 
                 self.embeddings = self.model(
-                    self.data.x, self.data.edge_index[:, self.data.dr_mask]
+                    self.data.x, self.data.edge_index
                 )
                 if i < args.contrastive_epochs_1:
-                    pos_dist, neg_dist = self.get_distances_edge()
-                    lmda = 0
-                    loss = self.unlearn_loss(
-                        pos_dist, neg_dist, margin=args.contrastive_margin, lmda=lmda
-                    )
+                    # pos_dist, neg_dist = self.get_distances_edge()
+                    # lmda = 0
+                    # loss = self.unlearn_loss(
+                    #     pos_dist, neg_dist, margin=args.contrastive_margin, lmda=lmda
+                    # )
+                    loss = self.run_sage_batch_edge()
                     
                     optimizer.zero_grad()
                     loss.backward()
@@ -538,24 +677,36 @@ class ContrastiveAscentTrainer(Trainer):
 
                     descent_optimizer.zero_grad()
 
-                    self.embeddings = self.model(
-                        self.data.x, self.data.edge_index[:, self.data.dr_mask]
-                    )
+                    if self.args.linked:
+                        self.embeddings = self.model(
+                            self.data.x, self.data.edge_index
+                        )
+                    else:
+                        self.embeddings = self.model(
+                            self.data.x, self.data.edge_index[:, self.data.dr_mask]
+                        )
 
                     finetune_loss = F.cross_entropy(
                         self.embeddings[self.data.retain_mask],
                         self.data.y[self.data.retain_mask],
                     )
-                    kd_loss = self.kd_loss()
-                    descent_loss = finetune_loss + kd_loss
+                    # kd_loss = self.kd_loss()
+                    # descent_loss = finetune_loss + kd_loss
 
-                    descent_loss.backward()
+                    finetune_loss.backward()
                     descent_optimizer.step()
                     # descent_scheduler.step()
-                    
+
+                self.unlearning_time += time.time() - iter_start_time
                 # save best model
-                self.save_best()
-        
+                if i % 2 == 0:
+                    if self.args.linked:
+                        cutoff = self.save_best(is_dr=False)
+                    else:
+                        cutoff = self.save_best()
+                        if cutoff:
+                            break
+            
         # load best model
         self.load_best()
 
@@ -566,14 +717,21 @@ class ContrastiveAscentTrainer(Trainer):
         self.get_sample_points()
         self.store_subset()
 
-        start_time = time.time()
+        self.start_time = time.time()
+        self.best_model_time = self.start_time
         if self.args.request == "node":
             self.train_node()
         elif self.args.request == "edge":
             self.train_edge()
-        end_time = time.time()
-        train_acc, msc_rate, f1 = self.evaluate(is_dr=True, use_val=True)
+        
+        if self.args.linked:
+            is_dr = False
+        else:
+            is_dr = True
+        train_acc, msc_rate, f1 = self.evaluate(is_dr=is_dr, use_val=True)
 
-        print(f"Training time: {self.best_model_time - start_time}")
+        print(f"Training time: {self.best_model_time}, Train Acc: {train_acc}, Msc Rate: {msc_rate}, F1: {f1}")
+        forg, util, forg_f1, util_f1 = self.get_score(self.args.attack_type, class1=class_dataset_dict[self.args.dataset]["class1"], class2=class_dataset_dict[self.args.dataset]["class2"])
+        print(f"Forgotten: {forg}, Util: {util}, Forg F1: {forg_f1}, Util F1: {util_f1}")        
 
-        return train_acc, msc_rate, self.best_model_time - start_time
+        return train_acc, msc_rate, self.best_model_time
