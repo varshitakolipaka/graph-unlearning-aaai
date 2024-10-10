@@ -1,0 +1,24 @@
+{
+    "Cora": {
+        "class1": 5,
+        "class2": 63,
+        "victim_class": 19,
+        "target_class": 15
+    },
+    "Amazon": {
+        "class1": 3,
+        "class2": 4,
+        "victim_class": 1,
+        "target_class": 6
+    },
+    "CS": {
+        "class1": 3,
+        "class2": 12,
+        "victim_class": 7,
+        "target_class": 14
+    },
+    "Computers": {
+        "class1": 0,
+        "class2": 6
+    }
+}

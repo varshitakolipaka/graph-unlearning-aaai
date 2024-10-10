@@ -1,0 +1,89 @@
+{
+    "results": {
+        "0": {
+            "Original": {
+                "Forget Ability": null,
+                "Utility": null
+            },
+            "Poisoned": {
+                "Forget Ability": null,
+                "Utility": null
+            }
+        },
+        "0": {
+            "Original": {
+                "Forget Ability": null,
+                "Utility": null
+            },
+            "Poisoned": {
+                "Forget Ability": null,
+                "Utility": null
+            },
+            "megu": {
+                "Forget Ability": null,
+                "Utility": null
+            }
+        }
+    },
+    "arguments": {
+        "train_ratio": 0.8,
+        "attack_type": "random",
+        "unlearning_model": "megu",
+        "gnn": "gcn",
+        "hidden_dim": 64,
+        "unlearning_epochs": 50,
+        "request": "node",
+        "edge_attack_type": "specific",
+        "df_size": 0.5,
+        "test_poison_fraction": 0.2,
+        "poison_tensor_size": 100,
+        "dataset": "Cora",
+        "random_seed": 0,
+        "train_lr": 0.005191475570177285,
+        "unlearn_lr": 0.015,
+        "weight_decay": 0.00016211813194850176,
+        "optimizer": "Adam",
+        "training_epochs": 1208,
+        "valid_freq": 30,
+        "checkpoint_dir": "./checkpoint",
+        "alpha": 0.5,
+        "neg_sample_random": "non_connected",
+        "loss_fct": "mse_mean",
+        "loss_type": "both_layerwise",
+        "num_clusters": 10,
+        "kmeans_max_iters": 1,
+        "shard_size_delta": 0.005,
+        "terminate_delta": 0,
+        "eval_steps": 1,
+        "runs": 1,
+        "num_remove_links": 11,
+        "parallel_unlearning": 4,
+        "lam": 0,
+        "regen_feats": false,
+        "regen_neighbors": false,
+        "regen_links": false,
+        "regen_subgraphs": false,
+        "hop_neighbors": 20,
+        "topk": 500,
+        "eval_on_cpu": false,
+        "num_edge_type": null,
+        "iteration": 100,
+        "scale": 100000,
+        "damp": 0.1,
+        "unlearn_iters": 50,
+        "kd_T": 4,
+        "scrubAlpha": 1,
+        "msteps": 15,
+        "wd": 0.0005,
+        "contrastive_epochs_1": 30,
+        "contrastive_epochs_2": 10,
+        "contrastive_margin": 500,
+        "contrastive_lambda": 0.8,
+        "k_hop": 2,
+        "contrastive_eps": 0.001,
+        "contrastive_frac": 0.1,
+        "kappa": 0.01,
+        "alpha1": 0.8,
+        "alpha2": 0.5
+    }
+}
